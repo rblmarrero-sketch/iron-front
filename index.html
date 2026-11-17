@@ -7,9 +7,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d1117">
 <title>Iron Front: Generals' War</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="vendor/peerjs.min.js"></script>
+<script>if(typeof Peer==='undefined'&&/^https?:$/.test(location.protocol))document.write('<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"><\/script>');</script>
+<style>
+@font-face{font-family:'Rajdhani';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/rajdhani-500.woff2) format('woff2')}
+@font-face{font-family:'Rajdhani';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/rajdhani-600.woff2) format('woff2')}
+@font-face{font-family:'Rajdhani';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/rajdhani-700.woff2) format('woff2')}
+</style>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:'Rajdhani',system-ui,sans-serif;color:#e8eef5;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
@@ -106,6 +113,7 @@ body.mobile .ctl{display:none}
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="vig" style="position:fixed;inset:0;pointer-events:none;display:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 58%,rgba(0,0,0,.34) 100%)"></div>
 <div id="top" class="hidden">
   <span id="money"></span><span id="power"></span><span id="rank"></span><span id="clock"></span>
   <span class="sp"></span>
@@ -136,6 +144,8 @@ body.mobile .ctl{display:none}
   <div class="panel">
     <h1>IRON FRONT</h1>
     <h2>Generals' War &mdash; up to 8 players, 4 factions, skirmish or online</h2>
+    <div class="chips" id="appBar" style="margin:-2px 0 8px;align-items:center"><div class="chip" id="shareBtn">&#128228; Share game</div><div class="chip" id="qrBtn">&#9638; QR code</div><div class="chip hidden" id="installBtn">&#11015; Install app</div><span id="netBadge" style="font-size:13px;color:#8a9aac"></span></div>
+    <div id="qrBox" class="hidden" style="text-align:center;margin:4px 0 10px"><img id="qrImg" alt="QR code" style="width:176px;height:176px;image-rendering:pixelated;background:#fff;padding:8px;border-radius:6px"><div style="font-size:13px;color:#8a9aac">Scan with a phone camera to open the game</div></div>
     <div class="tabs"><div class="tab on" data-tab="sk">Skirmish vs AI</div><div class="tab" data-tab="on">Online</div><div class="tab" data-tab="help">Factions &amp; Controls</div></div>
     <div id="tabOn" class="hidden">
       <div id="mpStatus" style="font-size:14px;margin:4px 0 8px">Loading online play…</div>
@@ -160,6 +170,7 @@ body.mobile .ctl{display:none}
       <h4>FACTIONS</h4>
       <div class="facgrid" id="facInfo"></div>
       <h4>OPTIONS</h4>
+      <div class="chips"><span>Graphics:</span><div class="chip" data-gfx="auto">Auto (adapts to device)</div><div class="chip" data-gfx="high">High</div><div class="chip" data-gfx="low">Low / battery saver</div></div>
       <div class="chips"><span>Mouse controls:</span><div class="chip" data-scheme="classic">Classic (left-click commands)</div><div class="chip" data-scheme="modern">Modern (right-click commands)</div></div>
       <h4>CONTROLS (desktop)</h4>
       <table class="ctl">
@@ -205,10 +216,17 @@ const TILE=40,HUD_T=34;
 let MW=96,MH=64,WW=MW*TILE,WH=MH*TILE,HUD_B=170;
 const $=id=>document.getElementById(id);
 const cv=$('game'),ctx=cv.getContext('2d'),mini=$('mini'),mctx=mini.getContext('2d');
+// ---- IF6_GFX: graphics quality, HiDPI, render-only effects (never touch the simulation / RND) ----
+let DPR=1,VIGON=null,SHAKE=0,FDT=0.016,VISVER=0;const DEB=[];
+const GFX={mode:'auto',dprCap:2,chunkScale:0.5,noise:true,fx:true,vig:true,low:false};
+function gfxApply(mode){if(mode!=='high'&&mode!=='low')mode='auto';GFX.mode=mode;const lo=mode==='low';GFX.low=lo;
+ GFX.dprCap=lo?1:(mode==='high'?2:(IS_TOUCH?1.75:2));GFX.chunkScale=lo?0.3:0.5;GFX.noise=!lo;GFX.fx=!lo;GFX.vig=!lo;
+ try{localStorage.setItem('if_gfx',mode);}catch(e){}TERR.reset();resize();}
 const MMW=mini.width,MMH=mini.height;let MSX=MMW/WW,MSY=MMH/WH;
 let W=0,H=0,Z=1,VW=0,VH=0;
 const IS_TOUCH=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
-function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.max(1,Math.min(GFX.dprCap,(typeof devicePixelRatio==='number'&&devicePixelRatio)||1));
+ cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
  const mob=IS_TOUCH&&Math.min(W,H)<900||W<760;document.body.classList.toggle('mobile',mob);HUD_B=mob?118:170;VW=W/Z;VH=H/Z;}
 addEventListener('resize',resize);resize();
 // 8 player colours
@@ -714,7 +732,7 @@ function updUnit(e,dt){
   else if(dHypot(e.x-e.home[0],e.y-e.home[1])>30){goTo(e,e.home[0],e.home[1]);if(step(e,dt)||e.stuckN>=3)e.home=[e.x,e.y];}
  }
  if(e.d.turret&&!e.tgt&&!(o&&o.t==='attack'))e.tang=turn(e.tang,e.ang,dt*4);
- if(e.d.hack){if(!e.order&&!e.moving){e.idleT=(e.idleT||0)+dt;if(e.idleT>3){e.hackAcc=(e.hackAcc||0)+dt;if(e.hackAcc>=1){e.hackAcc-=1;G.money[e.team]+=4;if(e.team===ME&&RND()<0.25)G.fx.push({k:'txt',x:e.x,y:e.y-14,s:'+$4',col:'#5dff9a',life:0.9,max:0.9});}}}else e.idleT=0;}
+ if(e.d.hack){if(!e.order&&!e.moving){e.idleT=(e.idleT||0)+dt;if(e.idleT>3){e.hackAcc=(e.hackAcc||0)+dt;if(e.hackAcc>=1){e.hackAcc-=1;G.money[e.team]+=4;if(e.team===ME&&Math.random()<0.25)G.fx.push({k:'txt',x:e.x,y:e.y-14,s:'+$4',col:'#5dff9a',life:0.9,max:0.9});}}}else e.idleT=0;}
  // salvage pickup
  if(!e.d.air&&G.crates.length){for(const c of G.crates)if(!c.dead&&Math.abs(c.x-e.x)<18&&Math.abs(c.y-e.y)<18){pickCrate(e,c);break;}}
 }
@@ -1027,7 +1045,7 @@ function splash(x,y,r,dmg,team,w,src,hitAir){
   const d=e.kind==='u'?Math.max(0,dist(x,y,e.x,e.y)-e.r):rectDist(x,y,e);
   if(d<r)hit(e,dmg*multFor(w,e)*(1-0.5*d/r),src);}
 }
-function boom(x,y,r,delay){G.fx.push({k:'boom',x,y,r,life:0.55+(delay||0),max:0.55,delay:delay||0});
+function boom(x,y,r,delay){G.fx.push({k:'boom',x,y,r,life:0.55+(delay||0),max:0.55,delay:delay||0});fxExtra(x,y,r);
  for(let i=0;i<Math.min(8,r/6);i++)G.fx.push({k:'smoke',x:x+(RND()-.5)*r,y:y+(RND()-.5)*r,vx:(RND()-.5)*20,vy:-10-RND()*20,r:r*0.25+4,life:1.2+RND(),max:2,dark:true});}
 function updProj(dt){
  for(const p of G.proj){
@@ -1292,6 +1310,7 @@ function markCircle(x,y,r,ti){
  for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){const cx=(tx+.5)*TILE-x,cy=(ty+.5)*TILE-y;if(cx*cx+cy*cy<=r2){const i=idx(tx,ty);V[i]=1;X[i]=1;}}
 }
 function computeVis(){
+ VISVER++;
  G.reveals=G.reveals.filter(r=>r.until>G.t);
  const need=new Array(G.NT).fill(false);G.pl.forEach((p,i)=>{if(G.human[i])need[p.ti]=true;});need[TI(ME)]=true;
  for(let ti=0;ti<G.NT;ti++){
@@ -1406,16 +1425,83 @@ function buildMiniBase(){
   m.fillStyle=o===-2?'#7a7a72':o===-3?G.bio.tree[0]:o===-4?G.bio.water:G.tcol[idx(x,y)];m.fillRect(x*TILE*MSX,y*TILE*MSY,TILE*MSX+1,TILE*MSY+1);}
 }
 
+// ---- IF6_TERRAIN: terrain pre-rendered in cached chunks (smooth blended ground, soft shorelines) ----
+// Chunks are rendered at the exact on-screen pixel scale (Z*DPR), so drawing them is a plain copy, which is fast even
+// on phones/PCs without GPU canvas. While zooming, the nearest cached scale is stretched until the exact one is ready.
+const TERR={N:16,map:new Map(),px:0,g:null,rgb:null,noise:null,built:0,levels:new Set(),
+ reset(){this.map.clear();this.px=0;this.g=null;this.rgb=null;this.levels.clear();},
+ col(s){s=String(s);let m=/^#([0-9a-f]{6})$/i.exec(s);if(m){const v=parseInt(m[1],16);return [v>>16,(v>>8)&255,v&255];}
+  m=/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(s);if(m)return [parseInt(m[1]+m[1],16),parseInt(m[2]+m[2],16),parseInt(m[3]+m[3],16)];
+  m=/hsla?\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)%\s*,\s*(-?[\d.]+)%/.exec(s);
+  if(m){const h=(((+m[1])%360)+360)%360/360,sa=Math.max(0,Math.min(1,m[2]/100)),l=Math.max(0,Math.min(1,m[3]/100));
+   const f=n=>{const k=(n+h*12)%12,a=sa*Math.min(l,1-l);return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))));};return [f(0),f(8),f(4)];}
+  return [90,105,70];},
+ prep(){if(this.g===G&&this.rgb)return;this.reset();this.g=G;
+  const n=MW*MH,rgb=new Uint8ClampedArray(n*3),cc=new Map();
+  for(let i=0;i<n;i++){const k=G.tcol[i];let c=cc.get(k);if(!c){c=this.col(k);cc.set(k,c);}rgb[i*3]=c[0];rgb[i*3+1]=c[1];rgb[i*3+2]=c[2];}
+  this.rgb=rgb;const w=this.col(G.bio.water);this.shallow=[Math.min(255,w[0]+28),Math.min(255,w[1]+34),Math.min(255,w[2]+30)];this.deep=[w[0]*0.72|0,w[1]*0.78|0,w[2]*0.86|0];
+  if(!this.noise)this.makeNoise();},
+ makeNoise(){const S=64,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');const id=g.createImageData(S,S),d=id.data;
+  const L=new Float32Array(8*8);for(let i=0;i<64;i++)L[i]=Math.random();
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){const fx=x/8,fy=y/8,x0=fx|0,y0=fy|0,ax=fx-x0,ay=fy-y0,q=(a,b)=>L[(b&7)*8+(a&7)];
+   const lo=(q(x0,y0)*(1-ax)+q(x0+1,y0)*ax)*(1-ay)+(q(x0,y0+1)*(1-ax)+q(x0+1,y0+1)*ax)*ay;
+   const v=(lo-0.5)*0.9+(Math.random()-0.5)*0.9,p=(y*S+x)*4;
+   if(v<0){d[p]=d[p+1]=d[p+2]=0;d[p+3]=Math.min(255,-v*70);}else{d[p]=255;d[p+1]=250;d[p+2]=230;d[p+3]=Math.min(255,v*38);}}
+  g.putImageData(id,0,0);this.noise=c;},
+ mask(N,fill){const c=document.createElement('canvas');c.width=c.height=N+2;const g=c.getContext('2d');const id=g.createImageData(N+2,N+2);fill(id.data);g.putImageData(id,0,0);return c;},
+ build(cx,cy,s){const N=this.N,px=Math.round(N*TILE*s),rgb=this.rgb,sh=this.shallow,dp=this.deep;let anyW=false;
+  const T=(i,j)=>idx(Math.max(0,Math.min(MW-1,cx*N+i-1)),Math.max(0,Math.min(MH-1,cy*N+j-1)));
+  const isW=(i,j)=>G.occ[T(i,j)]===-4;
+  const base=this.mask(N,d=>{for(let j=0;j<N+2;j++)for(let i=0;i<N+2;i++){const t=T(i,j),p=(j*(N+2)+i)*4;d[p]=rgb[t*3];d[p+1]=rgb[t*3+1];d[p+2]=rgb[t*3+2];d[p+3]=255;if(G.occ[t]===-4)anyW=true;}});
+  const c=document.createElement('canvas');c.width=c.height=px;const g=c.getContext('2d');g.imageSmoothingEnabled=true;try{g.imageSmoothingQuality='high';}catch(e){}
+  const o=-TILE*s,sz=(N+2)*TILE*s;g.drawImage(base,0,0,N+2,N+2,o,o,sz,sz);
+  if(GFX.noise&&this.noise){const ox=(cx*px)%64,oy=(cy*px)%64;g.save();g.translate(-ox,-oy);g.fillStyle=g.createPattern(this.noise,'repeat');g.fillRect(0,0,px+64,px+64);g.restore();}
+  if(anyW){
+   g.drawImage(this.mask(N,d=>{for(let j=0;j<N+2;j++)for(let i=0;i<N+2;i++){if(!isW(i,j))continue;const p=(j*(N+2)+i)*4;d[p]=sh[0];d[p+1]=sh[1];d[p+2]=sh[2];d[p+3]=255;}}),0,0,N+2,N+2,o,o,sz,sz);
+   g.drawImage(this.mask(N,d=>{for(let j=1;j<N+1;j++)for(let i=1;i<N+1;i++){if(!(isW(i,j)&&isW(i-1,j)&&isW(i+1,j)&&isW(i,j-1)&&isW(i,j+1)))continue;const p=(j*(N+2)+i)*4;d[p]=dp[0];d[p+1]=dp[1];d[p+2]=dp[2];d[p+3]=235;}}),0,0,N+2,N+2,o,o,sz,sz);}
+  this.built++;return c;},
+ key(s,cx,cy){return Math.round(s*40)*1e6+cy*1000+cx;},
+ hit(k){const c=this.map.get(k);if(c){this.map.delete(k);this.map.set(k,c);}return c;},
+ put(k,c){this.map.set(k,c);this.px+=c.width*c.height;const max=GFX.low?6e6:16e6;
+  while(this.px>max&&this.map.size>1){const k0=this.map.keys().next().value,c0=this.map.get(k0);this.map.delete(k0);this.px-=c0.width*c0.height;}},
+ nearest(cx,cy,want){let best=null,bd=1e9;for(const s of this.levels){const c=this.map.get(this.key(s,cx,cy));if(c){const d=Math.abs(Math.log(s/want));if(d<bd){bd=d;best=c;}}}return best;},
+ draw(){this.prep();const N=this.N,CW=N*TILE,ncx=Math.ceil(MW/N),ncy=Math.ceil(MH/N);
+  const want=Z*DPR,s=Math.max(0.1,Math.min(GFX.low?1:2,Math.round(want*40)/40)),M0=ctx.getTransform?ctx.getTransform():null,exact=Math.abs(s-want)<1e-6&&!!M0&&typeof M0.e==='number';this.levels.add(s);
+  const c0x=Math.max(0,Math.floor(cam.x/CW)),c1x=Math.min(ncx-1,Math.floor((cam.x+VW)/CW)),c0y=Math.max(0,Math.floor(cam.y/CW)),c1y=Math.min(ncy-1,Math.floor((cam.y+VH)/CW));
+  const t0=performance.now(),late=[];let nb=0;
+  const M=exact?M0:null;if(exact)ctx.setTransform(1,0,0,1,0,0);
+  for(let cy=c0y;cy<=c1y;cy++)for(let cx=c0x;cx<=c1x;cx++){
+   const k=this.key(s,cx,cy);let c=this.hit(k);
+   if(!c&&(nb===0||performance.now()-t0<5)){c=this.build(cx,cy,s);this.put(k,c);nb++;}
+   if(!c){late.push([cx,cy]);continue;}
+   const wT=Math.min(N,MW-cx*N),hT=Math.min(N,MH-cy*N);
+   if(exact){const w=Math.round(wT*TILE*s),h=Math.round(hT*TILE*s),dx=Math.round(M.e+(cx*CW-cam.x)*want),dy=Math.round(M.f+(cy*CW-cam.y)*want);ctx.drawImage(c,0,0,w,h,dx,dy,w,h);}
+   else{const sc=c.width/CW;ctx.imageSmoothingEnabled=true;ctx.drawImage(c,0,0,wT*TILE*sc,hT*TILE*sc,cx*CW-cam.x,cy*CW-cam.y,wT*TILE+0.6,hT*TILE+0.6);}}
+  if(exact)ctx.setTransform(M);
+  for(const [cx,cy] of late){const wT=Math.min(N,MW-cx*N),hT=Math.min(N,MH-cy*N),c=this.nearest(cx,cy,want);
+   if(c){const sc=c.width/CW;ctx.imageSmoothingEnabled=true;ctx.drawImage(c,0,0,wT*TILE*sc,hT*TILE*sc,cx*CW-cam.x,cy*CW-cam.y,wT*TILE+0.6,hT*TILE+0.6);continue;}
+   for(let ty=cy*N;ty<cy*N+hT;ty++)for(let tx=cx*N;tx<cx*N+wT;tx++){const o=G.occ[idx(tx,ty)];ctx.fillStyle=o===-4?G.bio.water:G.tcol[idx(tx,ty)];ctx.fillRect(tx*TILE-cam.x,ty*TILE-cam.y,TILE+1,TILE+1);}}}
+};
+function fxExtra(x,y,r){try{if(!G||typeof cam==='undefined'||!visAt(x,y))return;
+ const dx=x-(cam.x+VW/2),dy=y-(cam.y+VH/2),dd=Math.sqrt(dx*dx+dy*dy),R=Math.max(VW,VH);
+ if(r>=40&&dd<R)SHAKE=Math.min(14,SHAKE+(r/9)*(1-dd/R));
+ if(!GFX.fx||dd>R*1.2)return;const n=Math.min(12,r/5|0);
+ for(let i=0;i<n&&DEB.length<260;i++){const a=Math.random()*6.283,sp=40+Math.random()*r*2.2;
+  DEB.push({x,y,z:4,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*0.7,vz:120+Math.random()*220,s:2+Math.random()*3,life:0.8+Math.random()*0.9,max:1.7});}}catch(e){}}
+function drawDebris(){if(!DEB.length)return;const dt=FDT;let j=0;
+ for(let i=0;i<DEB.length;i++){const p=DEB[i];p.life-=dt;if(p.life<=0)continue;
+  p.x+=p.vx*dt;p.y+=p.vy*dt;p.vz-=420*dt;p.z+=p.vz*dt;if(p.z<0){p.z=0;p.vz*=-0.3;p.vx*=0.55;p.vy*=0.55;}DEB[j++]=p;
+  const x=p.x-cam.x,y=p.y-cam.y;if(x<-30||y<-30||x>VW+30||y>VH+30)continue;
+  ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(x-p.s/2,y-p.s*0.3,p.s,p.s*0.6);
+  ctx.fillStyle=p.life>p.max-0.35?'#ffb347':'#3b332a';ctx.fillRect(x-p.s/2,y-p.z-p.s/2,p.s,p.s);}
+ DEB.length=j;}
 function render(){
- ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+ ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
  VW=W/Z;VH=H/Z;
- ctx.setTransform(Z,0,0,Z,0,0);
+ {const sk=SHAKE>0.3?SHAKE:0;ctx.setTransform(Z*DPR,0,0,Z*DPR,(Math.random()-.5)*sk*Z*DPR,(Math.random()-.5)*sk*Z*DPR);}
  const bio=G.bio;
  const t0x=Math.max(0,tileOf(cam.x)),t1x=Math.min(MW-1,tileOf(cam.x+VW)),t0y=Math.max(0,tileOf(cam.y)),t1y=Math.min(MH-1,tileOf(cam.y+VH));
- for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){ctx.fillStyle=G.tcol[idx(tx,ty)];ctx.fillRect(tx*TILE-cam.x,ty*TILE-cam.y,TILE+1,TILE+1);}
- // water
- ctx.fillStyle=bio.water;
- for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){if(G.occ[idx(tx,ty)]===-4)ctx.fillRect(tx*TILE-cam.x,ty*TILE-cam.y,TILE+1,TILE+1);}
+ TERR.draw();
  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=2;
  for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){if(G.occ[idx(tx,ty)]===-4&&G.tseed[idx(tx,ty)]<0.25){const x=tx*TILE-cam.x,y=ty*TILE-cam.y,o=(G.t*8+G.tseed[idx(tx,ty)]*40)%30;ctx.beginPath();ctx.moveTo(x+5+o*0.3,y+20);ctx.lineTo(x+20+o*0.3,y+20);ctx.stroke();}}
  for(const s of G.scorch){const x=s.x-cam.x,y=s.y-cam.y;if(x<-200||y<-200||x>VW+200||y>VH+200)continue;
@@ -1446,7 +1532,7 @@ function render(){
    ctx.save();ctx.translate(x,y-p.h);const u=p.life/p.dur;ctx.rotate(u<0.5?-Math.PI/2:Math.PI/2);ctx.fillStyle='#ddd';ctx.fillRect(-12*sz,-3*sz,24*sz,6*sz);ctx.fillStyle='#ff5b3d';ctx.fillRect(10*sz,-3*sz,4*sz,6*sz);ctx.restore();}
   else if(p.kind==='rocket'){ctx.save();ctx.translate(x,y);ctx.rotate(p.ang);ctx.fillStyle='#ddd';ctx.fillRect(-5,-1.5,10,3);ctx.fillStyle='#ff9b3d';ctx.fillRect(-8,-1.5,3,3);ctx.restore();}
   else{ctx.fillStyle='#fff2b0';ctx.beginPath();ctx.arc(x,y,2.5,0,7);ctx.fill();}}
- drawFx();
+ drawFx();drawDebris();
  drawOrders();
  drawFog(t0x,t1x,t0y,t1y);
  for(const e of G.ents){if(isAir(e)&&entVisible(e))drawUnit(e);}
@@ -1467,7 +1553,7 @@ function render(){
  if(G.amove&&!IS_TOUCH){ctx.strokeStyle='#ff6b5b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(mxw,myw,9,0,7);ctx.moveTo(mxw-14,myw);ctx.lineTo(mxw+14,myw);ctx.moveTo(mxw,myw-14);ctx.lineTo(mxw,myw+14);ctx.stroke();}
  if(mouse.down&&mouse.drag&&mouse.box){const x0=Math.min(mouse.sx,mouse.wx)-cam.x,y0=Math.min(mouse.sy,mouse.wy)-cam.y;ctx.strokeStyle='#6f6';ctx.lineWidth=1/Z;ctx.fillStyle='rgba(100,255,100,.08)';
   ctx.fillRect(x0,y0,Math.abs(mouse.wx-mouse.sx),Math.abs(mouse.wy-mouse.sy));ctx.strokeRect(x0,y0,Math.abs(mouse.wx-mouse.sx),Math.abs(mouse.wy-mouse.sy));}
- ctx.setTransform(1,0,0,1,0,0);
+ ctx.setTransform(DPR,0,0,DPR,0,0);
  const fl=G.fx.find(f=>f.k==='flashscr');if(fl){ctx.fillStyle=`rgba(255,250,220,${fl.life/fl.max*0.7})`;ctx.fillRect(0,0,W,H);}
  if(paused){ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#ffd34d';ctx.font='700 48px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('PAUSED',W/2,H/2-60);ctx.textAlign='left';}
 }
@@ -1484,12 +1570,36 @@ function drawOrders(){
 function planeShape(s){s=s||1;ctx.beginPath();ctx.moveTo(34*s,0);ctx.lineTo(-20*s,-6*s);ctx.lineTo(-30*s,-6*s);ctx.lineTo(-24*s,0);ctx.lineTo(-30*s,6*s);ctx.lineTo(-20*s,6*s);ctx.closePath();ctx.fill();
  ctx.beginPath();ctx.moveTo(8*s,0);ctx.lineTo(-10*s,-34*s);ctx.lineTo(-18*s,-34*s);ctx.lineTo(-8*s,0);ctx.lineTo(-18*s,34*s);ctx.lineTo(-10*s,34*s);ctx.closePath();ctx.fill();}
 function jetShape(){ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(4,-4);ctx.lineTo(-4,-17);ctx.lineTo(-9,-17);ctx.lineTo(-5,-4);ctx.lineTo(-14,-3);ctx.lineTo(-18,-9);ctx.lineTo(-20,-9);ctx.lineTo(-18,0);ctx.lineTo(-20,9);ctx.lineTo(-18,9);ctx.lineTo(-14,3);ctx.lineTo(-5,4);ctx.lineTo(-9,17);ctx.lineTo(-4,17);ctx.lineTo(4,4);ctx.closePath();ctx.fill();}
+// ---- IF6_FOG: fog drawn from a 1-pixel-per-tile canvas with smoothing (soft edges, ~100x fewer draw calls) ----
+const FOG={c:null,g:null,img:null,ver:-1,ti:-1,g0:null,cs:8,cell:null,cw:0,ch:0};
+function fogUpdate(){const ti=TI(ME);
+ if(!FOG.c||FOG.g0!==G||FOG.c.width!==MW||FOG.c.height!==MH){FOG.c=document.createElement('canvas');FOG.c.width=MW;FOG.c.height=MH;FOG.g=FOG.c.getContext('2d');FOG.img=FOG.g.createImageData(MW,MH);FOG.g0=G;FOG.ver=-1;
+  FOG.cw=Math.ceil(MW/FOG.cs);FOG.ch=Math.ceil(MH/FOG.cs);FOG.cell=new Uint8Array(FOG.cw*FOG.ch);}
+ if(FOG.ver===VISVER&&FOG.ti===ti)return;FOG.ver=VISVER;FOG.ti=ti;
+ const v=G.vis[ti],x=G.exp[ti],d=FOG.img.data,n=MW*MH;
+ for(let i=0,p=0;i<n;i++,p+=4){if(!x[i]){d[p]=5;d[p+1]=6;d[p+2]=8;d[p+3]=255;}else{d[p]=d[p+1]=d[p+2]=0;d[p+3]=v[i]?0:118;}}
+ FOG.g.putImageData(FOG.img,0,0);
+ const cs=FOG.cs;
+ for(let cy=0;cy<FOG.ch;cy++)for(let cx=0;cx<FOG.cw;cx++){let st=-1;
+  const x0=Math.max(0,cx*cs-1),x1=Math.min(MW-1,cx*cs+cs),y0=Math.max(0,cy*cs-1),y1=Math.min(MH-1,cy*cs+cs);
+  out:for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){const i=ty*MW+tx,s2=!x[i]?1:v[i]?0:2;if(st<0)st=s2;else if(st!==s2){st=3;break out;}}
+  FOG.cell[cy*FOG.cw+cx]=st;}}
 function drawFog(t0x,t1x,t0y,t1y){
- if(G.specAll)return;
- ctx.fillStyle='rgba(0,0,0,.45)';
- for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){const i=idx(tx,ty);if(G.exp[TI(ME)][i]&&!G.vis[TI(ME)][i])ctx.fillRect(tx*TILE-cam.x,ty*TILE-cam.y,TILE,TILE);}
- ctx.fillStyle='#050608';
- for(let ty=t0y;ty<=t1y;ty++)for(let tx=t0x;tx<=t1x;tx++){if(!G.exp[TI(ME)][idx(tx,ty)])ctx.fillRect(tx*TILE-cam.x,ty*TILE-cam.y,TILE,TILE);}
+ if(G.specAll)return;fogUpdate();
+ const cs=FOG.cs,C=cs*TILE,M=ctx.getTransform?ctx.getTransform():null;
+ const c0x=Math.max(0,Math.floor(cam.x/C)),c1x=Math.min(FOG.cw-1,Math.floor((cam.x+VW)/C)),c0y=Math.max(0,Math.floor(cam.y/C)),c1y=Math.min(FOG.ch-1,Math.floor((cam.y+VH)/C));
+ if(!M||typeof M.e!=='number'||typeof M.a!=='number'){ctx.imageSmoothingEnabled=true;const sx=Math.max(0,t0x-2),sy=Math.max(0,t0y-2),ex=Math.min(MW,t1x+3),ey=Math.min(MH,t1y+3);ctx.drawImage(FOG.c,sx,sy,ex-sx,ey-sy,sx*TILE-cam.x,sy*TILE-cam.y,(ex-sx)*TILE,(ey-sy)*TILE);return;}
+ const k=M.a,X=wx=>Math.round(M.e+(wx-cam.x)*k),Y=wy=>Math.round(M.f+(wy-cam.y)*k);
+ ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=true;
+ for(let cy=c0y;cy<=c1y;cy++)for(let cx=c0x;cx<=c1x;cx++){const st=FOG.cell[cy*FOG.cw+cx];if(st===0)continue;
+  const tx0=cx*cs,ty0=cy*cs,tx1=Math.min(MW,tx0+cs),ty1=Math.min(MH,ty0+cs);
+  const dx0=X(tx0*TILE),dy0=Y(ty0*TILE),dx1=X(tx1*TILE),dy1=Y(ty1*TILE);
+  if(st===1){ctx.fillStyle='#050608';ctx.fillRect(dx0,dy0,dx1-dx0,dy1-dy0);continue;}
+  if(st===2){ctx.fillStyle='rgba(0,0,0,0.463)';ctx.fillRect(dx0,dy0,dx1-dx0,dy1-dy0);continue;}
+  const sx0=Math.max(0,tx0-1),sy0=Math.max(0,ty0-1),sx1=Math.min(MW,tx1+1),sy1=Math.min(MH,ty1+1);
+  ctx.save();ctx.beginPath();ctx.rect(dx0,dy0,dx1-dx0,dy1-dy0);ctx.clip();
+  ctx.drawImage(FOG.c,sx0,sy0,sx1-sx0,sy1-sy0,M.e+(sx0*TILE-cam.x)*k,M.f+(sy0*TILE-cam.y)*k,(sx1-sx0)*TILE*k,(sy1-sy0)*TILE*k);ctx.restore();}
+ ctx.setTransform(M);
 }
 function hpBar(x,y,w,frac){ctx.fillStyle='#111';ctx.fillRect(x-w/2-1,y-1,w+2,5);ctx.fillStyle=frac>0.6?'#4cd964':frac>0.3?'#ffcc00':'#ff3b30';ctx.fillRect(x-w/2,y,w*Math.max(0,frac),3);}
 function drawDepot(e){
@@ -1660,7 +1770,8 @@ function drawFx(){
   if(f.k==='line'){ctx.strokeStyle=f.col;ctx.globalAlpha=f.life/f.max;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(f.x1-cam.x,f.y1-cam.y);ctx.lineTo(f.x2-cam.x,f.y2-cam.y);ctx.stroke();ctx.globalAlpha=1;continue;}
   if(f.k==='flashscr')continue;
   if(x<-250||y<-250||x>VW+250||y>VH+250)continue;
-  if(f.k==='boom'){if(f.life>f.max)continue;const u=1-f.life/f.max;ctx.globalAlpha=1-u;
+  if(f.k==='boom'){if(f.life>f.max)continue;const u=1-f.life/f.max;
+   if(GFX.fx){ctx.save();ctx.globalCompositeOperation='lighter';const gr=f.r*2.4,gg=ctx.createRadialGradient(x,y,0,x,y,gr);gg.addColorStop(0,'rgba(255,170,60,'+(0.5*(1-u)).toFixed(3)+')');gg.addColorStop(1,'rgba(255,80,20,0)');ctx.fillStyle=gg;ctx.beginPath();ctx.arc(x,y,gr,0,7);ctx.fill();ctx.restore();}ctx.globalAlpha=1-u;
    const g=ctx.createRadialGradient(x,y,0,x,y,f.r*(0.5+u));g.addColorStop(0,'#fff6c0');g.addColorStop(0.35,'#ffb347');g.addColorStop(1,'rgba(200,60,20,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,f.r*(0.5+u),0,7);ctx.fill();ctx.globalAlpha=1;}
   else if(f.k==='smoke'){const u=f.life/f.max;ctx.fillStyle=f.dark?`rgba(40,40,40,${0.45*u})`:`rgba(200,200,200,${0.35*u})`;ctx.beginPath();ctx.arc(x,y,f.r*(1.6-u*0.6),0,7);ctx.fill();}
   else if(f.k==='cloud'){const u=f.life/f.max;ctx.fillStyle=`rgba(${f.col},${0.25*u})`;ctx.beginPath();ctx.arc(x,y,f.r*(1.5-u*0.5),0,7);ctx.fill();}
@@ -1676,12 +1787,7 @@ function drawFx(){
 let miniT=0;
 function drawMini(){
  mctx.drawImage(miniBase,0,0);
- if(!G.specAll){
- mctx.fillStyle='rgba(0,0,0,.4)';
- for(let ty=0;ty<MH;ty++){let run=-1;for(let tx=0;tx<=MW;tx++){const v=tx<MW&&G.exp[TI(ME)][idx(tx,ty)]&&!G.vis[TI(ME)][idx(tx,ty)];if(v&&run<0)run=tx;if(!v&&run>=0){mctx.fillRect(run*TILE*MSX,ty*TILE*MSY,(tx-run)*TILE*MSX,TILE*MSY+0.5);run=-1;}}}
- mctx.fillStyle='#000';
- for(let ty=0;ty<MH;ty++){let run=-1;for(let tx=0;tx<=MW;tx++){const v=tx<MW&&!G.exp[TI(ME)][idx(tx,ty)];if(v&&run<0)run=tx;if(!v&&run>=0){mctx.fillRect(run*TILE*MSX,ty*TILE*MSY,(tx-run)*TILE*MSX,TILE*MSY+0.5);run=-1;}}}
- }
+ if(!G.specAll){fogUpdate();mctx.imageSmoothingEnabled=true;mctx.drawImage(FOG.c,0,0,MW,MH,0,0,MW*TILE*MSX,MH*TILE*MSY);}
  for(const e of G.ents){if(!entVisible(e))continue;
   if(e.kind==='d'){mctx.fillStyle='#ffd34d';mctx.fillRect(e.tx*TILE*MSX,e.ty*TILE*MSY,4,4);}
   else if(e.kind==='b'){mctx.fillStyle=PC(e.team);mctx.fillRect(e.tx*TILE*MSX,e.ty*TILE*MSY,Math.max(3,e.w*TILE*MSX),Math.max(3,e.h*TILE*MSY));}
@@ -2036,6 +2142,7 @@ const MP={on:false,tick:0,acc:0,D:5,pending:[],fin:-1,bun:{},col:{},inject:{},ne
 function mpStatus(t){const el=$('mpStatus');if(el)el.innerHTML=t;}
 function netReady(){return typeof Peer!=='undefined';}
 function netInit(){
+ if(navigator.onLine===false){mpStatus('<b style="color:#ffcc00">You are offline.</b> Skirmish vs AI works without internet. Online play becomes available as soon as you reconnect.');return;}
  if(!netReady()){mpStatus('Online play could not load (network library blocked). Check your internet connection and reload.');return;}
  mpStatus('Host a game and send the link to your friends (up to 8 players), or type a friend\'s code.');
  const m=/^#join-([A-Z0-9]{4})$/i.exec(location.hash||'');
@@ -2050,14 +2157,14 @@ function sendAll(o){for(const c of NET.conns.values()){try{if(c.open)c.send(o);}
 function myName(){return (String($('pname').value||'').trim().slice(0,16))||'Commander';}
 // ---------- host ----------
 function netHost(){
- if(!netReady()){netInit();return;}
+ if(!netReady()||navigator.onLine===false){netInit();return;}
  netReset();saveName();
  const code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
  NET.host=true;NET.code=code;NET.myCid='host';
  setup.mode='host';setup.slots=defaultSlots('host');setup.slots[0].name=myName();
  const peer=new Peer(PEER_PREFIX+code.toLowerCase(),{config:ICE,debug:0});NET.peer=peer;
  mpStatus('Opening game…');
- peer.on('open',()=>{NET.inLobby=true;NET.link=location.href.split('#')[0]+'#join-'+code;
+ peer.on('open',()=>{NET.inLobby=true;NET.link=appUrl()+'#join-'+code;
   mpStatus(`Hosting game <b style="color:#ffd34d;font-size:18px">${code}</b>. Send this link to your friends:<br><span style="user-select:text;-webkit-user-select:text;color:#9fd6ff;word-break:break-all">${NET.link}</span> <span class="chip" id="mpCopy">Copy link</span> <span class="chip" id="mpCancel">Close lobby</span><br>Set slots below to <b>Open</b> for friends, or to AI. Start when everyone has joined.`);
   renderSetup();});
  peer.on('connection',conn=>{
@@ -2099,7 +2206,7 @@ function hostTryBundle(){
 }
 // ---------- client ----------
 function netJoin(code){
- if(!netReady()){netInit();return;}
+ if(!netReady()||navigator.onLine===false){netInit();return;}
  netReset();saveName();NET.code=code;
  const peer=new Peer({config:ICE,debug:0});NET.peer=peer;
  mpStatus(`Connecting to game <b style="color:#ffd34d">${code}</b>…`);let ok=false;
@@ -2292,17 +2399,63 @@ $('resumeBtn').addEventListener('click',()=>{$('menu').classList.add('hidden');$
 $('leaveBtn').addEventListener('click',()=>{if(G&&G.mp)netLeave();exitToMenu();});
 $('againBtn').addEventListener('click',()=>{if(G&&G.mp)netLeave();exitToMenu();});
 $('watchBtn').addEventListener('click',()=>{$('over').classList.add('hidden');});
+// ---- IF6_APP: offline app, sharing, install, error guard, adaptive quality ----
+const GAME_URL='https://rblmarrero-sketch.github.io/iron-front/';
+const QR_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUAQAAAABdRz15AAABNUlEQVR42s2WMY5dMQwDR4v04xv8+x/r34A+AVO8XSyQlFogUWPAxcAmBUpT/qz7wd/17+5m5txzOHOGmTlLni2+cyNiu3vfLxg5cH3jYVzznorTs9fvi3ePHR7iklfOtXALlJ0f0wG/ew98b3i0bcEa0rbNjieYIimCO94HN8YJMIQs9aMQMVCMsv1vaIGENKJb/aytPo6QLa8lgdSkds+zArH2EWCpX018Dojr/mtRSZXY/X9NScWELP2d3tNDLi/gItnOj94wL8ml3H2+hFOGTpDpbr5RpGmxpGbthwkJDdEmP5BXRf2MBMzWDw6XvKkDgX0+S/oZDet8AYwmFX8g/2wlEYzd54EoaQ0C2c6Pr0n5fiUpnh/YuTyHFy9eE8Jevz6N3cg6/wAJiYV0qd/85/vub1kv/hL3+9/tAAAAAElFTkSuQmCC';
+function appUrl(){return /^https?:$/.test(location.protocol)?location.href.split('#')[0]:GAME_URL;}
+function toast(t,bad){let el=$('if6toast');if(!el||!el.style){el=document.createElement('div');el.id='if6toast';document.body.appendChild&&document.body.appendChild(el);}
+ el.style.cssText='position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:99;padding:7px 14px;border-radius:5px;font-size:15px;pointer-events:none;max-width:92vw;text-align:center;'+(bad?'background:#2a1414f0;border:1px solid #ff6b5b;color:#ffd0c8':'background:#13202cf0;border:1px solid #7fb2ff;color:#dfe8f2');
+ el.textContent=t;clearTimeout(el._t);el._t=setTimeout(()=>{el.style.display='none';},5500);}
+let ERRN=0;
+function onErr(err){ERRN++;try{console.error(err);}catch(e){}if(ERRN<=3)toast('Recovered from an error ('+String(err&&err.message||err).slice(0,80)+'). The game keeps running.',true);}
+addEventListener('error',e=>onErr(e&&e.error||e&&e.message));
+addEventListener('unhandledrejection',e=>{const r=e&&e.reason;if(r&&/peer|webrtc|ice|socket|network/i.test(String(r.message||r)))return;onErr(r);});
+const PERF={ema:1/60,slow:0};
+function perfTick(raw){if(!running||raw>0.25||raw<=0)return;PERF.ema=PERF.ema*0.95+raw*0.05;if(GFX.mode!=='auto')return;
+ if(PERF.ema>0.027){if(++PERF.slow>150){PERF.slow=0;
+  if(DPR>1){GFX.dprCap=1;resize();}
+  else if(!GFX.low){GFX.low=true;GFX.fx=false;GFX.vig=false;GFX.noise=false;GFX.chunkScale=0.3;TERR.reset();}}}
+ else PERF.slow=Math.max(0,PERF.slow-1);}
 let last=performance.now();
 function frame(now){
- const raw=Math.max(0,(now-last)/1000);last=now;
+ requestAnimationFrame(frame);
+ const raw=Math.max(0,(now-last)/1000);last=now;FDT=Math.min(0.05,raw);if(SHAKE>0.05)SHAKE*=Math.pow(0.002,FDT);else SHAKE=0;
+ {const vv=!!(running&&G&&GFX.vig);if(vv!==VIGON){VIGON=vv;const el=$('vig');if(el&&el.style)el.style.display=vv?'block':'none';}}
+ try{
  if(running&&G){
   if(G.mp){if(!G.over)mpStep(Math.min(0.5,raw));}
   else if(!paused&&!G.over)update(Math.min(0.05,raw));
-  camUpdate(Math.min(0.05,raw));render();uiTick(Math.min(0.05,raw));
+  camUpdate(Math.min(0.05,raw));render();uiTick(Math.min(0.05,raw));perfTick(raw);
  }
- else{ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#06090d';ctx.fillRect(0,0,W,H);}
- requestAnimationFrame(frame);
+ else{ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#06090d';ctx.fillRect(0,0,W,H);}
+ }catch(err){onErr(err);}
 }
+(function appInit(){
+ const on=(id,f)=>{const el=$(id);if(el&&el.addEventListener)el.addEventListener('click',f);};
+ on('shareBtn',async()=>{const url=appUrl(),text="Iron Front: Generals' War - free real-time strategy in your browser. Play vs AI offline, or online with up to 8 friends.";
+  if(navigator.share){try{await navigator.share({title:'Iron Front',text,url});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  try{await navigator.clipboard.writeText(url);toast('Link copied: '+url);}catch(e){toast('Share this link: '+url);}});
+ on('qrBtn',()=>{const im=$('qrImg');if(im&&!im.src)im.src=QR_SRC;$('qrBox').classList.toggle('hidden');});
+ let deferred=null;
+ const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const mm=q=>typeof matchMedia==='function'&&matchMedia(q).matches;
+ const STANDALONE=mm('(display-mode: standalone)')||mm('(display-mode: fullscreen)')||navigator.standalone===true;
+ const WEB=/^https?:$/.test(location.protocol);
+ addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('installBtn').classList.remove('hidden');});
+ addEventListener('appinstalled',()=>{$('installBtn').classList.add('hidden');toast('Installed. Iron Front is on your home screen and works without internet.');});
+ if(IOS&&WEB&&!STANDALONE)$('installBtn').classList.remove('hidden');
+ on('installBtn',async()=>{if(deferred){deferred.prompt();try{await deferred.userChoice;}catch(e){}deferred=null;$('installBtn').classList.add('hidden');}
+  else if(IOS)toast('iPhone/iPad: tap the Share button, then "Add to Home Screen".');else toast('Use your browser menu: "Install app" / "Add to Home screen".');});
+ const badge=()=>{const el=$('netBadge');if(!el)return;const up=navigator.onLine!==false;
+  el.innerHTML=up?'<span style="color:#7be07b">&#9679; Online</span> &nbsp;skirmish + online play':'<span style="color:#ffcc00">&#9679; Offline</span> &nbsp;skirmish vs AI works; online returns when you reconnect';};
+ addEventListener('online',()=>{badge();if(!MP.on&&!NET.peer)netInit();});addEventListener('offline',()=>{badge();if(!MP.on&&!NET.peer)netInit();});badge();
+ if(WEB&&navigator.serviceWorker&&navigator.serviceWorker.register){
+  navigator.serviceWorker.register('sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const nw=reg.installing;if(nw)nw.addEventListener('statechange',()=>{
+   if(nw.state==='activated'&&!navigator.serviceWorker.controller)toast('Ready for offline play. You can now play skirmish without internet.');});});}).catch(()=>{});}
+ const chips=()=>document.querySelectorAll('[data-gfx]').forEach(c=>c.classList.toggle('on',c.dataset.gfx===GFX.mode));
+ document.querySelectorAll('[data-gfx]').forEach(c=>c.addEventListener('click',()=>{gfxApply(c.dataset.gfx);chips();}));
+ let g0='auto';try{g0=localStorage.getItem('if_gfx')||'auto';}catch(e){}gfxApply(g0);chips();
+})();
 requestAnimationFrame(frame);
 
 </script>

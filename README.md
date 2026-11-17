@@ -15,6 +15,16 @@ A browser real-time strategy game in the style of classic Generals-era RTS games
 - **Online**: the host clicks Host and shares the link, and friends join. Players connect directly through WebRTC (PeerJS), so no accounts are needed.
 - **Maps**: Auto-sized by player count (Medium, Large or Huge), or pick Small to Huge, in Temperate, Desert or Snow. They include lakes, capturable oil derricks and supply-drop crates.
 
+## Offline and online
+- **No internet:** open the game once while online, or install it with the **Install app** button or "Add to Home Screen". After that, Skirmish vs AI works fully offline. Online play comes back automatically when you reconnect.
+- **Single offline file:** `IronFront-offline.html` has everything built in. Open it in Chrome, Edge or Firefox on a PC or Android phone. Online play also works from this file when you have internet.
+- **Share:** use the **Share game** and **QR code** buttons in the menu.
+- **Size:** the full game is about 0.38 MB, including the network library and font. Everything is self-hosted, so there are no outside servers except the PeerJS matchmaking used by online play.
+
+## Graphics
+- Smooth blended terrain, soft fog-of-war edges, sharp images on phones (HiDPI), explosion glow, debris and screen shake.
+- **Graphics: Auto / High / Low** setting under Factions & Controls. Auto lowers the quality by itself on slow devices.
+
 ## Controls
 - **PC**: choose Classic (left-click to command) or Modern (right-click to command). Mouse-wheel zooms.
   - **A** attack-move, **P** patrol, **D** guard area, **S** stop. **Shift** + a command queues waypoints.
