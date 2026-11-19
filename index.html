@@ -269,6 +269,7 @@ function dHypot(a,b){return Math.sqrt(a*a+b*b);}
 const TILE=40,HUD_T=34;
 let MW=96,MH=64,WW=MW*TILE,WH=MH*TILE,HUD_B=170;
 const $=id=>document.getElementById(id);
+if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){if(typeof r==='number')r={tl:r,tr:r,br:r,bl:r};else if(Array.isArray(r)){r={tl:r[0]||0,tr:r[1]!=null?r[1]:r[0]||0,br:r[2]!=null?r[2]:r[0]||0,bl:r[3]!=null?r[3]:r[1]||r[0]||0};}else{r=Object.assign({tl:0,tr:0,br:0,bl:0},r||{});}this.moveTo(x+r.tl,y);this.lineTo(x+w-r.tr,y);if(r.tr)this.quadraticCurveTo(x+w,y,x+w,y+r.tr);else this.lineTo(x+w,y);this.lineTo(x+w,y+h-r.br);if(r.br)this.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);else this.lineTo(x+w,y+h);this.lineTo(x+r.bl,y+h);if(r.bl)this.quadraticCurveTo(x,y+h,x,y+h-r.bl);else this.lineTo(x,y+h);this.lineTo(x,y+r.tl);if(r.tl)this.quadraticCurveTo(x,y,x+r.tl,y);else this.lineTo(x,y);this.closePath();return this;};}
 const cv=$('game'),ctx=cv.getContext('2d'),mini=$('mini'),mctx=mini.getContext('2d');
 // ---- IF6_GFX: graphics quality, HiDPI, render-only effects (never touch the simulation / RND) ----
 let DPR=1,VIGON=null,SHAKE=0,FDT=0.016,VISVER=0;const DEB=[],TRK=[],CAS=[],WTH=[];
@@ -388,6 +389,8 @@ const B={
  m_stinger:{name:'Hornet Nest',w:2,h:2,hp:1000,pow:0,cost:900,time:10,sight:300,shape:'defaa',req:'m_barracks',desc:'Rocket nest, hits air & ground',wpn:wp({dmg:22,range:280,rof:1,burst:2,vsInf:0.7,vsVeh:1,vsBld:0.4,vsAir:1.3,air:true,proj:'rocket'})},
  m_gunpit:{name:'Gun Pit',w:2,h:2,hp:1100,pow:0,cost:800,time:10,sight:290,shape:'def',req:'m_barracks',desc:'Cannon defense (ground only)',wpn:wp({dmg:30,range:250,rof:1.2,vsInf:0.9,vsVeh:1.1,vsBld:0.6,proj:'shell'})},
  m_super:{name:'Hellfire Battery',w:3,h:3,hp:2800,pow:0,cost:5000,time:40,sight:240,shape:'super',req:'m_tech',super:'hellfire',desc:'Superweapon'},
+ m_tunnel:{name:'Tunnel Network',w:2,h:2,hp:1350,pow:0,cost:800,time:10,sight:240,shape:'tunnel',tunnel:true,garrison:10,desc:'Houses up to 10 units, rapidly heals inside & redeploys to any friendly tunnel'},
+ m_demo_trap:{name:'Demo Trap',w:1,h:1,hp:120,pow:0,cost:500,time:5,sight:160,shape:'trap',trap:true,desc:'Stealthed proximity explosive trap (cheaper/stronger for Demo, toxin cloud for Toxin)'},
  // ---- Neutral ----
  derrick:{name:'Oil Derrick',w:2,h:2,hp:1000,pow:0,cost:600,time:1,sight:160,shape:'derrick',neutral:true,income:5,desc:'Capture with infantry: +$5/s'},
  civbunker:{name:'Urban Outpost',w:2,h:2,hp:1600,pow:0,cost:500,time:1,sight:260,shape:'civbunker',neutral:true,garrison:4,desc:'Garrison up to 4 infantry inside for fortified crossfire',wpn:wp({dmg:14,range:230,rof:0.45,vsInf:1.25,vsVeh:0.75,vsBld:0.4,vsAir:0.9,air:true,proj:'bullet'})},
@@ -436,7 +439,7 @@ const FAC={
   bo:['power','barracks','supply','factory','supply','def','airfield','aa','tech','def','factory','super']},
  militia:{name:'Free Militia',tag:'Guerrilla army',desc:'No power, no air force. Workers build and gather, Bazaar income, wrecks drop salvage that upgrades vehicles, ambushes & Toxin Bomb. Superweapon: Hellfire Storm.',
   hq:'pal',builder:'worker',gatherer:'worker',start:['worker','worker'],
-  builds:['m_supply','m_barracks','m_factory','m_tech','m_stinger','m_gunpit','m_super'],
+  builds:['m_supply','m_barracks','m_factory','m_tech','m_tunnel','m_demo_trap','m_stinger','m_gunpit','m_super'],
   role:{power:null,supply:'m_supply',barracks:'m_barracks',factory:'m_factory',airfield:null,tech:'m_tech',def:'m_gunpit',aa:'m_stinger',super:'m_super'},
   mix:{rebel:1.5,rpg:1.2,technical:1.4,scorpion:2.6,quad:0.8,buggy:0.9},aaUnit:'quad',heli:null,jet:null,
   bo:['barracks','supply','factory','def','aa','supply','tech','def','factory','aa','super']},
@@ -557,6 +560,10 @@ function bldCost(type,team){
  const d=B[type];let c=d.cost;if(team==null||!G)return c;
  const sg=subFor(team);
  if(sg==='usa_sw'&&(d.super||d.wpn))c=Math.round(c*0.75);
+ if(type==='m_demo_trap'){
+  if(sg==='militia_demo')c=250;
+  else if(sg==='militia_toxin')c=650;
+ }
  return c;
 }
 const TI=p=>G.pl[p].ti;
@@ -908,6 +915,8 @@ function updUnit(e,dt){
   else if(o.t==='build')updBuilder(e,dt);
   else if(o.t==='capture')updCapture(e,dt);
   else if(o.t==='disable')updDisable(e,dt);
+  else if(o.t==='repair')updRepair(e,dt);
+  else if(o.t==='enter_tunnel')updEnterTunnel(e,dt);
  }else if(w){
   if(!e.home)e.home=[e.x,e.y];
   const st=e.stance||0;
@@ -1073,6 +1082,50 @@ function updJet(e,dt){
  e.x=Math.max(10,Math.min(WW-10,e.x+dCos(e.ang)*spd*dt));e.y=Math.max(10,Math.min(WH-10,e.y+dSin(e.ang)*spd*dt));
 }
 
+function updEnterTunnel(e,dt){
+ const b=e.order.b;
+ if(!b||b.dead||!b.built||!ally(e.team,b.team)){e.order=null;return;}
+ b.gar=b.gar||[];
+ if(b.gar.length>=(b.d.garrison||10)){e.order=null;if(e.team===ME)msg('Tunnel Network full (10/10)','#ff6b5b',true);return;}
+ if(rectDist(e.x,e.y,b)-e.r<24){
+  e.path=null;e.goal=null;e.order=null;
+  b.gar.push({type:e.type,hp:e.hp,maxHp:e.maxHp,vet:e.vet||0,kills:e.kills||0,salv:e.salv||0,team:e.team});
+  e.dead=true;
+  if(e.team===ME){msg(e.d.name+' entered Tunnel ('+b.gar.length+'/'+(b.d.garrison||10)+')','#7be07b',true);_sfxCall('play','click');}
+ }else{goTo(e,b.x,b.y);step(e,dt);}
+}
+function deployTunnel(b,destB){
+ if(!b||!b.gar||!b.gar.length)return;
+ const outB=(destB&&!destB.dead&&destB.built&&ally(b.team,destB.team))?destB:b;
+ const list=b.gar.splice(0,b.gar.length);
+ list.forEach((g,i)=>{
+  const [x,y]=exitPoint(outB);
+  const u=addUnit(g.team,g.type,x+(i%3-1)*16,y+Math.floor(i/3)*16);
+  u.maxHp=g.maxHp;u.hp=g.maxHp;u.vet=g.vet||0;u.kills=g.kills||0;u.salv=g.salv||0;
+  setOrder(u,{t:'move',x:x+(i%3-1)*32,y:y+Math.floor(i/3)*32+18});
+ });
+ if(b.team===ME){msg('Deployed '+list.length+' unit(s) from '+outB.d.name,'#7be07b',true);_sfxCall('play','ready');}
+}
+function updRepair(e,dt){
+ const t=e.order.target;
+ if(!t||t.dead||t.hp>=t.maxHp||!ally(e.team,t.team)){e.order=null;return;}
+ const reach=t.kind==='b'?26:22;
+ if(edgeDist(e,t)<=reach){
+  e.path=null;e.goal=null;
+  e.ang=turn(e.ang,dAtan2(t.y-e.y,t.x-e.x),dt*5);
+  const hpRate=t.kind==='b'?Math.max(95,t.maxHp*0.09):Math.max(55,t.maxHp*0.14);
+  const addHp=Math.min(t.maxHp-t.hp,hpRate*dt);
+  const costRatio=t.kind==='b'?(t.d.cost/Math.max(1,t.maxHp))*0.42:(t.d.cost/Math.max(1,t.maxHp))*0.30;
+  const pay=addHp*costRatio;
+  if(pay>0&&G.money[e.team]>=pay){
+   G.money[e.team]-=pay;t.hp+=addHp;
+   e._repAcc=(e._repAcc||0)+pay;
+   if(e.team===ME&&e._repAcc>=25){e._repAcc-=25;G.fx.push({k:'txt',x:t.x,y:t.y-18,s:'-$25 🔧',col:'#9fd6ff',life:0.85,max:0.85});}
+   if(FXRNG()<dt*6)G.fx.push({k:'spark',x:t.x+(FXRNG()-.5)*(t.r||20),y:t.y+(FXRNG()-.5)*(t.r||20),life:0.28,max:0.28,col:'#ffd34d'});
+   if(t.hp>=t.maxHp){t.hp=t.maxHp;e.order=null;if(e.team===ME)msg(t.d.name+' repaired!','#7be07b',true);}
+  }else if(G.money[e.team]<pay){e.order=null;if(e.team===ME)msg('Insufficient funds to repair','#ff6b5b',true);}
+ }else{goTo(e,t.x,t.y);step(e,dt);}
+}
 function updDisable(e,dt){
  const t=e.order.target;
  if(!t||t.dead||!enemy(e.team,t.team)||isAir(t)||(G.human[e.team]&&!entVisible(t,e.team))){e.order=null;e.chan=0;return;}
@@ -1094,6 +1147,25 @@ function calcPower(){
 }
 function updBld(b,dt){
  if(!b.built)return;
+ if(b.d.tunnel&&b.gar&&b.gar.length){
+  for(const g of b.gar){if(g.hp<g.maxHp)g.hp=Math.min(g.maxHp,g.hp+160*dt);}
+ }
+ if(b.d.trap&&b.team>=0){
+  const sg=subFor(b.team);
+  const trigR=sg==='militia_demo'?88:72;
+  for(const foe of G.ents){
+   if(!foe.dead&&foe.team>=0&&enemy(b.team,foe.team)&&!isAir(foe)&&dist(b.x,b.y,foe.x,foe.y)<=trigR){
+    const dmg=sg==='militia_demo'?950:sg==='militia_toxin'?360:640;
+    const rad=sg==='militia_demo'?125:95;
+    splash(b.x,b.y,rad,dmg,b.team,{vsInf:1.6,vsVeh:1.5,vsBld:1.6,vsAir:0},{team:b.team,kind:'p'});
+    boom(b.x,b.y,rad);
+    if(sg==='militia_toxin')addZone(b.x,b.y,{r:rad*0.9,dps:28,dur:14,kind:'toxin'},b.team);
+    b.dead=true;clearOcc(b);
+    if(b.team===ME)msg('Demo Trap detonated on enemy contact!','#ffd34d',true);
+    return;
+   }
+  }
+ }
  if(b.disT>G.t){if(FXRNG()<dt*5)G.fx.push({k:'spark',x:b.tx*TILE+FXRNG()*b.w*TILE,y:b.ty*TILE+FXRNG()*b.h*TILE,life:0.3,max:0.3,col:'#5dff9a'});return;}
  if(b.queue.length){
   const it=b.queue[0],isUp=it.startsWith('up:'),time=isUp?UPG[it.slice(3)].time:U[it].time;
@@ -1111,6 +1183,9 @@ function updBld(b,dt){
   if(!b.tgt&&b.scanT<=0){b.scanT=0.4;b.tgt=findTarget(b,w.range);}
   if(b.tgt){const a=dAtan2(b.tgt.y-b.y,b.tgt.x-b.x);b.tang=turn(b.tang,a,dt*5);if(Math.abs(angDiff(b.tang,a))<0.2&&b.cd<=0)fire(b,b.tgt);}
  }
+ if(b.d.super&&lowPower(b.team)){b.readyAt+=dt;}
+ if(b.d.shape==='factory'&&b.team>=0){for(const u of G.ents)if(u.kind==='u'&&!u.dead&&u.team===b.team&&u.d.armor==='veh'&&!u.d.air&&u.hp<u.maxHp&&rectDist(u.x,u.y,b)<110)u.hp=Math.min(u.maxHp,u.hp+45*dt);}
+ if(b.d.shape==='barracks'&&b.team>=0){for(const u of G.ents)if(u.kind==='u'&&!u.dead&&u.team===b.team&&u.d.armor==='inf'&&u.hp<u.maxHp&&rectDist(u.x,u.y,b)<105)u.hp=Math.min(u.maxHp,u.hp+14*dt);}
  if(b.d.super&&b.team===ME&&G.t>=b.readyAt&&!b.ann){b.ann=true;msg(b.d.name+' is ready! (G to fire)','#ffd34d');}
  if(b.hp<b.maxHp*0.5&&FXRNG()<dt*(b.hp<b.maxHp*0.25?8:3))
   G.fx.push({k:'smoke',x:b.tx*TILE+FXRNG()*b.w*TILE,y:b.ty*TILE+FXRNG()*b.h*TILE,vx:8,vy:-18,r:6+FXRNG()*6,life:2,max:2,dark:true});
@@ -1157,11 +1232,15 @@ function doRightClick(team,own,wx,wy,t,q){
  if(!units.length){blds.forEach(b=>{if(b.d.makes)b.rally=[wx,wy];});return;}
  const movers=[];
  if(t&&t.dead)t=null;
- if(t&&t.d&&t.d.garrison&&(t.team<0||ally(team,t.team))){for(const u of units){if(u.d.armor==='inf'&&u.d.wpn)setOrder(u,{t:'capture',b:t});else movers.push(u);}}
+ if(t&&t.d&&t.d.tunnel&&ally(team,t.team)&&t.built){
+  for(const u of units){if(!u.d.air)setOrder(u,{t:'enter_tunnel',b:t});else movers.push(u);}
+ }else if(t&&t.d&&t.d.garrison&&(t.team<0||ally(team,t.team))){for(const u of units){if(u.d.armor==='inf'&&u.d.wpn)setOrder(u,{t:'capture',b:t});else movers.push(u);}}
  else if(t&&t.d&&(t.d.shape==='derrick'||t.d.shape==='hospital'||t.d.shape==='radar')&&!ally(team,t.team)){for(const u of units){if(u.d.armor==='inf'&&u.d.wpn)setOrder(u,{t:'capture',b:t});else if(t.team>=0&&u.d.wpn&&canHit(u.d.wpn,t))setOrder(u,{t:'attack',target:t});else movers.push(u);}}
  else if(t&&t.team>=0&&enemy(team,t.team)){for(const u of units){if(u.d.hack){if(!isAir(t)&&(t.kind==='b'||t.d.armor==='veh'))setOrder(u,{t:'disable',target:t});else movers.push(u);continue;}if(u.d.wpn&&canHit(u.d.wpn,t))setOrder(u,{t:'attack',target:t});else movers.push(u);}}
  else if(t&&t.kind==='d'){for(const u of units){if(u.d.cap)setOrder(u,{t:'gather',st:u.carry>0?'toBase':'toDepot',depot:t});else movers.push(u);}}
  else if(t&&t.team===team&&t.kind==='b'&&!t.built){for(const u of units){if(u.d.builder)setOrder(u,{t:'build',b:t});else movers.push(u);}}
+ else if(t&&t.team===team&&t.kind==='b'&&t.built&&!t.d.neutral&&t.hp<t.maxHp){const bs=units.filter(u=>u.d.builder);if(bs.length){for(const u of units){if(u.d.builder)setOrder(u,{t:'repair',target:t});else movers.push(u);}}else movers.push(...units);}
+ else if(t&&t.team===team&&t.kind==='u'&&t.d.armor==='veh'&&!t.d.builder&&t.hp<t.maxHp){const bs=units.filter(u=>u.d.builder&&u!==t);if(bs.length){for(const u of units){if(u.d.builder&&u!==t)setOrder(u,{t:'repair',target:t});else movers.push(u);}}else movers.push(...units);}
  else if(t&&t.team===team&&t.kind==='b'&&t.d.drop){for(const u of units){if(u.d.cap)setOrder(u,{t:'gather',st:'toBase'});else movers.push(u);}}
  else movers.push(...units);
  if(movers.length)formation(movers,wx,wy,(x,y)=>({t:'move',x,y}),q);
@@ -1188,6 +1267,8 @@ function applyCmd(team,c){
    G.warns.push({x:bx,y:by,r:95,until:G.t+3});
    G.timers.push({at:G.t+3,fn:()=>{splash(bx,by,95,950,tm,{vsInf:1.5,vsVeh:1.5,vsBld:2.2,vsAir:0},{team:tm,kind:'p'});boom(bx,by,95);}});}break;}
   case 'sc':for(const u of mine(c.ids))if(u.kind==='u'&&u.d.air!=='jet'){const a=RND()*Math.PI*2,r=60+RND()*60;setOrder(u,{t:'move',x:u.x+dCos(a)*r,y:u.y+dSin(a)*r});}break;
+  case 'dep_tun':{const b=mine([c.bid])[0];if(b&&b.kind==='b'&&b.d.tunnel)deployTunnel(b,c.destId?byId(c.destId):null);}break;
+  case 'beacon':{const bx=num(c.x),by=num(c.y);G.ping={x:bx,y:by,t:G.t};G.fx.push({k:'ring',x:bx,y:by,r:130,col:'#ffd34d',life:1.4,max:1.4});if(ally(team,ME))msg('Tactical beacon placed by '+esc(PN(team)),'#ffd34d',true);}break;
   case 'st':for(const u of mine(c.ids))if(u.kind==='u')setOrder(u,null);break;
   case 'ga':for(const u of mine(c.ids))if(u.kind==='u'&&u.d.cap)setOrder(u,{t:'gather'});break;
   case 'pl':placeBld(team,c.type,num(c.tx)|0,num(c.ty)|0,mine(c.ids));break;
@@ -1584,6 +1665,9 @@ function entVisible(t,p){
  if(p==null){if(G.specAll)return true;p=ME;}
  if(t.team>=0&&ally(t.team,p))return true;
  if(t.kind==='u')return visAt(t.x,t.y,p);
+ if(t.d&&t.d.trap&&t.team>=0&&!ally(t.team,p)){
+  return G.ents.some(o=>!o.dead&&o.team>=0&&TI(o.team)===TI(p)&&dist(o.x,o.y,t.x,t.y)<=130);
+ }
  if(t.kind==='d'||t.team<0)return G.exp[TI(p)][idx(t.tx,t.ty)]===1;
  return !!t.seen[TI(p)];
 }
@@ -2207,6 +2291,22 @@ function drawBld(e){
    ctx.rotate(ph);ctx.fillStyle='#222';ctx.fillRect(-24,-9,48,6);ctx.fillStyle='#d4a017';ctx.beginPath();ctx.arc(22,-6,6,0,7);ctx.fill();ctx.restore();
    if(e.capP>0&&G.t-(e.capT||0)<0.5){ctx.fillStyle='#111';ctx.fillRect(x+6,y-8,w-12,6);ctx.fillStyle=PC(e.capBy);ctx.fillRect(x+7,y-7,(w-14)*e.capP,4);}
    break;}
+  case 'tunnel':
+   drawIsoBox(x+8,y+8,w-16,h-16,7,'#5c4e36','#241e14','rgba(255,225,150,.3)',c);
+   ctx.fillStyle='#14181d';ctx.beginPath();ctx.arc(cx,cy,22,0,7);ctx.fill();
+   ctx.strokeStyle='#ffd34d';ctx.lineWidth=2.2;ctx.stroke();
+   ctx.fillStyle='#06080a';ctx.beginPath();ctx.arc(cx,cy,14,0,7);ctx.fill();
+   if(e.gar&&e.gar.length){
+    ctx.fillStyle='#7be07b';ctx.font='700 13px Rajdhani,sans-serif';ctx.textAlign='center';
+    ctx.fillText('🚇 '+e.gar.length+'/'+(e.d.garrison||10),cx,y+h-6);ctx.textAlign='left';
+   }
+   break;
+  case 'trap':
+   ctx.fillStyle='#4a3d28';ctx.beginPath();ctx.arc(cx,cy,13,0,7);ctx.fill();
+   ctx.strokeStyle='#14181d';ctx.lineWidth=2;ctx.stroke();
+   ctx.fillStyle=subFor(e.team)==='militia_toxin'?'#8aff4d':'#ff4d3d';
+   ctx.beginPath();ctx.arc(cx,cy,5.5,0,7);ctx.fill();
+   break;
   case 'super':{
    const sw=e.d.super,ready=e.built&&G.t>=e.readyAt;
    ctx.fillStyle='#2e302c';ctx.fillRect(x+6,y+6,w-12,h-12);
@@ -2792,6 +2892,7 @@ function boxSelect(shift){
  if(shift)G.sel=[...new Set(ownUnits().concat(got))];else if(got.length)G.sel=got;else G.sel=[];
 }
 function selectArmy(){G.sel=G.ents.filter(e=>e.team===ME&&e.kind==='u'&&e.d.wpn);if(!G.sel.length)msg('No combat units','#ff6b5b',true);}
+function selectAir(){G.sel=G.ents.filter(e=>e.team===ME&&e.kind==='u'&&e.d.air);if(!G.sel.length)msg('No aircraft','#ff6b5b',true);}
 function formation(units,x,y,make,q){
  const n=units.length,cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),sp=30;
  units.forEach((u,i)=>{const ox=(i%cols-(cols-1)/2)*sp,oy=(Math.floor(i/cols)-(rows-1)/2)*sp;(q?queueOrder:setOrder)(u,make(x+ox,y+oy,u));});
@@ -2948,6 +3049,9 @@ addEventListener('keydown',ev=>{
  if(k==='escape'){toggleChatInput(false);cancelModes();}
  else if(ev.ctrlKey&&k==='a'){ev.preventDefault();selectArmy();}
  else if(ev.ctrlKey&&k==='d'){ev.preventDefault();G.sel=[];}
+ else if(!ev.ctrlKey&&!ev.metaKey&&k==='x'){const us=ownUnits().filter(u=>u.d.air!=='jet');if(us.length)issue({k:'sc',ids:us.map(u=>u.id)});return;}
+ else if(!ev.ctrlKey&&!ev.metaKey&&k==='f'){selectAir();return;}
+ else if((ev.ctrlKey||ev.metaKey)&&k==='b'){ev.preventDefault();issue({k:'beacon',x:Math.round(mouse.wx),y:Math.round(mouse.wy)});return;}
  else if(k==='f9'||k==='pause'||(k==='p'&&!ownUnits().some(u=>u.d.wpn))){ev.preventDefault&&ev.preventDefault();if(G.mp)msg('Pause is disabled online','#ff6b5b',true);else paused=!paused;}
  else if(k==='p'){cancelModes();G.patrolMode=true;}
  else if(dm&&dm!=='0'){
@@ -4027,138 +4131,155 @@ const SFX={
   if(tzb){tzb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';tzb.textContent=(this.bgm&&this.playMainOnly)?tr('topZhOn'):tr('topZh');}
   if(!this.bgm){clearInterval(this.bgmTimer);this.bgmTimer=null;return;}
   this.init();let step=0;
-  // Orchestral brass power-chord intro swell
-  try{if(this.ctx){const c=this.ctx,t=c.currentTime;for(const f of [73.42,146.83,220.0,293.66,440.0]){const o=c.createOscillator(),g=c.createGain(),fl=c.createBiquadFilter();o.type='sawtooth';fl.type='lowpass';fl.frequency.setValueAtTime(1600,t);o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0.025,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.85);o.connect(fl);fl.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.88);}}}catch(e){}
-  // Bill Brown / Mikael Sandgren style Zero Hour OST Suites:
-  // 1. Zero Hour Main Theme (Heroic D-minor brass fanfare + driving war-drum ostinato)
+  try{if(this.ctx){const c=this.ctx,t=c.currentTime;
+   for(const f of [73.42,110.0,146.83,220.0,293.66,349.23,440.0]){
+    const o=c.createOscillator(),g=c.createGain(),fl=c.createBiquadFilter();
+    o.type='sawtooth';fl.type='lowpass';
+    fl.frequency.setValueAtTime(320,t);fl.frequency.exponentialRampToValueAtTime(2200,t+0.65);fl.frequency.exponentialRampToValueAtTime(650,t+1.35);
+    o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0.002,t);g.gain.linearRampToValueAtTime(0.026,t+0.35);g.gain.exponentialRampToValueAtTime(0.0008,t+1.4);
+    o.connect(fl);fl.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.42);
+   }
+  }}catch(e){}
   const mainTheme={
+   tempo:170,
    bass:[
-    73.42,73.42,146.83,110.0, 87.31,87.31,174.61,130.81, 98.0,98.0,196.0,146.83, 110.0,110.0,146.83,164.81,
-    73.42,73.42,146.83,110.0, 65.41,65.41,130.81,98.0,  87.31,87.31,110.0,130.81, 146.83,110.0,87.31,73.42
+    73.42,0,73.42,146.83, 110.0,0,146.83,110.0,  87.31,0,87.31,174.61, 130.81,0,174.61,130.81,
+    98.0,0,98.0,196.0,    146.83,0,196.0,146.83, 110.0,0,110.0,146.83, 164.81,146.83,130.81,110.0,
+    73.42,73.42,146.83,73.42, 65.41,65.41,130.81,65.41, 58.27,58.27,116.54,58.27, 65.41,73.42,87.31,110.0,
+    73.42,146.83,73.42,146.83, 87.31,174.61,87.31,174.61, 110.0,220.0,110.0,164.81, 146.83,110.0,87.31,73.42
    ],
    brass:[
-    293.66,0,440.0,587.33, 523.25,440.0,392.0,349.23, 392.0,0,493.88,587.33, 659.25,587.33,523.25,440.0,
-    587.33,0,659.25,698.46, 659.25,587.33,523.25,440.0, 493.88,523.25,587.33,659.25, 587.33,0,440.0,293.66
+    293.66,0,440.0,587.33, 523.25,0,440.0,392.0,  349.23,0,440.0,523.25, 659.25,0,587.33,523.25,
+    392.0,0,493.88,587.33, 659.25,0,587.33,523.25, 440.0,0,523.25,587.33, 659.25,587.33,523.25,440.0,
+    587.33,0,659.25,698.46, 783.99,0,698.46,659.25, 587.33,0,523.25,466.16, 440.0,493.88,523.25,587.33,
+    587.33,587.33,0,698.46, 659.25,659.25,0,587.33, 523.25,493.88,440.0,392.0, 349.23,329.63,293.66,0
    ],
    harmony:[
-    146.83,0,220.0,293.66, 261.63,220.0,196.0,174.61, 196.0,0,246.94,293.66, 329.63,293.66,261.63,220.0,
-    293.66,0,329.63,349.23, 329.63,293.66,261.63,220.0, 246.94,261.63,293.66,329.63, 293.66,0,220.0,146.83
+    146.83,0,220.0,293.66, 261.63,0,220.0,196.0,  174.61,0,220.0,261.63, 329.63,0,293.66,261.63,
+    196.0,0,246.94,293.66, 329.63,0,293.66,261.63, 220.0,0,261.63,293.66, 329.63,293.66,261.63,220.0,
+    293.66,0,329.63,349.23, 392.0,0,349.23,329.63,  293.66,0,261.63,233.08, 220.0,246.94,261.63,293.66,
+    293.66,293.66,0,349.23, 329.63,329.63,0,293.66, 261.63,246.94,220.0,196.0, 174.61,164.81,146.83,0
    ],
    arp:[
-    587.33,440.0,523.25,440.0, 587.33,523.25,440.0,349.23, 392.0,493.88,587.33,493.88, 659.25,587.33,523.25,440.0,
-    587.33,440.0,659.25,587.33, 698.46,659.25,587.33,523.25, 493.88,587.33,659.25,587.33, 587.33,440.0,349.23,293.66
+    587.33,440.0,587.33,440.0, 523.25,440.0,523.25,440.0, 698.46,523.25,698.46,523.25, 659.25,523.25,659.25,523.25,
+    587.33,493.88,587.33,493.88, 659.25,587.33,659.25,587.33, 587.33,440.0,587.33,440.0, 659.25,587.33,523.25,440.0,
+    783.99,587.33,783.99,587.33, 698.46,587.33,698.46,587.33, 587.33,466.16,587.33,466.16, 523.25,440.0,523.25,587.33,
+    880.0,698.46,880.0,698.46, 783.99,659.25,783.99,659.25, 698.46,587.33,659.25,523.25, 587.33,440.0,293.66,0
    ],
-   bType:'sawtooth',lType:'sawtooth',cutoff:1240
+   bType:'sawtooth',lType:'sawtooth',cutoff:1450
   };
   const themes={
    main:mainTheme,
-   // USA: Heroic Hollywood military rock & brass (electric guitar chugs + triumphant horns)
    usa:{
-    bass:[73.42,73.42,146.83,73.42, 87.31,87.31,174.61,87.31, 98.0,98.0,196.0,98.0, 110.0,110.0,130.81,110.0,
-          73.42,73.42,146.83,130.81, 110.0,98.0,87.31,73.42, 65.41,65.41,130.81,98.0, 87.31,110.0,146.83,110.0],
+    tempo:164,
+    bass:[73.42,73.42,146.83,73.42, 87.31,87.31,174.61,87.31, 98.0,98.0,196.0,98.0, 110.0,110.0,130.81,146.83,
+          73.42,0,146.83,130.81, 110.0,0,98.0,87.31, 65.41,65.41,130.81,98.0, 87.31,110.0,146.83,110.0],
     brass:[293.66,0,440.0,392.0, 349.23,0,392.0,440.0, 523.25,0,440.0,392.0, 349.23,329.63,293.66,220.0,
-           440.0,0,523.25,587.33, 523.25,440.0,392.0,349.23, 392.0,440.0,523.25,440.0, 587.33,0,440.0,293.66],
+           440.0,0,523.25,587.33, 659.25,0,587.33,523.25, 440.0,392.0,440.0,523.25, 587.33,0,440.0,293.66],
     harmony:[146.83,0,220.0,196.0, 174.61,0,196.0,220.0, 261.63,0,220.0,196.0, 174.61,164.81,146.83,110.0,
-             220.0,0,261.63,293.66, 261.63,220.0,196.0,174.61, 196.0,220.0,261.63,220.0, 293.66,0,220.0,146.83],
-    arp:[440.0,523.25,587.33,523.25, 440.0,392.0,349.23,392.0, 523.25,587.33,659.25,587.33, 523.25,440.0,392.0,349.23,
-         440.0,587.33,659.25,587.33, 523.25,440.0,392.0,440.0, 523.25,587.33,659.25,698.46, 587.33,440.0,523.25,440.0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:1120
+             220.0,0,261.63,293.66, 329.63,0,293.66,261.63, 220.0,196.0,220.0,261.63, 293.66,0,220.0,146.83],
+    arp:[587.33,440.0,523.25,440.0, 698.46,523.25,587.33,523.25, 783.99,587.33,659.25,587.33, 523.25,440.0,392.0,349.23,
+         587.33,440.0,659.25,587.33, 783.99,659.25,698.46,659.25, 587.33,523.25,587.33,659.25, 880.0,659.25,587.33,440.0],
+    bType:'sawtooth',lType:'sawtooth',cutoff:1280
    },
-   // China: Heavy industrial war march + pentatonic brass & gong-like fifths
    china:{
+    tempo:176,
     bass:[73.42,73.42,87.31,73.42, 110.0,110.0,98.0,87.31, 73.42,73.42,110.0,130.81, 146.83,130.81,110.0,87.31,
-          73.42,73.42,110.0,73.42, 87.31,87.31,110.0,130.81, 146.83,146.83,130.81,110.0, 87.31,73.42,87.31,73.42],
+          73.42,0,110.0,73.42, 87.31,0,110.0,130.81, 146.83,146.83,130.81,110.0, 87.31,73.42,87.31,73.42],
     brass:[293.66,349.23,440.0,0, 587.33,523.25,440.0,0, 440.0,523.25,587.33,659.25, 587.33,440.0,349.23,293.66,
-           440.0,0,587.33,659.25, 587.33,440.0,349.23,440.0, 523.25,587.33,659.25,587.33, 440.0,349.23,293.66,0],
+           440.0,0,587.33,659.25, 783.99,659.25,587.33,440.0, 523.25,587.33,659.25,587.33, 440.0,349.23,293.66,0],
     harmony:[146.83,0,220.0,0, 293.66,0,220.0,0, 220.0,0,293.66,329.63, 293.66,220.0,174.61,0,
-             220.0,0,293.66,329.63, 293.66,220.0,174.61,220.0, 261.63,293.66,329.63,293.66, 220.0,174.61,146.83,0],
-    arp:[587.33,523.25,440.0,349.23, 440.0,523.25,587.33,440.0, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66,
-         587.33,659.25,587.33,440.0, 523.25,587.33,440.0,349.23, 440.0,523.25,587.33,659.25, 587.33,440.0,349.23,293.66],
-    bType:'sawtooth',lType:'sawtooth',cutoff:940
+             220.0,0,293.66,329.63, 392.0,329.63,293.66,220.0, 261.63,293.66,329.63,293.66, 220.0,174.61,146.83,0],
+    arp:[587.33,440.0,587.33,349.23, 587.33,440.0,659.25,587.33, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66,
+         587.33,440.0,783.99,659.25, 783.99,659.25,587.33,440.0, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66],
+    bType:'sawtooth',lType:'sawtooth',cutoff:1080
    },
-   // Russia: Dark Soviet Red-Alert / Generals iron-fist C-minor march
    russia:{
+    tempo:158,
     bass:[65.41,65.41,130.81,65.41, 87.31,77.78,65.41,58.27, 65.41,65.41,98.0,87.31, 77.78,65.41,58.27,65.41,
-          65.41,65.41,130.81,98.0, 87.31,87.31,116.54,98.0, 77.78,77.78,87.31,98.0, 130.81,98.0,77.78,65.41],
+          65.41,0,130.81,98.0, 87.31,0,116.54,98.0, 77.78,77.78,87.31,98.0, 130.81,98.0,77.78,65.41],
     brass:[196.0,0,233.08,261.63, 233.08,0,196.0,174.61, 261.63,0,293.66,311.13, 293.66,261.63,233.08,196.0,
-           261.63,0,311.13,392.0, 349.23,311.13,293.66,261.63, 233.08,261.63,293.66,311.13, 261.63,0,196.0,130.81],
+           261.63,0,311.13,392.0, 466.16,392.0,349.23,311.13, 293.66,261.63,233.08,196.0, 261.63,0,196.0,130.81],
     harmony:[130.81,0,155.56,174.61, 155.56,0,130.81,116.54, 174.61,0,196.0,207.65, 196.0,174.61,155.56,0,
-             130.81,0,155.56,196.0, 174.61,155.56,146.83,130.81, 116.54,130.81,146.83,155.56, 130.81,0,98.0,65.41],
-    arp:[392.0,311.13,261.63,196.0, 349.23,311.13,261.63,233.08, 392.0,349.23,311.13,293.66, 311.13,293.66,261.63,233.08,
-         392.0,311.13,349.23,392.0, 466.16,392.0,349.23,311.13, 293.66,311.13,349.23,392.0, 311.13,261.63,233.08,196.0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:760
+             130.81,0,155.56,196.0, 233.08,196.0,174.61,155.56, 146.83,130.81,116.54,98.0, 130.81,0,98.0,65.41],
+    arp:[392.0,261.63,392.0,261.63, 466.16,311.13,466.16,311.13, 523.25,392.0,523.25,392.0, 466.16,349.23,392.0,261.63,
+         392.0,261.63,523.25,392.0, 587.33,466.16,587.33,466.16, 523.25,392.0,466.16,311.13, 392.0,261.63,196.0,130.81],
+    bType:'sawtooth',lType:'sawtooth',cutoff:880
    },
-   // Free Militia (GLA): Hijaz Phrygian-dominant Middle-Eastern electric guitar & darbuka groove
    militia:{
+    tempo:174,
     bass:[82.41,82.41,164.81,110.0, 82.41,82.41,123.47,110.0, 82.41,98.0,110.0,123.47, 130.81,123.47,110.0,98.0,
           82.41,164.81,82.41,110.0, 87.31,174.61,87.31,110.0, 98.0,110.0,123.47,130.81, 123.47,110.0,98.0,82.41],
     brass:[329.63,349.23,415.30,440.0, 415.30,349.23,329.63,246.94, 440.0,493.88,523.25,493.88, 440.0,415.30,349.23,329.63,
-           415.30,440.0,493.88,523.25, 493.88,440.0,415.30,349.23, 329.63,349.23,415.30,440.0, 415.30,349.23,329.63,246.94],
+           415.30,440.0,493.88,523.25, 659.25,523.25,493.88,440.0, 415.30,349.23,329.63,246.94, 440.0,415.30,349.23,329.63],
     harmony:[164.81,0,207.65,220.0, 207.65,0,164.81,0, 220.0,0,261.63,246.94, 220.0,207.65,174.61,0,
-             207.65,220.0,246.94,261.63, 246.94,220.0,207.65,174.61, 164.81,174.61,207.65,220.0, 207.65,174.61,164.81,0],
-    arp:[659.25,523.25,493.88,440.0, 415.30,349.23,329.63,349.23, 415.30,440.0,493.88,523.25, 587.33,523.25,493.88,440.0,
-         659.25,587.33,523.25,493.88, 440.0,415.30,349.23,329.63, 349.23,415.30,440.0,493.88, 415.30,349.23,329.63,246.94],
-    bType:'square',lType:'sawtooth',cutoff:980
+             207.65,220.0,246.94,261.63, 329.63,261.63,246.94,220.0, 207.65,174.61,164.81,0, 220.0,207.65,174.61,164.81],
+    arp:[659.25,440.0,659.25,415.30, 659.25,440.0,523.25,493.88, 659.25,523.25,659.25,587.33, 659.25,523.25,440.0,415.30,
+         659.25,440.0,783.99,659.25, 880.0,659.25,783.99,659.25, 659.25,523.25,493.88,440.0, 415.30,349.23,329.63,246.94],
+    bType:'square',lType:'sawtooth',cutoff:1120
    }
   };
-  this.bgmTimer=setInterval(()=>{
+  let curTempo=mainTheme.tempo;
+  const tickBgm=()=>{
    if(!this.bgm||paused||!this.ctx)return;
    if(!running&&!this.playMainOnly)return;
    const c=this.ctx;if(c.state==='suspended')c.resume();
    const t=c.currentTime,s=step++;
-   const th=this.playMainOnly?mainTheme:((s<32)?mainTheme:(themes[this.facOf(ME)]||themes.usa));
+   const th=this.playMainOnly?mainTheme:((s<64)?mainTheme:(themes[this.facOf(ME)]||themes.usa));
+   if(th.tempo&&th.tempo!==curTempo){curTempo=th.tempo;clearInterval(this.bgmTimer);this.bgmTimer=setInterval(tickBgm,curTempo);}
    const inCombat=G&&G.lastAttack&&G.lastAttack[ME]&&(G.t-G.lastAttack[ME].t<14);
-   // 1. Driving Sub + Electric Bass Ostinato
+   const climax=(s%64)>=32||inCombat;
+   const durSec=(curTempo/1000)*1.15;
    const bf=th.bass[s%th.bass.length];
    if(bf>0){
     const ob=c.createOscillator(),gb=c.createGain(),fb=c.createBiquadFilter();
-    ob.type=th.bType;fb.type='lowpass';fb.frequency.setValueAtTime(inCombat?th.cutoff*1.45:th.cutoff,t);
+    ob.type=th.bType;fb.type='lowpass';fb.frequency.setValueAtTime(climax?th.cutoff*1.55:th.cutoff,t);
     ob.frequency.setValueAtTime(bf,t);
-    gb.gain.setValueAtTime(inCombat?0.056:0.042,t);gb.gain.exponentialRampToValueAtTime(0.001,t+0.19);
-    ob.connect(fb);fb.connect(gb);gb.connect(c.destination);ob.start(t);ob.stop(t+0.20);
+    gb.gain.setValueAtTime(climax?0.062:0.044,t);gb.gain.exponentialRampToValueAtTime(0.0008,t+durSec);
+    ob.connect(fb);fb.connect(gb);gb.connect(c.destination);ob.start(t);ob.stop(t+durSec+0.01);
    }
-   // 2. Dual-Detuned Brass / Lead Guitar Power Voice (chorus richness!)
    const lf=th.brass[s%th.brass.length];
    if(lf>0){
-    for(const det of [-6,6]){
+    for(const det of [-8,8]){
      const ol=c.createOscillator(),gl=c.createGain(),fl=c.createBiquadFilter();
-     ol.type=th.lType;ol.detune.value=det;fl.type='lowpass';fl.frequency.setValueAtTime(inCombat?th.cutoff*2.3:th.cutoff*1.6,t);
+     ol.type=th.lType;ol.detune.value=det;fl.type='lowpass';
+     fl.frequency.setValueAtTime(climax?th.cutoff*2.5:th.cutoff*1.7,t);
      ol.frequency.setValueAtTime(lf,t);
-     gl.gain.setValueAtTime(inCombat?0.024:0.015,t);gl.gain.exponentialRampToValueAtTime(0.001,t+0.21);
-     ol.connect(fl);fl.connect(gl);gl.connect(c.destination);ol.start(t);ol.stop(t+0.22);
+     gl.gain.setValueAtTime(climax?0.028:0.017,t);gl.gain.exponentialRampToValueAtTime(0.0008,t+durSec*1.05);
+     ol.connect(fl);fl.connect(gl);gl.connect(c.destination);ol.start(t);ol.stop(t+durSec*1.08);
     }
    }
-   // 3. Orchestral Choir / Strings Fifth Harmony
    const hf=th.harmony[s%th.harmony.length];
-   if(hf>0&&(inCombat||s%2===0)){
+   if(hf>0&&(climax||s%2===0)){
     const oh=c.createOscillator(),gh=c.createGain();
     oh.type='triangle';oh.frequency.setValueAtTime(hf,t);
-    gh.gain.setValueAtTime(inCombat?0.030:0.018,t);gh.gain.exponentialRampToValueAtTime(0.001,t+0.24);
-    oh.connect(gh);gh.connect(c.destination);oh.start(t);oh.stop(t+0.25);
+    gh.gain.setValueAtTime(climax?0.034:0.020,t);
+    gh.gain.exponentialRampToValueAtTime(0.0008,t+durSec*1.2);
+    oh.connect(gh);gh.connect(c.destination);oh.start(t);oh.stop(t+durSec*1.22);
    }
-   // 4. High Tactical Synth / Guitar Arpeggio Pulse (signature Zero Hour rhythmic drive)
-   if(th.arp&&(inCombat||this.playMainOnly||s%2===0)){
+   if(th.arp&&(climax||this.playMainOnly||s%2===0)){
     const af=th.arp[s%th.arp.length];
     if(af>0){
      const oa=c.createOscillator(),ga=c.createGain();
      oa.type='triangle';oa.frequency.setValueAtTime(af,t);
-     ga.gain.setValueAtTime(inCombat?0.018:0.010,t);ga.gain.exponentialRampToValueAtTime(0.001,t+0.12);
-     oa.connect(ga);ga.connect(c.destination);oa.start(t);oa.stop(t+0.13);
+     ga.gain.setValueAtTime(climax?0.020:0.011,t);ga.gain.exponentialRampToValueAtTime(0.0008,t+durSec*0.65);
+     oa.connect(ga);ga.connect(c.destination);oa.start(t);oa.stop(t+durSec*0.68);
     }
    }
-   // 5. Heavy War Drums (Kick + Snare + Hi-Hat 16th pulse)
-   if(s%4===0||(inCombat&&(s%2===0))){
+   if(s%4===0||(climax&&(s%2===0))){
     const ok=c.createOscillator(),gk=c.createGain();
-    ok.type='sine';ok.frequency.setValueAtTime(s%8===0?135:110,t);ok.frequency.exponentialRampToValueAtTime(30,t+0.12);
-    gk.gain.setValueAtTime(inCombat?0.085:0.055,t);gk.gain.exponentialRampToValueAtTime(0.001,t+0.13);
-    ok.connect(gk);gk.connect(c.destination);ok.start(t);ok.stop(t+0.14);
+    ok.type='sine';ok.frequency.setValueAtTime(s%8===0?145:115,t);ok.frequency.exponentialRampToValueAtTime(28,t+0.14);
+    gk.gain.setValueAtTime(climax?0.095:0.060,t);gk.gain.exponentialRampToValueAtTime(0.0008,t+0.15);
+    ok.connect(gk);gk.connect(c.destination);ok.start(t);ok.stop(t+0.16);
    }
-   if(s%4===2||(inCombat&&s%4===3)){
-    this.noise(t,0.08,'bandpass',1800,750,inCombat?0.045:0.025,1.2);
+   if(s%4===2||(climax&&s%4===3)){
+    this.noise(t,0.095,'bandpass',1900,720,climax?0.052:0.028,1.1);
    }else{
-    this.noise(t,0.03,'highpass',5200,3800,inCombat?0.018:0.010,1.0);
+    this.noise(t,0.032,'highpass',5400,3600,climax?0.020:0.011,1.0);
    }
-  },185);
+  };
+  this.bgmTimer=setInterval(tickBgm,curTempo);
  }
 };
 $('sfxBtn').addEventListener('click',()=>{SFX.on=!SFX.on;$('sfxBtn').textContent=SFX.on?tr('sfxOn'):tr('sfxOff');$('sfxBtn').style.borderColor=SFX.on?'#ffd34d':'#3b5068';if(SFX.on)SFX.play('click');});
@@ -4199,18 +4320,31 @@ EVA.unitVoice=function(ent,mode){
  if(!this.on||!ent||ent.kind!=='u')return;
  if(this.lang!=='en'&&this.lang!=='ru')return;
  const now=performance.now();
- if(now-(this.lastUnitVoice||0)<3200)return;
+ if(now-(this.lastUnitVoice||0)<2200)return;
  this.lastUnitVoice=now;
- const sh=ent.d.shape;
+ const sh=ent.d.shape,fac=(ent.team>=0&&G&&G.fac&&G.fac[ent.team])||'usa';
  const dict=this.lang==='ru'?ZH_UNIT_LINES_RU:ZH_UNIT_LINES;
  const bank=dict[sh]||dict.tank;
  const pool=bank[mode]||bank.sel;
  const line=pool[Math.floor(Math.random()*pool.length)];
+ const facPitch={usa:1.05,china:0.94,russia:0.84,militia:1.12}[fac]||1.0;
+ const rolePitch=ent.d.hero?0.90:(sh==='tank'||sh==='heavy'||sh==='arty')?0.78:(sh==='jet'||sh==='heli')?0.96:(sh==='sniper')?0.88:1.02;
+ const jitter=(Math.random()-0.5)*0.16;
  try{
   if('speechSynthesis' in window){
    window.speechSynthesis.cancel();
    const u=new SpeechSynthesisUtterance(line);
-   u.lang=this.lang==='ru'?'ru-RU':'en-US';u.rate=1.04;u.pitch=ent.d.armor==='veh'?0.82:0.95;u.volume=0.88;
+   u.lang=this.lang==='ru'?'ru-RU':'en-US';
+   u.rate=(mode==='act'?1.10:0.95)+(Math.random()-0.5)*0.14;
+   u.pitch=Math.max(0.55,Math.min(1.55,facPitch*rolePitch+jitter));
+   u.volume=0.92;
+   const voices=window.speechSynthesis.getVoices?window.speechSynthesis.getVoices():[];
+   const prefix=u.lang.slice(0,2).toLowerCase();
+   const langVoices=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(prefix));
+   if(langVoices.length){
+    const pickIdx=(fac==='russia'||sh==='tank'||sh==='heavy')?langVoices.length-1:(fac==='militia'||mode==='act')?0:Math.floor(Math.random()*langVoices.length);
+    u.voice=langVoices[pickIdx]||langVoices[0];
+   }
    window.speechSynthesis.speak(u);
   }
  }catch(e){}
