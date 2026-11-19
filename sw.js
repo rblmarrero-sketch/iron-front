@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ironfront-zh-pwa-v36';
+const CACHE_NAME = 'ironfront-zh-pwa-v38';
 const ASSETS = ['./', './index.html', './IronFront-ZeroHour.html', './manifest.json'];
 
 self.addEventListener('install', event => {
