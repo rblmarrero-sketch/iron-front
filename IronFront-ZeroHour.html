@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.update().catch(function(){}); });
+  }).catch(function(){});
+}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
@@ -853,15 +860,17 @@ function updUnit(e,dt){
   else if(o.t==='amove'){
    if(!w){goTo(e,o.x,o.y);if(step(e,dt))e.order=null;}
    else{
-    const cx=o.cx!=null?o.cx:o.x,cy=o.cy!=null?o.cy:o.y,ar=o.r||260,leash=ar+180;
-    const nearZone=dist(e.x,e.y,cx,cy)<=ar+90;
-    if(e.tgt&&(e.tgt.dead||(nearZone?ptEdgeDist(cx,cy,e.tgt)>leash:edgeDist(e,e.tgt)>Math.max(w.range,e.d.sight)+120)||(G.human[e.team]&&!entVisible(e.tgt,e.team))))e.tgt=null;
+    const cx=o.cx!=null?o.cx:o.x,cy=o.cy!=null?o.cy:o.y,ar=Math.max(o.r||260,w.range+60),leash=ar+220;
+    if(o.target&&!o.target.dead&&canHit(w,o.target)&&(!G.human[e.team]||entVisible(o.target,e.team))){e.tgt=o.target;}
+    else{o.target=null;}
+    const nearZone=dist(e.x,e.y,cx,cy)<=ar+110;
+    if(e.tgt&&(e.tgt.dead||(!o.target&&(nearZone?ptEdgeDist(cx,cy,e.tgt)>leash:edgeDist(e,e.tgt)>Math.max(w.range+80,e.d.sight)+140))||(G.human[e.team]&&!entVisible(e.tgt,e.team))))e.tgt=null;
     if(!e.tgt&&e.scanT<=0){
-     e.scanT=0.25;
-     e.tgt=nearZone?(findTarget(e,ar,cx,cy)||findTarget(e,Math.max(w.range+40,e.d.sight))):(findTarget(e,Math.max(w.range+40,e.d.sight))||findTarget(e,ar,cx,cy));
+     e.scanT=0.2;
+     e.tgt=nearZone?(findTarget(e,ar,cx,cy)||findTarget(e,Math.max(w.range+60,e.d.sight))):(findTarget(e,Math.max(w.range+60,e.d.sight))||findTarget(e,ar,cx,cy));
     }
     if(e.tgt)engage(e,e.tgt,dt);
-    else if(dist(e.x,e.y,o.x,o.y)>34){
+    else if(dist(e.x,e.y,o.x,o.y)>44){
      goTo(e,o.x,o.y);
      if(step(e,dt)||e.stuckN>=4){e.stuckN=0;e.path=null;e.goal=null;if(e.oq&&e.oq.length)e.order=null;}
     }else{
@@ -958,7 +967,7 @@ function updBuilder(e,dt){
  }else{goTo(e,b.x,b.y);step(e,dt);}
 }
 function onBuilt(b){
- if(b.team===ME){msg('Construction complete: '+b.d.name,'#9fd6ff');if(typeof SFX!=='undefined')SFX.play('ready',b.team);}
+ if(b.team===ME){msg('Construction complete: '+b.d.name,'#9fd6ff');_sfxCall('play','ready',b.team);}
  if(b.d.spawn){const [x,y]=exitPoint(b);const t=addUnit(b.team,b.d.spawn,x,y);t.order={t:'gather'};}
  if(b.d.super){const sg=subFor(b.team),mul=(sg==='usa_sw'||sg==='russia_arty')?0.7:(sg==='china_nuke'||sg==='militia_demo')?0.75:1;b.readyAt=G.t+Math.round(SW[b.d.super].charge*mul);
   if(enemy(ME,b.team))msg('Warning: '+esc(PN(b.team))+' built a '+b.d.name+'!','#ff6b5b');}
@@ -989,47 +998,80 @@ function updJet(e,dt){
    e.hp=Math.min(e.maxHp,e.hp+dt*28);
    const p=padPos(af,e.pad);e.x=p[0];e.y=p[1];
    if(!e.order&&e.stance===1&&e.ammo>=d.ammo&&e.scanT<=0){e.scanT=0.4;const ht=findTarget(e,720,af.x,af.y);if(ht)e.order={t:'attack',target:ht};}
-   if(e.order&&e.ammo>0&&(e.ammo>=d.ammo||e.order.t==='attack'||e.order.t==='fattack')){e.parked=false;}
-   else if(e.order&&(e.order.t==='guard'||e.order.t==='amove'||e.order.t==='patrol'))return;
-   else{if(e.order&&e.order.t!=='move')e.order=null;return;}
+   // Allow immediate takeoff for move/patrol/guard/amove, or attack/fattack once at least 1 munition is loaded
+   if(e.order){
+    if(e.order.t==='rtb'){e.order=null;return;}
+    if(e.order.t==='move'||e.ammo>0){e.parked=false;}
+    else return;
+   }else return;
   }
  }
  let tx=null,ty=null,tgt=null;const o=e.order;
- if(o&&(e.ammo>0||o.t==='move')){
-  if(o.t==='attack'){if(o.target.dead||!canHit(w,o.target)||(G.human[e.team]&&!entVisible(o.target,e.team)))e.order=null;else tgt=o.target;}
-  else if(o.t==='fattack'){
-   tx=o.x;ty=o.y;const a=dAtan2(ty-e.y,tx-e.x);
-   if(dist(e.x,e.y,tx,ty)<=w.range&&Math.abs(angDiff(e.ang,a))<0.35&&e.cd<=0&&e.ammo>0){
-    fire(e,{x:tx,y:ty,kind:'u',d:{armor:'veh'},team:-1,hp:999,maxHp:999});e.ammo--;if(!e.ammo)e.order=null;
+ if(o){
+  if(o.t==='rtb'){
+   // Explicitly return to airfield pad to rearm/repair
+   tx=null;ty=null;
+  }else if(o.t==='attack'){
+   if(o.target.dead||!canHit(w,o.target)||(G.human[e.team]&&!entVisible(o.target,e.team))){e.order=null;}
+   else if(e.ammo>0){tgt=o.target;}
+   else{tx=null;ty=null;} // Out of ammo: return to airfield to rearm, keeping attack target queued!
+  }else if(o.t==='fattack'){
+   if(e.ammo>0){
+    tx=o.x;ty=o.y;const a=dAtan2(ty-e.y,tx-e.x);
+    if(dist(e.x,e.y,tx,ty)<=w.range&&Math.abs(angDiff(e.ang,a))<0.38&&e.cd<=0){
+     fire(e,{x:tx,y:ty,kind:'u',d:{armor:'veh'},team:-1,hp:999,maxHp:999});e.ammo--;if(!e.ammo)e.order=null;
+    }
+   }else{tx=null;ty=null;}
+  }else if(o.t==='guard'||o.t==='amove'||o.t==='patrol'){
+   const gx=o.t==='patrol'?(o.leg?o.bx:o.ax):(o.cx!=null?o.cx:o.x),gy=o.t==='patrol'?(o.leg?o.by:o.ay):(o.cy!=null?o.cy:o.y),gr=o.r||300;
+   if(e.ammo>0){
+    if(e.tgt&&(e.tgt.dead||ptEdgeDist(gx,gy,e.tgt)>gr+220||(G.human[e.team]&&!entVisible(e.tgt,e.team))))e.tgt=null;
+    if(!e.tgt&&e.scanT<=0){e.scanT=0.25;e.tgt=findTarget(e,gr,gx,gy)||findTarget(e,d.sight);}
+    tgt=e.tgt;
+   }else{e.tgt=null;}
+   if(!tgt){
+    if(e.ammo<=0){tx=null;ty=null;} // Return to base to rearm when empty
+    else{
+     const la=G.t*1.15+e.id*1.1;
+     const orbitR=Math.min(140,Math.max(85,gr*0.45));
+     tx=gx+dCos(la)*orbitR;ty=gy+dSin(la)*orbitR;
+     if(o.t==='patrol'&&dist(e.x,e.y,gx,gy)<135)o.leg=1-o.leg;
+    }
+   }
+  }else if(o.t==='move'){
+   // Fly directly to player waypoint and hold a wide CAP orbit there instead of snapping back to base!
+   if(e.ammo>0&&e.stance!==2){
+    if(e.tgt&&(e.tgt.dead||dist(o.x,o.y,e.tgt.x,e.tgt.y)>d.sight+120||(G.human[e.team]&&!entVisible(e.tgt,e.team))))e.tgt=null;
+    if(!e.tgt&&e.scanT<=0){e.scanT=0.3;e.tgt=findTarget(e,d.sight*0.9,o.x,o.y);}
+    tgt=e.tgt;
+   }
+   if(!tgt){
+    const dWp=dist(e.x,e.y,o.x,o.y);
+    if(dWp<110)o.hold=true;
+    if(o.hold){
+     const la=G.t*1.1+e.id*1.3;
+     tx=o.x+dCos(la)*115;ty=o.y+dSin(la)*115;
+    }else{tx=o.x;ty=o.y;}
    }
   }
-  else if(o.t==='guard'||o.t==='amove'||o.t==='patrol'){
-   const gx=o.t==='patrol'?(o.leg?o.bx:o.ax):(o.cx!=null?o.cx:o.x),gy=o.t==='patrol'?(o.leg?o.by:o.ay):(o.cy!=null?o.cy:o.y),gr=o.r||300;
-   if(e.tgt&&(e.tgt.dead||ptEdgeDist(gx,gy,e.tgt)>gr+180||(G.human[e.team]&&!entVisible(e.tgt,e.team))))e.tgt=null;
-   if(!e.tgt&&e.scanT<=0){e.scanT=0.25;e.tgt=findTarget(e,gr,gx,gy)||findTarget(e,d.sight);}
-   tgt=e.tgt;
-   if(!tgt){
-    const la=G.t*1.35+e.id*1.1;
-    const orbitR=Math.min(130,Math.max(70,gr*0.45));
-    tx=gx+dCos(la)*orbitR;ty=gy+dSin(la)*orbitR;
-    if(o.t==='patrol'&&dist(e.x,e.y,gx,gy)<125)o.leg=1-o.leg;
-   }
-  }else if(o.t==='move'){tx=o.x;ty=o.y;if(dist(e.x,e.y,tx,ty)<80){e.order=null;tx=null;}}
  }
  if(tgt){tx=tgt.x;ty=tgt.y;const a=dAtan2(ty-e.y,tx-e.x);
-  if(edgeDist(e,tgt)<=w.range&&Math.abs(angDiff(e.ang,a))<0.38&&e.cd<=0&&e.ammo>0){fire(e,tgt);e.ammo--;if(!e.ammo){if(o&&o.t!=='guard'&&o.t!=='amove'&&o.t!=='patrol')e.order=null;e.tgt=null;}}}
- let ret=false,spd=d.spd,tr=2.8;
+  if(edgeDist(e,tgt)<=w.range&&Math.abs(angDiff(e.ang,a))<0.42&&e.cd<=0&&e.ammo>0){fire(e,tgt);e.ammo--;if(!e.ammo){if(o&&o.t!=='guard'&&o.t!=='amove'&&o.t!=='patrol'&&o.t!=='attack')e.order=null;e.tgt=null;}}}
+ let spd=d.spd,tr=3.2;
  if(tx==null){
   const af=findHome(e);
-  if(af){const p=padPos(af,e.pad);tx=p[0];ty=p[1];ret=true;const dd=dist(e.x,e.y,tx,ty);
-   if(dd<32){e.parked=true;e.rearm=rTime;if(o&&o.t!=='guard'&&o.t!=='amove'&&o.t!=='patrol')e.order=null;e.tgt=null;e.x=tx;e.y=ty;e.ang=-Math.PI/2;return;}
-   if(dd<180){spd=Math.max(115,d.spd*dd/180);tr=7.5;}}
-  else{tx=e.x+dCos(e.ang+0.8)*100;ty=e.y+dSin(e.ang+0.8)*100;}
+  if(af){const p=padPos(af,e.pad);tx=p[0];ty=p[1];const dd=dist(e.x,e.y,tx,ty);
+   if(dd<34){e.parked=true;e.rearm=rTime;if(o&&o.t==='rtb')e.order=null;e.tgt=null;e.x=tx;e.y=ty;e.ang=-Math.PI/2;return;}
+   if(dd<190){spd=Math.max(115,d.spd*dd/190);tr=7.5;}}
+  else{
+   // No airfield available: orbit player's starting sector smoothly instead of tight spinning
+   const home=G.pl[e.team];const hx=home?home.sx:WW/2,hy=home?home.sy:WH/2;
+   const la=G.t*0.9+e.id*1.2;tx=hx+dCos(la)*160;ty=hy+dSin(la)*160;
+  }
  }
  e.ang=turn(e.ang,dAtan2(ty-e.y,tx-e.x),dt*tr);
  e.x=Math.max(10,Math.min(WW-10,e.x+dCos(e.ang)*spd*dt));e.y=Math.max(10,Math.min(WH-10,e.y+dSin(e.ang)*spd*dt));
 }
-
 
 function updDisable(e,dt){
  const t=e.order.target;
@@ -1132,8 +1174,9 @@ function applyCmd(team,c){
  const num=v=>typeof v==='number'&&isFinite(v)?v:0;
  switch(c.k){
   case 'rc':doRightClick(team,mine(c.ids),num(c.x),num(c.y),c.tid!=null?byId(c.tid):null,!!c.q);break;
-  case 'am':{const us=mine(c.ids).filter(u=>u.kind==='u'&&u.d.wpn),ax=num(c.x),ay=num(c.y),ar=Math.max(120,Math.min(600,num(c.r)||260));
-   formation(us,ax,ay,(x,y)=>({t:'amove',x:Math.round(x),y:Math.round(y),cx:ax,cy:ay,r:ar}),!!c.q);break;}
+  case 'am':{const us=mine(c.ids).filter(u=>u.kind==='u'&&u.d.wpn),ax=num(c.x),ay=num(c.y),ar=Math.max(120,Math.min(600,num(c.r)||260)),tgt=c.tid!=null?byId(c.tid):null;
+   formation(us,ax,ay,(x,y)=>({t:'amove',x:Math.round(x),y:Math.round(y),cx:ax,cy:ay,r:ar,target:tgt}),!!c.q);break;}
+  case 'rtb':{for(const u of mine(c.ids))if(u.kind==='u'&&u.d.air==='jet')setOrder(u,{t:'rtb'});break;}
   case 'pt':{const us=mine(c.ids).filter(u=>u.kind==='u'&&u.d.wpn),px=num(c.x),py=num(c.y),pr=Math.max(120,Math.min(600,num(c.r)||260));
    formation(us,px,py,(x,y,u)=>({t:'patrol',ax:Math.round(u.x),ay:Math.round(u.y),bx:Math.round(x),by:Math.round(y),cx:px,cy:py,r:pr,leg:1}),!!c.q);break;}
   case 'gd':{const us=mine(c.ids).filter(u=>u.kind==='u'&&u.d.wpn),gx=num(c.x),gy=num(c.y),gr=Math.max(120,Math.min(600,num(c.r)||280));
@@ -1201,11 +1244,12 @@ function shot(e,t){
  G.fx.push({k:'flash',x:mx,y:my,ang:a,life:0.075,max:0.075,r:w.proj==='bullet'?5.5:11});
  if(w.proj==='shell'||w.proj==='arty')G.fx.push({k:'ring',x:mx,y:my,r:w.proj==='arty'?28:18,col:'rgba(255,235,180,.7)',life:0.16,max:0.16});
  fxShot(e,mx,my,a,w.proj);
- if(typeof SFX!=='undefined')SFX.shot(w.proj,mx,my,e.team,e.type);
+ _sfxCall('shot',w.proj,mx,my,e.team,e.type);
  if(w.proj==='bullet'){
   const ox=(FXRNG()-.5)*8,oy=(FXRNG()-.5)*8;
   if(w.splash)splash(t.x,t.y,w.splash,dmg,e.team,w,e);else hit(t,dmg*multFor(w,t),e);
-  G.fx.push({k:'line',x1:mx,y1:my,x2:t.x+ox,y2:t.y+oy-ta,life:e.type==='avenger'?0.14:0.06,max:e.type==='avenger'?0.14:0.06,col:e.type==='avenger'?'#5ce1ff':'#ffe9a0',w:e.type==='avenger'?3.2:1.5});
+  const fCol=e.type==='avenger'?'#5ce1ff':e.team>=0?(G.fac[e.team]==='usa'?'#7fd7ff':G.fac[e.team]==='china'?'#ff6b5b':G.fac[e.team]==='russia'?'#ffd34d':'#9dff57'):'#ffe9a0';
+  G.fx.push({k:'line',x1:mx,y1:my,x2:t.x+ox,y2:t.y+oy-ta,life:e.type==='avenger'?0.15:0.075,max:e.type==='avenger'?0.15:0.075,col:fCol,w:e.type==='avenger'?3.4:1.7});
  }else if(w.proj==='flame'){
   splash(t.x,t.y,w.splash,dmg,e.team,w,e);
   for(let i=0;i<5;i++){const u=FXRNG();G.fx.push({k:'fire',x:mx+(t.x-mx)*u+(FXRNG()-.5)*12,y:my+(t.y-my)*u+(FXRNG()-.5)*12,r:6+u*10,life:0.34,max:0.34});}
@@ -1274,7 +1318,7 @@ function boom(x,y,r,delay){
   if(r>=26)G.fx.push({k:'ring',x,y,r:r*2.8,col:'rgba(255,110,30,.65)',life:0.62,max:0.62});
   if(r>=65)G.fx.push({k:'ring',x,y,r:r*3.5,col:'rgba(255,255,255,.55)',life:0.78,max:0.78});
  }
- fxExtra(x,y,r);if(typeof SFX!=='undefined'&&!delay)SFX.boom(r,x,y);
+ fxExtra(x,y,r);if(!delay)_sfxCall('boom',r,x,y);
  const ns=Math.min(26,(r/2.6)|0);
  for(let i=0;i<ns;i++){const sa=FXRNG()*6.28,sp=55+FXRNG()*r*2.8;
   G.fx.push({k:'spark',x,y,vx:dCos(sa)*sp,vy:dSin(sa)*sp-26,life:0.35+FXRNG()*0.42,max:0.75,col:i%3===0?'#ffffff':i%2?'#fff2a0':'#ff6611'});}
@@ -1358,7 +1402,7 @@ function fireSuper(b,x,y){
  if(!superReady(b))return false;const s=SW[b.d.super],team=b.team,dummy={team,kind:'p'};
  const sg=subFor(team),mul=(sg==='usa_sw'||sg==='russia_arty')?0.7:(sg==='china_nuke'||sg==='militia_demo')?0.75:1;b.readyAt=G.t+Math.round(s.charge*mul);b.ann=false;
  if(enemy(ME,team)){msg('ALERT: '+esc(PN(team))+' launched '+s.name+'!','#ff3b30');G.warns.push({x,y,r:s.r,until:G.t+6});}
- else if(team===ME)msg(s.name+' fired!','#ffd34d');if(typeof SFX!=='undefined')SFX.superweapon(b.d.super,x,y,team);
+ else if(team===ME)msg(s.name+' fired!','#ffd34d');_sfxCall('superweapon',b.d.super,x,y,team);
  if(b.d.super==='lance'){
   G.beams.push({x,y,t0:G.t+1.8,dur:5.0,team});G.warns.push({x,y,r:s.r,until:G.t+6.8});
   for(let i=0;i<50;i++)G.timers.push({at:G.t+1.8+i*0.1,fn:()=>{const a=i*0.24,rr=(i/50)*s.r*0.55,bx=x+dCos(a)*rr,by=y+dSin(a)*rr;
@@ -1581,7 +1625,7 @@ function updCapture(e,dt){
   if(rectDist(e.x,e.y,b)-e.r<20){
    e.path=null;e.goal=null;e.order=null;b.team=e.team;
    b.gar.push({type:e.type,hp:e.hp,maxHp:e.maxHp,vet:e.vet||0,kills:e.kills||0,team:e.team});
-   e.dead=true;if(e.team===ME){msg(e.d.name+' garrisoned '+b.d.name+' ('+b.gar.length+'/'+b.d.garrison+')','#9fd6ff',true);if(typeof SFX!=='undefined')SFX.play('click');}
+   e.dead=true;if(e.team===ME){msg(e.d.name+' garrisoned '+b.d.name+' ('+b.gar.length+'/'+b.d.garrison+')','#9fd6ff',true);_sfxCall('play','click');}
   }else{goTo(e,b.x,b.y);step(e,dt);}
   return;
  }
@@ -1589,14 +1633,14 @@ function updCapture(e,dt){
  if(rectDist(e.x,e.y,b)-e.r<20){
   e.path=null;e.goal=null;b.capBy=e.team;b.capP=(b.capP||0)+dt/4;b.capT=G.t;
   if(b.capP>=1){const old=b.team;b.team=e.team;b.capP=0;b.hp=b.maxHp;e.order=null;
-   if(e.team===ME){msg(b.d.name+' captured!','#7be07b');if(typeof SFX!=='undefined')SFX.play('ready');}else if(old===ME)msg('We lost '+b.d.name+'!','#ff6b5b');}
+   if(e.team===ME){msg(b.d.name+' captured!','#7be07b');_sfxCall('play','ready');}else if(old===ME)msg('We lost '+b.d.name+'!','#ff6b5b');}
  }else{goTo(e,b.x,b.y);step(e,dt);}
 }
 function evacuateBld(b){
  if(!b||!b.gar||!b.gar.length)return;
  const list=b.gar.splice(0,b.gar.length);
  list.forEach((g,i)=>{const [x,y]=exitPoint(b);const u=addUnit(g.team,g.type,x+(i%2)*14-7,y+((i>>1)*14));u.hp=g.hp;u.maxHp=g.maxHp;u.vet=g.vet;u.kills=g.kills;});
- b.team=-1;if(typeof SFX!=='undefined')SFX.play('click');
+ b.team=-1;_sfxCall('play','click');
 }
 function eliminate(p,quit){
  const pl=G.pl[p];if(!pl.alive)return;pl.alive=false;if(quit)pl.quit=true;
@@ -1779,9 +1823,15 @@ function fxShot(e,mx,my,a,proj){try{if(!GFX.fx||!G||!visAt(mx,my))return;
  }}catch(e2){}}
 function drawTracks(){if(!GFX.fx)return;const dt=FDT;
  for(const e of G.ents){if(e.kind!=='u'||e.dead||!e.moving||e.d.air||e.d.armor==='inf'||!entVisible(e))continue;
-  e._trkT=(e._trkT||0)-dt;if(e._trkT<=0){e._trkT=0.09;if(TRK.length<420)TRK.push({x:e.x,y:e.y,ang:e.ang,w:e.r*1.28,l:e.r*0.55,life:7.5,max:7.5});
-   if(Math.random()<0.55){const bx=e.x-dCos(e.ang)*e.r,by=e.y-dSin(e.ang)*e.r;
-    G.fx.push({k:'smoke',x:bx+(Math.random()-.5)*6,y:by+(Math.random()-.5)*6,vx:-dCos(e.ang)*14,vy:-dSin(e.ang)*14-6,r:3.5+Math.random()*2.5,life:0.45,max:0.45,dark:G.bio===BIOME.temperate});}}}
+  e._trkT=(e._trkT||0)-dt;if(e._trkT<=0){e._trkT=0.075;if(TRK.length<520)TRK.push({x:e.x,y:e.y,ang:e.ang,w:e.r*1.32,l:e.r*0.62,life:8.5,max:8.5});
+   const isHeavy=e.d.shape==='heavy'||e.d.shape==='tank'||e.d.shape==='arty'||e.d.shape==='dozer';
+   const dustCol=G.bio===BIOME.desert?'214,186,132':G.bio===BIOME.snow?'232,242,250':'156,144,118';
+   for(const side of (isHeavy?[-1,1]:[0])){
+    if(!isHeavy&&Math.random()>0.65)continue;
+    const lat=side*(e.r*0.72),ca=dCos(e.ang),sa=dSin(e.ang);
+    const bx=e.x-ca*e.r*0.95-sa*lat,by=e.y-sa*e.r*0.95+ca*lat;
+    G.fx.push({k:'cloud',x:bx+(Math.random()-.5)*4,y:by+(Math.random()-.5)*4,vx:-ca*18+(Math.random()-.5)*8,vy:-sa*18-7,r:(isHeavy?5.2:3.6)+Math.random()*2.5,life:0.55,max:0.55,col:dustCol});
+   }}}
  let j=0;for(let i=0;i<TRK.length;i++){const t=TRK[i];t.life-=dt;if(t.life<=0)continue;TRK[j++]=t;
   const x=t.x-cam.x,y=t.y-cam.y;if(x<-40||y<-40||x>VW+40||y>VH+40)continue;
   ctx.save();ctx.translate(x,y);ctx.rotate(t.ang);ctx.fillStyle=`rgba(20,18,14,${(t.life/t.max)*0.26})`;
@@ -1869,20 +1919,24 @@ function render(){
    ctx.restore();
   }else if(p.kind==='rocket'){
    ctx.save();ctx.translate(x,y);ctx.rotate(p.ang);
-   // Detailed guided missile / RPG with fins, exhaust plume, and smoke ribbon
+   // Faction-colored guided missile / RPG exhaust plume & ionized trail
+   const rFac=p.team>=0?G.fac[p.team]:'usa';
+   const rGlow=rFac==='usa'?'rgba(92,210,255,.55)':rFac==='china'?'rgba(255,95,45,.58)':rFac==='russia'?'rgba(255,205,70,.55)':'rgba(155,245,75,.55)';
    const flk=0.85+0.25*dSin(G.t*55+p.x);
-   ctx.fillStyle='rgba(255,130,30,.5)';ctx.beginPath();ctx.ellipse(-10*flk,0,9*flk,3.8,0,0,7);ctx.fill();
-   ctx.fillStyle='#fff6b0';ctx.beginPath();ctx.arc(-6,0,2.5,0,7);ctx.fill();
+   ctx.fillStyle=rGlow;ctx.beginPath();ctx.ellipse(-12*flk,0,12*flk,4.2,0,0,7);ctx.fill();
+   ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(-6,0,2.6,0,7);ctx.fill();
    ctx.fillStyle='#4a525a';ctx.beginPath();ctx.moveTo(-5,-2);ctx.lineTo(-8,-4.5);ctx.lineTo(-3,-2);ctx.moveTo(-5,2);ctx.lineTo(-8,4.5);ctx.lineTo(-3,2);ctx.fill();
    ctx.fillStyle='#eef3f8';ctx.fillRect(-5.5,-1.9,11.5,3.8);
    ctx.fillStyle='#ff4d3d';ctx.beginPath();ctx.moveTo(6,-1.9);ctx.lineTo(10.5,0);ctx.lineTo(6,1.9);ctx.closePath();ctx.fill();
    ctx.restore();
   }else{
-   // High-velocity armor-piercing tank shell with glowing tracer wake
+   // High-velocity armor-piercing tank shell with faction-tinted tracer wake
    ctx.save();ctx.translate(x,y);ctx.rotate(p.ang||0);
-   const g=ctx.createLinearGradient(-18,0,6,0);g.addColorStop(0,'rgba(255,150,40,0)');g.addColorStop(1,'rgba(255,215,90,.75)');
-   ctx.fillStyle=g;ctx.fillRect(-18,-2.4,24,4.8);
-   ctx.fillStyle='#ffffff';ctx.beginPath();ctx.ellipse(3,0,5.5,1.8,0,0,7);ctx.fill();
+   const sFac=p.team>=0?G.fac[p.team]:'usa';
+   const sStop=sFac==='usa'?'rgba(92,225,255,.85)':sFac==='china'?'rgba(255,105,60,.85)':sFac==='russia'?'rgba(255,215,85,.85)':'rgba(165,255,90,.85)';
+   const g=ctx.createLinearGradient(-24,0,6,0);g.addColorStop(0,'rgba(255,150,40,0)');g.addColorStop(1,sStop);
+   ctx.fillStyle=g;ctx.fillRect(-24,-2.6,30,5.2);
+   ctx.fillStyle='#ffffff';ctx.beginPath();ctx.ellipse(3,0,6.0,2.0,0,0,7);ctx.fill();
    ctx.restore();
   }}
  drawFx();drawDebris();
@@ -2004,15 +2058,21 @@ function drawDepot(e){
 }
 const PAD={usa:'#5b6068',china:'#5f5650',russia:'#5a6066',militia:'#6e6248',none:'#55554c'};
 function drawIsoBox(x,y,w,h,elev,topCol,wallCol,rimCol,borderCol){
- ctx.fillStyle='rgba(0,0,0,.38)';
+ // Soft ambient occlusion halo + long directional sunlight cast shadow
+ ctx.save();
+ ctx.fillStyle='rgba(0,0,0,.22)';
+ ctx.fillRect(x-3,y-2,w+elev*1.45+6,h+elev*1.25+5);
+ ctx.fillStyle='rgba(0,0,0,.46)';
  ctx.beginPath();
- ctx.moveTo(x+elev*0.7,y+h);
- ctx.lineTo(x+w+elev*1.3,y+h);
- ctx.lineTo(x+w+elev*1.3,y+elev*0.6);
+ ctx.moveTo(x+elev*0.6,y+h);
+ ctx.lineTo(x+elev*1.35,y+h+elev*1.15);
+ ctx.lineTo(x+w+elev*1.65,y+h+elev*1.15);
+ ctx.lineTo(x+w+elev*1.65,y+elev*0.85);
  ctx.lineTo(x+w,y);
  ctx.lineTo(x+w,y+h);
  ctx.closePath();
  ctx.fill();
+ ctx.restore();
  // South & East 3D extruded wall faces
  ctx.fillStyle=wallCol;
  ctx.beginPath();
@@ -2196,313 +2256,437 @@ function drawBld(e){
  if(e.built&&lowPower(e.team)&&e.d.pow<0&&e.team===ME&&dSin(G.t*6)>0){ctx.fillStyle='#ffd34d';ctx.font='700 18px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('⚡',cx,cy+6);ctx.textAlign='left';}
 }
 function drawUnit(e){
- const al=altOf(e);const x=e.x-cam.x,y=e.y-cam.y-al;if(x<-80||y<-80||x>VW+80||y>VH+80)return;
+ const al=altOf(e);const x=e.x-cam.x,y=e.y-cam.y-al;if(x<-100||y<-100||x>VW+100||y>VH+100)return;
  const c=PC(e.team),dk=PD(e.team),lt=PL(e.team),sel=G.sel.includes(e),sh=e.d.shape,fac=e.team>=0?G.fac[e.team]:'usa';
- // Light vector from top-left (-0.65, -0.75) for consistent 2.5D relief across all entities
+ // Realistic ground/altitude shadow
  if(al){
-  ctx.save();ctx.translate(x+al*0.52,y+al);ctx.rotate(e.ang);
-  const sg=ctx.createRadialGradient(0,0,2,0,0,e.r*1.45);
-  sg.addColorStop(0,'rgba(0,0,0,.48)');sg.addColorStop(0.65,'rgba(0,0,0,.18)');sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.save();ctx.translate(x+al*0.58,y+al*1.05);ctx.rotate(e.ang);
+  const sg=ctx.createRadialGradient(0,0,2,0,0,e.r*1.65);
+  sg.addColorStop(0,'rgba(0,0,0,.55)');sg.addColorStop(0.6,'rgba(0,0,0,.22)');sg.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=sg;
-  if(sh==='jet')jetShape();else{ctx.beginPath();ctx.ellipse(0,0,e.r*1.16,e.r*0.64,0,0,7);ctx.fill();}
+  if(sh==='jet')jetShape();else{ctx.beginPath();ctx.ellipse(0,0,e.r*1.25,e.r*0.7,0,0,7);ctx.fill();}
   ctx.restore();
  }
+ // Selection ring & range indicator
  if(sel){
-  ctx.strokeStyle=e.order&&e.order.t==='guard'?'#3dd8e0':e.stance===1?'#ff6b5b':e.stance===2?'#ffd34d':'#6f6';
-  ctx.lineWidth=1.8;ctx.beginPath();ctx.ellipse(x,y+2,e.r+6,(e.r+6)*0.75,0,0,7);ctx.stroke();
+  const pulse=1+0.04*dSin(G.t*7);
+  ctx.strokeStyle=e.order&&e.order.t==='guard'?'#3dd8e0':e.order&&e.order.t==='amove'?'#ff6b5b':e.stance===1?'#ff6b5b':e.stance===2?'#ffd34d':'#5dff9a';
+  ctx.lineWidth=2.0;ctx.beginPath();ctx.ellipse(x,y+2,(e.r+6)*pulse,(e.r+6)*0.76*pulse,0,0,7);ctx.stroke();
   if(e.d.wpn&&G.sel.length<=20){ctx.save();ctx.strokeStyle='rgba(255,120,90,.28)';ctx.lineWidth=1.2;ctx.setLineDash([5,5]);ctx.beginPath();ctx.arc(x,y+al,e.d.wpn.range,0,7);ctx.stroke();ctx.restore();}
  }
  ctx.save();ctx.translate(x,y);
+
+ // ==================== 1. ARTICULATED 2.5D TROOPS (NO BLOCKY SQUARES) ====================
  if(e.d.armor==='inf'){
-  const sc=e.d.hero?1.38:sh==='rinf'?1.2:sh==='sniper'?1.16:sh==='worker'?1.0:1.1;
+  const sc=e.d.hero?1.48:sh==='rinf'?1.26:sh==='sniper'?1.22:sh==='worker'?1.08:1.18;
   ctx.scale(sc,sc);
-  const walk=e.moving?dSin(G.t*16+e.id*2)*4.0:0;
-  ctx.fillStyle='rgba(0,0,0,.48)';ctx.beginPath();ctx.ellipse(1.8,3.8,9.0,6.0,0,0,7);ctx.fill();
+  const walk=e.moving?dSin(G.t*18+e.id*2)*4.4:0;
+  const sway=e.moving?dCos(G.t*18+e.id*2)*0.07:0;
+  // Soft elliptical contact shadow + subtle faction base ring
+  ctx.fillStyle='rgba(0,0,0,.54)';ctx.beginPath();ctx.ellipse(2.0,4.2,9.8,6.6,0,0,7);ctx.fill();
+  ctx.strokeStyle=c;ctx.globalAlpha=0.48;ctx.lineWidth=1.1;ctx.beginPath();ctx.ellipse(0,2.4,8.6,5.8,0,0,7);ctx.stroke();ctx.globalAlpha=1;
   if(e.d.hero){
-   ctx.save();ctx.rotate(G.t*2.4);ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(0,0,11.5,0,7);ctx.stroke();ctx.restore();
+   ctx.save();ctx.rotate(G.t*2.6);ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.6;ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(0,0,12.5,0,7);ctx.stroke();ctx.restore();
   }
-  ctx.rotate(e.ang);
-  ctx.fillStyle='#121518';
-  ctx.fillRect(walk-2.4,-5.5,4.8,3.5);ctx.fillRect(-walk-2.4,2.0,4.8,3.5);
-  ctx.fillStyle='#2e353c';ctx.fillRect(walk-1.2,-5.2,2.4,2.9);ctx.fillRect(-walk-1.2,2.3,2.4,2.9);
+  ctx.rotate(e.ang+sway);
+
+  // Articulated legs & combat boots (rounded capsule limbs instead of square blocks)
+  const legCol=fac==='usa'?'#3e4a36':fac==='china'?'#4e2a25':fac==='russia'?'#313a42':'#615137';
+  const drawLimb=(lx,ly,len,w,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.roundRect(lx,ly,len,w,w*0.48);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=0.9;ctx.stroke();};
+  drawLimb(walk-3.2,-6.0,6.2,3.4,legCol);
+  drawLimb(-walk-3.2,2.6,6.2,3.4,legCol);
+  // Boots
+  ctx.fillStyle='#14171a';
+  ctx.beginPath();ctx.ellipse(walk+2.2,-4.3,2.3,1.5,0,0,7);ctx.fill();
+  ctx.beginPath();ctx.ellipse(-walk+2.2,4.3,2.3,1.5,0,0,7);ctx.fill();
+
+  // Contoured Backpacks / Cloaks / Ammo Rigs
   if(sh==='sniper'&&!e.d.hero){
-   ctx.fillStyle=G.bio===BIOME.desert?'#8c7a4b':G.bio===BIOME.snow?'#cfd8dc':'#36562c';
-   ctx.beginPath();ctx.moveTo(-9.2,-7.0);ctx.lineTo(3.4,-8.0);ctx.lineTo(5.8,0);ctx.lineTo(3.4,8.0);ctx.lineTo(-9.2,7.0);ctx.lineTo(-6.4,0);ctx.closePath();ctx.fill();
+   // Organic draped ghillie / arctic mantle
+   ctx.fillStyle=G.bio===BIOME.desert?'#9c8856':G.bio===BIOME.snow?'#dce6ec':'#2e5426';
+   ctx.beginPath();ctx.moveTo(-10.2,-6.5);ctx.quadraticCurveTo(-11.5,0,-10.2,6.5);ctx.quadraticCurveTo(-2,9.2,4.8,6.2);ctx.quadraticCurveTo(7.2,0,4.8,-6.2);ctx.quadraticCurveTo(-2,-9.2,-10.2,-6.5);ctx.fill();
    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='#52783a';ctx.fillRect(-7.2,-4.6,2.6,2.6);ctx.fillRect(-5.6,2.1,2.6,2.6);
+   ctx.fillStyle=G.bio===BIOME.snow?'#8da2b0':'#527a38';
+   ctx.beginPath();ctx.arc(-6.2,-3.2,1.8,0,7);ctx.arc(-4.8,3.4,1.8,0,7);ctx.arc(-7.5,0.6,1.6,0,7);ctx.fill();
   }else if(e.d.hero){
-   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(-8.8,-7.0);ctx.lineTo(3.4,-7.4);ctx.lineTo(4.4,7.4);ctx.lineTo(-8.8,7.0);ctx.closePath();ctx.fill();
-   ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.2;ctx.stroke();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(-9.8,-6.8);ctx.quadraticCurveTo(-11.5,0,-9.8,6.8);ctx.lineTo(4.2,7.6);ctx.lineTo(4.2,-7.6);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.3;ctx.stroke();
   }else if(sh==='rinf'){
-   ctx.fillStyle='#283027';ctx.fillRect(-8.0,-5.6,6.0,11.2);
-   ctx.fillStyle='#e04836';ctx.fillRect(-7.2,-3.9,2.5,3.3);ctx.fillRect(-7.2,0.6,2.5,3.3);
+   // Cylindrical AT/AA warhead tube pack
+   ctx.fillStyle='#242c24';ctx.beginPath();ctx.roundRect(-8.8,-5.8,6.4,11.6,2.6);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1;ctx.stroke();
+   ctx.fillStyle=fac==='usa'?'#ffd34d':fac==='china'?'#ff4d3d':fac==='russia'?'#7fd7ff':'#8aff4d';
+   ctx.beginPath();ctx.arc(-6.0,-2.6,1.6,0,7);ctx.arc(-6.0,2.6,1.6,0,7);ctx.fill();
+  }else if(fac==='militia'){
+   // Flowing desert scarf / sash
+   ctx.fillStyle='#786442';ctx.beginPath();ctx.moveTo(-9.2,-5.0);ctx.quadraticCurveTo(-11,0,-9.2,5.0);ctx.lineTo(-2,6.0);ctx.lineTo(-2,-6.0);ctx.closePath();ctx.fill();
   }else{
-   ctx.fillStyle=dk;ctx.fillRect(-7.0,-4.3,5.0,8.6);
-   ctx.strokeStyle='rgba(255,255,255,.24)';ctx.lineWidth=0.8;ctx.strokeRect(-6.6,-4.0,4.3,8.0);
+   // Contoured tactical field pack
+   ctx.fillStyle=fac==='china'?'#5c2420':fac==='russia'?'#3a434c':'#3b4a3a';
+   ctx.beginPath();ctx.roundRect(-7.8,-4.8,5.4,9.6,2.2);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1;ctx.stroke();
   }
+
+  // Anatomical Shoulders & Tapered Torso
+  const vestBase=fac==='usa'?'#4e6148':fac==='china'?'#752823':fac==='russia'?'#45515c':'#8a744d';
   const bg=ctx.createLinearGradient(-4,-6,4,6);
-  bg.addColorStop(0,lt);bg.addColorStop(0.45,c);bg.addColorStop(1,dk);
-  ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(0,0,5.4,7.0,0,0,7);ctx.fill();
-  ctx.strokeStyle='#0d1117';ctx.lineWidth=1.3;ctx.stroke();
+  bg.addColorStop(0,lt);bg.addColorStop(0.5,vestBase);bg.addColorStop(1,dk);
+  ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(0,0,5.6,7.6,0,0,7);ctx.fill();
+  ctx.strokeStyle='#0d1117';ctx.lineWidth=1.35;ctx.stroke();
+
+  // Tactically contoured chest rig / plate carrier
+  if(fac==='militia'){
+   ctx.strokeStyle='#d4a64f';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-3.2,-5.8);ctx.lineTo(3.2,5.8);ctx.stroke();
+  }else if(fac==='usa'){
+   ctx.fillStyle='#2a352b';ctx.beginPath();ctx.roundRect(-2.0,-4.6,4.2,9.2,1.5);ctx.fill();
+  }else if(fac==='china'){
+   ctx.fillStyle='#b82921';ctx.beginPath();ctx.roundRect(-1.8,-4.8,3.8,9.6,1.4);ctx.fill();
+  }else if(fac==='russia'){
+   ctx.fillStyle='#262d34';ctx.beginPath();ctx.roundRect(-2.4,-5.2,4.8,10.4,1.6);ctx.fill();
+   ctx.strokeStyle='#9fb0c2';ctx.lineWidth=0.8;ctx.stroke();
+  }
+
+  // Articulated Arms & Hands gripping weapon
   ctx.fillStyle=c;ctx.strokeStyle='#0d1117';ctx.lineWidth=1.0;
-  ctx.beginPath();ctx.arc(0.8,-5.9,2.4,0,7);ctx.fill();ctx.stroke();
-  ctx.beginPath();ctx.arc(0.8,5.9,2.4,0,7);ctx.fill();ctx.stroke();
+  // Left support arm reaching forward onto barrel/foregrip
+  ctx.beginPath();ctx.ellipse(1.2,-6.4,2.8,2.2,-0.25,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle=vestBase;ctx.beginPath();ctx.roundRect(1.5,-6.2,7.2,2.5,1.2);ctx.fill();ctx.stroke();
+  // Right trigger arm
+  ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(0.6,6.4,2.8,2.2,0.2,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle=vestBase;ctx.beginPath();ctx.roundRect(0.8,4.0,5.6,2.5,1.2);ctx.fill();ctx.stroke();
+
+  // Detailed Weapons (curved magazines, tapered barrels, scopes, warheads)
   if(sh==='hacker'){
-   ctx.strokeStyle='#7fd7ff';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-5,-4);ctx.lineTo(-9.5,-8.5);ctx.stroke();
-   ctx.fillStyle='#5dff9a';ctx.beginPath();ctx.arc(-9.5,-8.5,2.0,0,7);ctx.fill();
-   ctx.fillStyle='#10151c';ctx.fillRect(3.2,-6.5,8.8,13.0);ctx.strokeStyle='#5dff9a';ctx.lineWidth=0.9;ctx.strokeRect(3.2,-6.5,8.8,13.0);
-   ctx.fillStyle=(e.idleT>3||e.chan>0)?'#5dff9a':'#228b57';ctx.fillRect(4.3,-5.3,6.6,10.6);
-   if(e.idleT>3){ctx.strokeStyle='rgba(93,255,154,.65)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(7.5,0,7.5+dSin(G.t*8)*2,0,7);ctx.stroke();}
+   ctx.strokeStyle='#7fd7ff';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-5,-4);ctx.lineTo(-10,-9);ctx.stroke();
+   ctx.fillStyle='#5dff9a';ctx.beginPath();ctx.arc(-10,-9,2.2,0,7);ctx.fill();
+   ctx.fillStyle='#10151c';ctx.beginPath();ctx.roundRect(3.2,-6.8,9.2,13.6,1.8);ctx.fill();ctx.strokeStyle='#5dff9a';ctx.lineWidth=1.0;ctx.stroke();
+   ctx.fillStyle=(e.idleT>3||e.chan>0)?'#5dff9a':'#228b57';ctx.fillRect(4.4,-5.5,6.8,11.0);
+   if(e.idleT>3){ctx.strokeStyle='rgba(93,255,154,.7)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(7.8,0,8.0+dSin(G.t*8)*2.2,0,7);ctx.stroke();}
   }else if(sh==='worker'){
-   ctx.fillStyle='#f2cb30';ctx.fillRect(-2.6,-5.5,5.2,11.0);
-   ctx.fillStyle='#8a6d3b';ctx.fillRect(2,1.5,9.5,2.6);ctx.fillStyle='#e4ebf2';ctx.fillRect(9.5,-2.2,3.2,9.4);
-   if(e.carry){ctx.fillStyle='#d4a64f';ctx.fillRect(-11.5,-5.2,7.8,10.4);ctx.strokeStyle='#6a4a1a';ctx.lineWidth=1.2;ctx.strokeRect(-11.5,-5.2,7.8,10.4);}
+   ctx.fillStyle='#f2cb30';ctx.beginPath();ctx.roundRect(-2.6,-5.6,5.2,11.2,1.5);ctx.fill();
+   ctx.fillStyle='#8a6d3b';ctx.beginPath();ctx.roundRect(2,1.4,10.2,2.6,1.1);ctx.fill();
+   ctx.fillStyle='#e4ebf2';ctx.beginPath();ctx.roundRect(10.0,-2.4,3.4,9.8,1.2);ctx.fill();
+   if(e.carry){ctx.fillStyle='#d4a64f';ctx.beginPath();ctx.roundRect(-12.0,-5.5,8.2,11.0,1.5);ctx.fill();ctx.strokeStyle='#6a4a1a';ctx.lineWidth=1.2;ctx.stroke();}
   }else if(sh==='rinf'){
-   ctx.fillStyle='#343d33';ctx.fillRect(-7.6,1.0,22.2,5.3);
-   ctx.fillStyle='#14171a';ctx.beginPath();ctx.moveTo(-7.6,1.0);ctx.lineTo(-11.0,-0.5);ctx.lineTo(-11.0,7.8);ctx.lineTo(-7.6,6.3);ctx.closePath();ctx.fill();
-   ctx.fillStyle=fac==='militia'||e.type==='volkov'?'#e04836':'#ffd34d';
-   ctx.beginPath();ctx.moveTo(14.6,0.6);ctx.lineTo(19.8,3.6);ctx.lineTo(14.6,6.6);ctx.closePath();ctx.fill();
-   ctx.fillStyle='#ff6b5b';ctx.fillRect(2,1.9,4.8,3.4);
+   // Realistic tapered AT/AA rocket launcher with optical sight & conical warhead
+   ctx.fillStyle=fac==='usa'?'#3e4d3c':fac==='china'?'#4a2c28':fac==='russia'?'#37424a':'#5e5036';
+   ctx.beginPath();ctx.roundRect(-8.5,0.6,23.8,5.4,1.8);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1;ctx.stroke();
+   // Exhaust bell
+   ctx.fillStyle='#14171a';ctx.beginPath();ctx.moveTo(-8.5,0.6);ctx.lineTo(-12.2,-1.0);ctx.lineTo(-12.2,7.6);ctx.lineTo(-8.5,6.0);ctx.closePath();ctx.fill();
+   // Conical warhead tip
+   ctx.fillStyle=fac==='militia'||e.type==='volkov'?'#ff4d3d':fac==='china'?'#ff8a2a':'#ffd34d';
+   ctx.beginPath();ctx.moveTo(15.3,0.4);ctx.lineTo(21.4,3.3);ctx.lineTo(15.3,6.2);ctx.closePath();ctx.fill();
+   // Optical rangefinder
+   ctx.fillStyle='#243038';ctx.fillRect(2.0,-1.2,5.4,2.2);ctx.fillStyle='#5ce1ff';ctx.fillRect(6.2,-0.9,1.8,1.6);
   }else if(sh==='sniper'){
-   if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,50,50,.58)';ctx.lineWidth=0.95;ctx.beginPath();ctx.moveTo(23,2.4);ctx.lineTo(68,2.4);ctx.stroke();}
-   ctx.fillStyle='#14171a';ctx.fillRect(2,1.3,22.5,2.6);ctx.fillRect(21.5,0.7,3.8,3.8);
-   ctx.strokeStyle='#6c747c';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(16.5,2.5);ctx.lineTo(19.5,-1.6);ctx.moveTo(16.5,2.5);ctx.lineTo(19.5,6.6);ctx.stroke();
-   ctx.fillStyle='#243038';ctx.fillRect(6.5,0.1,7.2,2.4);ctx.fillStyle='#5ce1ff';ctx.fillRect(12.2,0.4,2.2,1.8);
+   if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,50,50,.65)';ctx.lineWidth=1.0;ctx.beginPath();ctx.moveTo(24,2.2);ctx.lineTo(76,2.2);ctx.stroke();}
+   // Long precision barrel + muzzle brake + bipod + scope
+   ctx.fillStyle='#14171a';ctx.beginPath();ctx.roundRect(1.5,1.1,23.5,2.4,1.0);ctx.fill();
+   ctx.fillRect(22.5,0.5,4.2,3.6);
+   ctx.strokeStyle='#7a848e';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(17.5,2.3);ctx.lineTo(20.5,-1.8);ctx.moveTo(17.5,2.3);ctx.lineTo(20.5,6.4);ctx.stroke();
+   ctx.fillStyle='#243038';ctx.beginPath();ctx.roundRect(6.2,-0.4,8.0,2.4,1.0);ctx.fill();ctx.fillStyle='#5ce1ff';ctx.fillRect(12.6,-0.1,2.4,1.8);
   }else{
-   ctx.fillStyle=dk;ctx.fillRect(-2.2,-5.0,4.4,10.0);
-   ctx.fillStyle='#1b2024';ctx.fillRect(2,1.3,13.8,2.8);ctx.fillStyle='#b0bac4';ctx.fillRect(13.2,1.7,5.0,1.8);
+   // Contoured assault rifle + stock + receiver + barrel + curved mag
+   ctx.fillStyle='#262c32';ctx.beginPath();ctx.roundRect(-2.5,1.0,17.5,2.8,1.1);ctx.fill();
+   if(fac==='china'||fac==='militia'){
+    ctx.fillStyle='#4a3828';ctx.beginPath();ctx.moveTo(7.5,3.5);ctx.quadraticCurveTo(9.5,5.5,8.2,7.5);ctx.lineTo(6.0,7.0);ctx.quadraticCurveTo(7.0,5.2,5.5,3.5);ctx.fill();
+   }else{
+    ctx.fillStyle='#4a5562';ctx.fillRect(5.8,0.1,5.6,1.4);
+   }
+   ctx.fillStyle='#b8c4d0';ctx.fillRect(14.5,1.5,5.8,1.8);
   }
+
+  // Distinct Faction Headgear & Visors
   if(e.d.hero){
-   ctx.fillStyle=e.type==='lotus'?'#161920':e.type==='burton'?'#a8281e':e.type==='volkov'?'#ffd34d':'#2b5a28';
-   ctx.beginPath();ctx.arc(0.8,0,4.7,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='#5ce1ff';ctx.fillRect(3.2,-2.7,2.4,5.4);
+   ctx.fillStyle=e.type==='lotus'?'#141820':e.type==='burton'?'#b8251c':e.type==='volkov'?'#ffd34d':'#2c5e28';
+   ctx.beginPath();ctx.arc(0.8,0,5.0,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.2;ctx.stroke();
+   ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.roundRect(3.4,-2.9,2.6,5.8,1.0);ctx.fill();
   }else if(sh==='worker'){
-   ctx.fillStyle='#ffd34d';ctx.beginPath();ctx.arc(0.8,0,4.4,0,7);ctx.fill();ctx.fillStyle='#c99700';ctx.fillRect(-2.2,-1.2,6.2,2.4);
-  }else if(sh==='rinf'){
-   ctx.fillStyle=fac==='usa'?'#3a506b':fac==='china'?'#4a5d3f':fac==='russia'?'#47525c':'#b89f72';
-   ctx.beginPath();ctx.arc(0.8,0,4.6,0,7);ctx.fill();ctx.fillStyle='#ff8a2a';ctx.fillRect(3.0,-2.8,2.2,5.6);
-  }else if(sh==='sniper'){
-   ctx.fillStyle=G.bio===BIOME.desert?'#9c8856':'#2f4a28';
-   ctx.beginPath();ctx.arc(0.8,0,4.5,0,7);ctx.fill();ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.arc(3.6,1.4,1.6,0,7);ctx.fill();
-  }else if(sh==='hacker'){
-   ctx.fillStyle='#243038';ctx.beginPath();ctx.arc(0.8,0,4.2,0,7);ctx.fill();ctx.fillStyle='#5dff9a';ctx.fillRect(2.8,-2.5,2.2,5);
+   ctx.fillStyle='#ffd34d';ctx.beginPath();ctx.arc(0.8,0,4.6,0,7);ctx.fill();ctx.fillStyle='#c99700';ctx.fillRect(-2.4,-1.3,6.6,2.6);
+  }else if(fac==='usa'){
+   ctx.fillStyle='#3b4e38';ctx.beginPath();ctx.arc(0.8,0,4.6,0,7);ctx.fill();ctx.strokeStyle='#141914';ctx.lineWidth=1;ctx.stroke();
+   ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.roundRect(3.2,-2.6,2.2,5.2,0.9);ctx.fill();
+  }else if(fac==='china'){
+   ctx.fillStyle='#7a241e';ctx.beginPath();ctx.arc(0.8,0,4.6,0,7);ctx.fill();ctx.strokeStyle='#1c0a08';ctx.lineWidth=1;ctx.stroke();
+   ctx.fillStyle='#ffd34d';ctx.beginPath();ctx.arc(3.6,0,1.7,0,7);ctx.fill();
+  }else if(fac==='russia'){
+   ctx.fillStyle='#455059';ctx.beginPath();ctx.arc(0.8,0,4.8,0,7);ctx.fill();ctx.strokeStyle='#14181c';ctx.lineWidth=1.1;ctx.stroke();
+   ctx.fillStyle='#dfe8f2';ctx.beginPath();ctx.roundRect(3.2,-2.8,2.1,5.6,0.8);ctx.fill();
   }else{
-   ctx.fillStyle=fac==='militia'?'#d8d0b8':fac==='china'?'#3b4f37':fac==='russia'?'#3d464d':'#3c4b5c';
-   ctx.beginPath();ctx.arc(0.8,0,4.3,0,7);ctx.fill();
-   ctx.fillStyle='rgba(255,255,255,.38)';ctx.beginPath();ctx.arc(1.9,-1.1,1.8,0,7);ctx.fill();
+   ctx.fillStyle='#e2d4b7';ctx.beginPath();ctx.arc(0.8,0,4.8,0,7);ctx.fill();
+   ctx.strokeStyle='#8f6b32';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0.8,0,3.2,0,7);ctx.stroke();
   }
+
+ // ==================== 2. HELICOPTERS (SWEPT FUSELAGES & ROTOR DISCS) ====================
  }else if(sh==='heli'){
   ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(0,al,19+dSin(G.t*16+e.id)*4,11.5+dSin(G.t*16+e.id)*2.2,0,0,7);ctx.stroke();
   ctx.rotate(e.ang);
   if(e.type==='hellhound'){
-   ctx.fillStyle=dk;ctx.fillRect(-31,-3.2,23,6.4);ctx.fillRect(-33,-10.5,5.5,21);
-   ctx.fillStyle='#262c32';ctx.fillRect(-7.5,-19.5,15,39);
-   ctx.fillStyle='#ff8a2a';ctx.fillRect(2,-18.5,4.5,4.2);ctx.fillRect(2,14.3,4.5,4.2);
-   const hg=ctx.createLinearGradient(0,-10,0,10);hg.addColorStop(0,lt);hg.addColorStop(0.5,c);hg.addColorStop(1,dk);
-   ctx.fillStyle=hg;ctx.beginPath();ctx.ellipse(0,0,18.5,10.8,0,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.8;ctx.stroke();
-   ctx.fillStyle='#1e2226';ctx.fillRect(14.5,-3.6,8.5,2.1);ctx.fillRect(14.5,-0.6,9.5,2.1);ctx.fillRect(14.5,2.4,8.5,2.1);
-   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.ellipse(8.2,0,6.8,5.6,0,0,7);ctx.fill();
-   ctx.fillStyle='rgba(255,255,255,.48)';ctx.beginPath();ctx.ellipse(9.5,-1.8,3.2,1.4,-0.3,0,7);ctx.fill();
+   // Hind-style gunship: tapered tail boom, stub wings with rocket pods, twin bubble canopies
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(-10,-3.8);ctx.lineTo(-32,-2.0);ctx.lineTo(-32,2.0);ctx.lineTo(-10,3.8);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#1f2328';ctx.beginPath();ctx.moveTo(-29,-2);ctx.lineTo(-34,-11);ctx.lineTo(-30,-11);ctx.lineTo(-27,-2);ctx.fill();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(2,-7);ctx.lineTo(-6,-21);ctx.lineTo(-9,-20);ctx.lineTo(-4,-7);ctx.moveTo(2,7);ctx.lineTo(-6,21);ctx.lineTo(-9,20);ctx.lineTo(-4,7);ctx.fill();
+   ctx.fillStyle='#2b3036';ctx.beginPath();ctx.roundRect(-7,-20.5,8,4.2,1.8);ctx.roundRect(-7,16.3,8,4.2,1.8);ctx.fill();
+   ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.arc(1.2,-18.4,1.9,0,7);ctx.arc(1.2,18.4,1.9,0,7);ctx.fill();
+   const hg=ctx.createLinearGradient(0,-11,0,11);hg.addColorStop(0,lt);hg.addColorStop(0.5,c);hg.addColorStop(1,dk);
+   ctx.fillStyle=hg;ctx.beginPath();ctx.moveTo(21,0);ctx.quadraticCurveTo(15,-10.5,-8,-9.2);ctx.quadraticCurveTo(-18,-5,-20,0);ctx.quadraticCurveTo(-18,5,-8,9.2);ctx.quadraticCurveTo(15,10.5,21,0);ctx.fill();
+   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.7;ctx.stroke();
+   ctx.fillStyle='#1e2226';ctx.fillRect(16,-3.2,8.5,1.8);ctx.fillRect(16,-0.6,9.5,1.8);ctx.fillRect(16,2.0,8.5,1.8);
+   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.ellipse(9.5,0,6.5,5.0,0,0,7);ctx.fill();
+   ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(11,-1.6,3.0,1.3,-0.3,0,7);ctx.fill();
   }else if(e.type==='strix'){
-   ctx.fillStyle=dk;ctx.fillRect(-30,-2.8,21,5.6);ctx.fillRect(-32,-9.5,5.5,19);
-   ctx.fillStyle=dk;ctx.fillRect(-6.5,-17.5,11.5,35);
-   ctx.fillStyle='#e4ebf2';ctx.fillRect(-4.5,-19.5,13.5,4.6);ctx.fillRect(-4.5,14.9,13.5,4.6);
-   ctx.fillStyle='#ff4d3d';ctx.fillRect(7,-19.5,2.8,4.6);ctx.fillRect(7,14.9,2.8,4.6);
+   // Ka-52 / Havoc heavy armored attack gunship
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(-10,-3.4);ctx.lineTo(-31,-1.8);ctx.lineTo(-31,1.8);ctx.lineTo(-10,3.4);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#1f2328';ctx.fillRect(-33,-10,5.5,20);
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(3,-6.5);ctx.lineTo(-5,-19);ctx.lineTo(-8,-18);ctx.lineTo(-3,-6.5);ctx.moveTo(3,6.5);ctx.lineTo(-5,19);ctx.lineTo(-8,18);ctx.lineTo(-3,6.5);ctx.fill();
+   ctx.fillStyle='#e4ebf2';ctx.beginPath();ctx.roundRect(-6,-20,13.5,4.2,1.6);ctx.roundRect(-6,15.8,13.5,4.2,1.6);ctx.fill();
+   ctx.fillStyle='#ff4d3d';ctx.beginPath();ctx.moveTo(7.5,-20);ctx.lineTo(11,-17.9);ctx.lineTo(7.5,-15.8);ctx.moveTo(7.5,20);ctx.lineTo(11,17.9);ctx.lineTo(7.5,15.8);ctx.fill();
    const sg=ctx.createLinearGradient(0,-9,0,9);sg.addColorStop(0,lt);sg.addColorStop(0.5,c);sg.addColorStop(1,dk);
-   ctx.fillStyle=sg;ctx.beginPath();ctx.moveTo(19.5,0);ctx.lineTo(8,-8.8);ctx.lineTo(-15.5,-7.8);ctx.lineTo(-18.5,0);ctx.lineTo(-15.5,7.8);ctx.lineTo(8,8.8);ctx.closePath();ctx.fill();
+   ctx.fillStyle=sg;ctx.beginPath();ctx.moveTo(21,0);ctx.lineTo(9,-9.2);ctx.lineTo(-15,-7.6);ctx.lineTo(-19,0);ctx.lineTo(-15,7.6);ctx.lineTo(9,9.2);ctx.closePath();ctx.fill();
    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.7;ctx.stroke();
-   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(7.2,-2.7,4.6,2.3,0,0,7);ctx.ellipse(2.2,2.7,4.6,2.3,0,0,7);ctx.fill();
+   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(8.0,-2.6,4.8,2.2,0,0,7);ctx.ellipse(3.0,2.6,4.8,2.2,0,0,7);ctx.fill();
   }else{
-   ctx.fillStyle=dk;ctx.fillRect(-29,-2.5,21,5);ctx.fillRect(-31,-8.5,5,17);
-   ctx.strokeStyle='#d0d8e0';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(-29,-8.5,4.2,0,7);ctx.stroke();
-   ctx.fillStyle=dk;ctx.fillRect(-5.5,-16,9.5,32);
-   ctx.fillStyle='#262b30';ctx.fillRect(-3.5,-18,12.5,4.4);ctx.fillRect(-3.5,13.6,12.5,4.4);
-   ctx.fillStyle='#ff6b5b';ctx.fillRect(7,-17.5,2.5,3.4);ctx.fillRect(7,14.1,2.5,3.4);
+   // Apache / Comanche sleek stealth gunship
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(-9,-3.0);ctx.lineTo(-30,-1.5);ctx.lineTo(-30,1.5);ctx.lineTo(-9,3.0);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#1f2328';ctx.beginPath();ctx.moveTo(-27,-1.5);ctx.lineTo(-32,-9.5);ctx.lineTo(-28.5,-9.5);ctx.lineTo(-25,-1.5);ctx.fill();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(2,-6);ctx.lineTo(-5,-18);ctx.lineTo(-8,-17);ctx.lineTo(-3,-6);ctx.moveTo(2,6);ctx.lineTo(-5,18);ctx.lineTo(-8,17);ctx.lineTo(-3,6);ctx.fill();
+   ctx.fillStyle='#262b30';ctx.beginPath();ctx.roundRect(-5,-18.5,12.5,4.0,1.6);ctx.roundRect(-5,14.5,12.5,4.0,1.6);ctx.fill();
+   ctx.fillStyle='#ff6b5b';ctx.beginPath();ctx.moveTo(7.5,-18.5);ctx.lineTo(10.5,-16.5);ctx.lineTo(7.5,-14.5);ctx.moveTo(7.5,18.5);ctx.lineTo(10.5,16.5);ctx.lineTo(7.5,14.5);ctx.fill();
    const cg=ctx.createLinearGradient(0,-8,0,8);cg.addColorStop(0,lt);cg.addColorStop(0.5,c);cg.addColorStop(1,dk);
-   ctx.fillStyle=cg;ctx.beginPath();ctx.moveTo(18.5,0);ctx.lineTo(6,-8.2);ctx.lineTo(-14.5,-6.8);ctx.lineTo(-17.5,0);ctx.lineTo(-14.5,6.8);ctx.lineTo(6,8.2);ctx.closePath();ctx.fill();
+   ctx.fillStyle=cg;ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(7,-8.6);ctx.lineTo(-14,-6.8);ctx.lineTo(-18,0);ctx.lineTo(-14,6.8);ctx.lineTo(7,8.6);ctx.closePath();ctx.fill();
    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.7;ctx.stroke();
-   ctx.fillStyle='#1d2226';ctx.fillRect(15.5,-1.6,7.0,3.2);ctx.beginPath();ctx.arc(17.5,0,3.0,0,7);ctx.fill();
-   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.ellipse(6.2,0,7.0,4.2,0,0,7);ctx.fill();ctx.strokeStyle='#182028';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='rgba(255,255,255,.48)';ctx.beginPath();ctx.ellipse(7.5,-1.3,3.2,1.3,-0.25,0,7);ctx.fill();
+   ctx.fillStyle='#1d2226';ctx.fillRect(16.5,-1.5,7.2,3.0);ctx.beginPath();ctx.arc(18.5,0,2.8,0,7);ctx.fill();
+   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.ellipse(6.8,0,7.2,4.0,0,0,7);ctx.fill();ctx.strokeStyle='#182028';ctx.lineWidth=1.1;ctx.stroke();
+   ctx.fillStyle='rgba(255,255,255,.48)';ctx.beginPath();ctx.ellipse(8.2,-1.3,3.2,1.2,-0.25,0,7);ctx.fill();
   }
-  ctx.fillStyle='rgba(210,230,255,.15)';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();
-  ctx.save();ctx.rotate(G.t*30);ctx.strokeStyle='rgba(18,22,26,.88)';ctx.lineWidth=2.8;
-  ctx.beginPath();ctx.moveTo(-25,0);ctx.lineTo(25,0);ctx.moveTo(0,-25);ctx.lineTo(0,25);ctx.stroke();
-  ctx.strokeStyle='rgba(255,235,130,.65)';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,24.5,0,7);ctx.stroke();
+  ctx.fillStyle='rgba(210,230,255,.14)';ctx.beginPath();ctx.arc(0,0,26,0,7);ctx.fill();
+  ctx.save();ctx.rotate(G.t*32);ctx.strokeStyle='rgba(18,22,26,.88)';ctx.lineWidth=2.8;
+  ctx.beginPath();ctx.moveTo(-26,0);ctx.lineTo(26,0);ctx.moveTo(0,-26);ctx.lineTo(0,26);ctx.stroke();
+  ctx.strokeStyle='rgba(255,235,130,.65)';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,25.5,0,7);ctx.stroke();
   ctx.restore();
   ctx.fillStyle='#2b3036';ctx.beginPath();ctx.arc(0,0,3.6,0,7);ctx.fill();
+
+ // ==================== 3. JETS & BOMBERS (AERODYNAMIC AIRFRAMES) ====================
  }else if(sh==='jet'){
   ctx.rotate(e.ang);
   ctx.save();ctx.translate(3,4);ctx.fillStyle='rgba(0,0,0,.38)';jetShape();ctx.restore();
   if(e.type==='aurora'){
+   // Hypersonic Aurora delta-wing bomber with twin scramjet nacelles & shock cones
    ctx.fillStyle='#eef3f8';ctx.strokeStyle='#141920';ctx.lineWidth=1.6;
-   ctx.beginPath();ctx.moveTo(27,0);ctx.lineTo(-10.5,-19.5);ctx.lineTo(-21.5,-19.5);ctx.lineTo(-15.5,-5.2);ctx.lineTo(-22.5,0);ctx.lineTo(-15.5,5.2);ctx.lineTo(-21.5,19.5);ctx.lineTo(-10.5,19.5);ctx.closePath();ctx.fill();ctx.stroke();
-   ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(18.5,0);ctx.lineTo(-12.5,-9.5);ctx.lineTo(-16.5,0);ctx.lineTo(-12.5,9.5);ctx.closePath();ctx.fill();
-   ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.ellipse(10.5,0,6.5,2.5,0,0,7);ctx.fill();
-   ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.ellipse(11.5,-0.8,3.5,1.0,0,0,7);ctx.fill();
+   ctx.beginPath();ctx.moveTo(29,0);ctx.lineTo(8,-5.5);ctx.lineTo(-11.5,-21.5);ctx.lineTo(-22.5,-20.5);ctx.lineTo(-16.5,-5.8);ctx.lineTo(-24,0);ctx.lineTo(-16.5,5.8);ctx.lineTo(-22.5,20.5);ctx.lineTo(-11.5,21.5);ctx.lineTo(8,5.5);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(-13,-10.5);ctx.lineTo(-17.5,0);ctx.lineTo(-13,10.5);ctx.closePath();ctx.fill();
+   // Twin engine nacelles
+   ctx.fillStyle='#2b323b';ctx.beginPath();ctx.roundRect(-19,-7.2,14,3.4,1.4);ctx.roundRect(-19,3.8,14,3.4,1.4);ctx.fill();
+   ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.ellipse(11.5,0,7.0,2.5,0,0,7);ctx.fill();
+   ctx.fillStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.ellipse(12.5,-0.8,3.6,1.0,0,0,7);ctx.fill();
    if(!e.parked){
-    const fl=8+dSin(G.t*58+e.id)*3.5;
-    ctx.fillStyle='rgba(92,225,255,.92)';ctx.beginPath();ctx.ellipse(-23-fl*0.5,-3.6,fl,2.6,0,0,7);ctx.ellipse(-23-fl*0.5,3.6,fl,2.6,0,0,7);ctx.fill();
-    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(-21.5,-3.6,2.2,0,7);ctx.arc(-21.5,3.6,2.2,0,7);ctx.fill();
+    const fl=9+dSin(G.t*58+e.id)*3.8;
+    ctx.fillStyle='rgba(92,225,255,.92)';ctx.beginPath();ctx.ellipse(-24-fl*0.5,-5.5,fl,2.6,0,0,7);ctx.ellipse(-24-fl*0.5,5.5,fl,2.6,0,0,7);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(-22.5,-5.5,2.2,0,7);ctx.arc(-22.5,5.5,2.2,0,7);ctx.fill();
    }
   }else if(e.type==='raven'){
-   const rg=ctx.createLinearGradient(0,-22,0,22);rg.addColorStop(0,lt);rg.addColorStop(0.5,c);rg.addColorStop(1,dk);
+   // Heavy swept-wing tactical bomber with underwing munitions
+   const rg=ctx.createLinearGradient(0,-23,0,23);rg.addColorStop(0,lt);rg.addColorStop(0.5,c);rg.addColorStop(1,dk);
    ctx.fillStyle=rg;ctx.strokeStyle='#141920';ctx.lineWidth=1.6;
-   ctx.beginPath();ctx.moveTo(25,0);ctx.lineTo(4,-5.2);ctx.lineTo(-8.5,-22.5);ctx.lineTo(-15.5,-21.5);ctx.lineTo(-7.5,-5.2);ctx.lineTo(-19.5,-4.2);ctx.lineTo(-23.5,-10.5);ctx.lineTo(-23.5,10.5);ctx.lineTo(-19.5,4.2);ctx.lineTo(-7.5,5.2);ctx.lineTo(-15.5,21.5);ctx.lineTo(-8.5,22.5);ctx.lineTo(4,5.2);ctx.closePath();ctx.fill();ctx.stroke();
-   ctx.fillStyle=dk;ctx.fillRect(-14.5,-3.8,27,7.6);
-   ctx.fillStyle='#ff4d3d';ctx.fillRect(-10.5,-15.5,5.5,2.8);ctx.fillRect(-10.5,12.7,5.5,2.8);
-   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(11.5,0,5.8,3.2,0,0,7);ctx.fill();
+   ctx.beginPath();ctx.moveTo(27,0);ctx.lineTo(6,-5.4);ctx.lineTo(-8.5,-23.5);ctx.lineTo(-16.0,-22.0);ctx.lineTo(-8.0,-5.4);ctx.lineTo(-20.5,-4.4);ctx.lineTo(-24.5,-11.2);ctx.lineTo(-24.5,11.2);ctx.lineTo(-20.5,4.4);ctx.lineTo(-8.0,5.4);ctx.lineTo(-16.0,22.0);ctx.lineTo(-8.5,23.5);ctx.lineTo(6,5.4);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(-15.5,-3.8,29,7.6,3.0);ctx.fill();
+   ctx.fillStyle='#ff4d3d';ctx.beginPath();ctx.roundRect(-11.0,-16.2,6.2,2.8,1.2);ctx.roundRect(-11.0,13.4,6.2,2.8,1.2);ctx.fill();
+   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(12.5,0,6.2,3.2,0,0,7);ctx.fill();
   }else if(e.type==='firebird'){
-   ctx.fillStyle='#ff7722';ctx.fillRect(-7.5,-18.0,11.5,3.0);ctx.fillRect(-7.5,15.0,11.5,3.0);
-   const fg=ctx.createLinearGradient(0,-17,0,17);fg.addColorStop(0,lt);fg.addColorStop(0.5,c);fg.addColorStop(1,dk);
+   // Forward-swept / MiG-style strike fighter with napalm pods
+   ctx.fillStyle='#ff7722';ctx.beginPath();ctx.roundRect(-7.5,-18.5,12.0,3.2,1.4);ctx.roundRect(-7.5,15.3,12.0,3.2,1.4);ctx.fill();
+   const fg=ctx.createLinearGradient(0,-18,0,18);fg.addColorStop(0,lt);fg.addColorStop(0.5,c);fg.addColorStop(1,dk);
    ctx.fillStyle=fg;jetShape();ctx.strokeStyle='#141920';ctx.lineWidth=1.4;ctx.stroke();
-   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(9.5,-3.2);ctx.lineTo(3,-9.5);ctx.lineTo(0,-8.5);ctx.lineTo(4,-3.2);ctx.moveTo(9.5,3.2);ctx.lineTo(3,9.5);ctx.lineTo(0,8.5);ctx.lineTo(4,3.2);ctx.fill();
-   ctx.fillStyle='#ffd34d';ctx.fillRect(-11.5,-2.4,21,4.8);
-   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(9.5,0,5.5,2.8,0,0,7);ctx.fill();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.moveTo(10.5,-3.2);ctx.lineTo(3,-10.2);ctx.lineTo(0,-9.0);ctx.lineTo(4,-3.2);ctx.moveTo(10.5,3.2);ctx.lineTo(3,10.2);ctx.lineTo(0,9.0);ctx.lineTo(4,3.2);ctx.fill();
+   ctx.fillStyle='#ffd34d';ctx.beginPath();ctx.roundRect(-11.5,-2.4,22,4.8,2.0);ctx.fill();
+   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(10.2,0,5.8,2.8,0,0,7);ctx.fill();
   }else{
-   ctx.fillStyle='#eef3f8';ctx.fillRect(-8.5,-19.0,10.5,2.4);ctx.fillRect(-8.5,16.6,10.5,2.4);
-   ctx.fillStyle='#ff4d3d';ctx.fillRect(0,-19.0,2.8,2.4);ctx.fillRect(0,16.6,2.8,2.4);
-   const jg=ctx.createLinearGradient(0,-17,0,17);jg.addColorStop(0,lt);jg.addColorStop(0.5,c);jg.addColorStop(1,dk);
+   // Raptor / Falcon stealth air-superiority fighter with wingtip Sidewinders & chined fuselage
+   ctx.fillStyle='#eef3f8';ctx.beginPath();ctx.roundRect(-9.0,-19.5,11.5,2.4,1.0);ctx.roundRect(-9.0,17.1,11.5,2.4,1.0);ctx.fill();
+   ctx.fillStyle='#ff4d3d';ctx.beginPath();ctx.moveTo(2.5,-19.5);ctx.lineTo(5.8,-18.3);ctx.lineTo(2.5,-17.1);ctx.moveTo(2.5,19.5);ctx.lineTo(5.8,18.3);ctx.lineTo(2.5,17.1);ctx.fill();
+   const jg=ctx.createLinearGradient(0,-18,0,18);jg.addColorStop(0,lt);jg.addColorStop(0.5,c);jg.addColorStop(1,dk);
    ctx.fillStyle=jg;jetShape();ctx.strokeStyle='#141920';ctx.lineWidth=1.4;ctx.stroke();
-   ctx.fillStyle=dk;ctx.fillRect(-13.5,-2.6,25,5.2);
-   ctx.fillStyle='rgba(255,255,255,.28)';ctx.beginPath();ctx.moveTo(16.5,0);ctx.lineTo(-4,-15.5);ctx.lineTo(-2,-15.5);ctx.lineTo(18.5,0);ctx.fill();
-   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(9.5,0,5.6,2.9,0,0,7);ctx.fill();
-   ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(10.5,-1.0,2.8,1.1,-0.2,0,7);ctx.fill();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(-14.0,-2.8,26,5.6,2.4);ctx.fill();
+   ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.moveTo(17.5,0);ctx.lineTo(-4,-16.0);ctx.lineTo(-2,-16.0);ctx.lineTo(19.5,0);ctx.fill();
+   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.ellipse(10.0,0,6.0,3.0,0,0,7);ctx.fill();
+   ctx.fillStyle='rgba(255,255,255,.52)';ctx.beginPath();ctx.ellipse(11.0,-1.0,3.0,1.1,-0.2,0,7);ctx.fill();
   }
   ctx.fillStyle='#1d2226';ctx.fillRect(-21.5,-5.2,3.2,3.7);ctx.fillRect(-21.5,1.5,3.2,3.7);
   if(!e.parked&&e.type!=='aurora'){
-   const fl=5.2+(dSin(G.t*48+e.id)*2.5);
+   const fl=5.6+(dSin(G.t*48+e.id)*2.6);
    ctx.fillStyle='rgba(255,145,35,.92)';ctx.beginPath();ctx.ellipse(-22.5-fl*0.4,-3.3,fl,2.3,0,0,7);ctx.ellipse(-22.5-fl*0.4,3.3,fl,2.3,0,0,7);ctx.fill();
    ctx.fillStyle='#fff8c4';ctx.beginPath();ctx.arc(-21.5,-3.3,1.9,0,7);ctx.arc(-21.5,3.3,1.9,0,7);ctx.fill();
-   ctx.strokeStyle='rgba(240,248,255,.38)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-7,-17);ctx.lineTo(-28,-17);ctx.moveTo(-7,17);ctx.lineTo(-28,17);ctx.stroke();
+   ctx.strokeStyle='rgba(240,248,255,.42)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-7,-17);ctx.lineTo(-30,-17);ctx.moveTo(-7,17);ctx.lineTo(-30,17);ctx.stroke();
   }
+
+ // ==================== 4. REALISTIC ARMORED VEHICLES & TANKS (NO BOXES!) ====================
  }else{
-  const L=e.r*2.14,Wd=e.r*1.52;
+  const L=e.r*2.26,Wd=e.r*1.60;
   ctx.rotate(e.ang);
-  ctx.fillStyle='rgba(0,0,0,.46)';ctx.fillRect(-L/2+4,-Wd/2+4,L+1,Wd+1);
+  // Soft grounded shadow
+  ctx.fillStyle='rgba(0,0,0,.48)';ctx.beginPath();ctx.roundRect(-L/2+3,-Wd/2+3,L+2,Wd+2,5);ctx.fill();
   const wheeled=sh==='jeep'||sh==='rbuggy'||sh==='truck'||e.type==='battlebus';
   ctx.fillStyle='#14171a';
   if(wheeled){
    const nw=e.type==='battlebus'?3:2;
    for(let wi=0;wi<nw;wi++){
     const wx=-L/2+2+wi*((L-10)/(nw-1));
-    for(const wy of [-Wd/2-2.8,Wd/2-2.4]){
-     ctx.fillStyle='#14171a';ctx.fillRect(wx,wy,7.5,5.2);
-     ctx.fillStyle='#4a525a';ctx.fillRect(wx+1.8,wy+1.2,3.8,2.8);
-     ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.strokeRect(wx,wy,7.5,5.2);
+    for(const wy of [-Wd/2-3.0,Wd/2-2.4]){
+     ctx.fillStyle='#14171a';ctx.beginPath();ctx.roundRect(wx,wy,8.0,5.4,1.8);ctx.fill();
+     ctx.fillStyle='#5c6570';ctx.beginPath();ctx.roundRect(wx+2.0,wy+1.2,4.0,3.0,1.0);ctx.fill();
+     ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.stroke();
     }
    }
   }else{
-   ctx.fillStyle='#14171a';ctx.fillRect(-L/2-1.8,-Wd/2-3.6,L+3.6,6.4);ctx.fillRect(-L/2-1.8,Wd/2-2.8,L+3.6,6.4);
-   ctx.fillStyle='#4b525a';
-   const off=e.moving?((G.t*32)%6):0;
-   for(let tx=-L/2+off;tx<L/2-1;tx+=5.5){ctx.fillRect(tx,-Wd/2-3.2,2.8,5.4);ctx.fillRect(tx,Wd/2-2.2,2.8,5.4);}
-   ctx.fillStyle='#2a2f35';
-   for(let rx=-L/2+4;rx<=L/2-4;rx+=5.2){ctx.beginPath();ctx.arc(rx,-Wd/2-0.4,1.5,0,7);ctx.arc(rx,Wd/2+0.4,1.5,0,7);ctx.fill();}
+   // Rounded heavy caterpillar tracks with drive sprockets, road wheels & animated treads
+   ctx.fillStyle='#14171a';
+   ctx.beginPath();ctx.roundRect(-L/2-2.2,-Wd/2-3.8,L+4.4,6.6,3.0);ctx.fill();
+   ctx.beginPath();ctx.roundRect(-L/2-2.2,Wd/2-2.8,L+4.4,6.6,3.0);ctx.fill();
+   ctx.fillStyle='#525a63';
+   const off=e.moving?((G.t*34)%6):0;
+   for(let tx=-L/2+off;tx<L/2-1;tx+=5.5){ctx.fillRect(tx,-Wd/2-3.3,2.8,5.4);ctx.fillRect(tx,Wd/2-2.3,2.8,5.4);}
+   ctx.fillStyle='#2d333a';
+   for(let rx=-L/2+4;rx<=L/2-4;rx+=5.2){ctx.beginPath();ctx.arc(rx,-Wd/2-0.5,1.6,0,7);ctx.arc(rx,Wd/2+0.5,1.6,0,7);ctx.fill();}
   }
   const hg=ctx.createLinearGradient(0,-Wd/2,0,Wd/2);
   hg.addColorStop(0,lt);hg.addColorStop(0.45,c);hg.addColorStop(1,dk);
   ctx.fillStyle=hg;ctx.strokeStyle='#0d1117';ctx.lineWidth=1.6;
+
   if(sh==='dozer'){
-   ctx.fillRect(-L/2+1,-Wd/2+2,L-6,Wd-4);ctx.strokeRect(-L/2+1,-Wd/2+2,L-6,Wd-4);
-   ctx.fillStyle='#9fe3ff';ctx.fillRect(-4,-5.5,8,11);ctx.strokeStyle=dk;ctx.strokeRect(-4,-5.5,8,11);
-   ctx.fillStyle='#ffd34d';ctx.fillRect(-L/2+3,-Wd/2+3,4,Wd-6);
-   ctx.fillStyle='#ebd028';ctx.fillRect(L/2-4,-Wd/2-5.8,6.8,Wd+11.6);ctx.strokeStyle='#5e4800';ctx.lineWidth=1.1;ctx.strokeRect(L/2-4,-Wd/2-5.8,6.8,Wd+11.6);
-   ctx.fillStyle='#2b2f35';ctx.fillRect(L/2-8.5,-Wd/2+2,4.8,3.2);ctx.fillRect(L/2-8.5,Wd/2-5.2,4.8,3.2);
+   // Tapered engine hood, roll-cage cab, hydraulic arms & curved bulldozer blade
+   ctx.beginPath();ctx.roundRect(-L/2+1,-Wd/2+2,L-6,Wd-4,3.5);ctx.fill();ctx.stroke();
+   ctx.fillStyle=dk;ctx.fillRect(-L/2+3,-Wd/2+3.5,L*0.44,Wd-7);
+   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.roundRect(-3.5,-5.8,8.5,11.6,1.6);ctx.fill();ctx.strokeStyle=dk;ctx.stroke();
+   // Hydraulic lift arms
+   ctx.strokeStyle='#3a4048';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(2,-Wd/2+1);ctx.lineTo(L/2-2,-Wd/2-2);ctx.moveTo(2,Wd/2-1);ctx.lineTo(L/2-2,Wd/2+2);ctx.stroke();
+   // Curved heavy steel blade
+   ctx.fillStyle='#ebd028';ctx.beginPath();ctx.moveTo(L/2-4,-Wd/2-6.2);ctx.quadraticCurveTo(L/2+4,0,L/2-4,Wd/2+6.2);ctx.lineTo(L/2+2.5,Wd/2+6.2);ctx.quadraticCurveTo(L/2+8,0,L/2+2.5,-Wd/2-6.2);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#5e4800';ctx.lineWidth=1.1;ctx.stroke();
   }
   else if(sh==='truck'){
-   ctx.fillStyle='#4a4233';ctx.fillRect(-L/2,-Wd/2+1,L-10,Wd-2);ctx.strokeStyle='#221e16';ctx.strokeRect(-L/2,-Wd/2+1,L-10,Wd-2);
-   ctx.fillStyle=hg;ctx.fillRect(L/2-10,-Wd/2+1,10,Wd-2);ctx.strokeStyle='#0d1117';ctx.strokeRect(L/2-10,-Wd/2+1,10,Wd-2);
-   ctx.fillStyle='#a8e8ff';ctx.fillRect(L/2-5,-Wd/2+3,3.8,Wd-6);
+   // 6x6 military cargo truck with ribbed canvas/steel bed & angled cab
+   ctx.fillStyle='#4a4233';ctx.beginPath();ctx.roundRect(-L/2,-Wd/2+1,L-11,Wd-2,2.5);ctx.fill();ctx.strokeStyle='#221e16';ctx.stroke();
+   ctx.fillStyle=hg;ctx.beginPath();ctx.moveTo(L/2-11,-Wd/2+1);ctx.lineTo(L/2-2,-Wd/2+2.2);ctx.lineTo(L/2+1,-Wd/2+4.5);ctx.lineTo(L/2+1,Wd/2-4.5);ctx.lineTo(L/2-2,Wd/2-2.2);ctx.lineTo(L/2-11,Wd/2-1);ctx.closePath();ctx.fill();ctx.strokeStyle='#0d1117';ctx.stroke();
+   ctx.fillStyle='#a8e8ff';ctx.beginPath();ctx.roundRect(L/2-5.5,-Wd/2+3.2,4.0,Wd-6.4,1.2);ctx.fill();
    if(e.carry>0){ctx.fillStyle='#d4a64f';ctx.fillRect(-L/2+2,-6,7,5.5);ctx.fillRect(-L/2+10,-6,7,5.5);ctx.fillRect(-L/2+2,0.5,7,5.5);ctx.fillRect(-L/2+10,0.5,7,5.5);}
   }
   else if(sh==='jeep'){
-   ctx.fillRect(-L/2+2,-Wd/2+2,L-4,Wd-4);ctx.strokeRect(-L/2+2,-Wd/2+2,L-4,Wd-4);
-   ctx.fillStyle=dk;ctx.fillRect(-L/2+3,-Wd/2+3.5,L*0.42,Wd-7);
-   ctx.fillStyle='#9fe3ff';ctx.fillRect(2,-Wd/2+3.5,4.8,Wd-7);
+   // Tapered Humvee / Technical chassis with hood louvers, bullbar & pintle-mounted gun
+   ctx.beginPath();ctx.moveTo(-L/2+2,-Wd/2+2);ctx.lineTo(L/2-4,-Wd/2+2.4);ctx.lineTo(L/2+2,-Wd/2+5.2);ctx.lineTo(L/2+2,Wd/2-5.2);ctx.lineTo(L/2-4,Wd/2-2.4);ctx.lineTo(-L/2+2,Wd/2-2);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle=dk;ctx.fillRect(-L/2+3,-Wd/2+3.8,L*0.42,Wd-7.6);
+   ctx.fillStyle='#9fe3ff';ctx.beginPath();ctx.roundRect(2,-Wd/2+3.8,5.0,Wd-7.6,1.2);ctx.fill();
    ctx.rotate((e.tgt?dAtan2(e.tgt.y-e.y,e.tgt.x-e.x)-e.ang:0));
-   ctx.fillStyle='#262b30';ctx.beginPath();ctx.arc(-2,0,5.0,0,7);ctx.fill();
-   ctx.strokeStyle='#14171a';ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(L/2+6.5,0);ctx.stroke();
+   ctx.fillStyle='#262b30';ctx.beginPath();ctx.arc(-2,0,5.2,0,7);ctx.fill();
+   ctx.strokeStyle='#14171a';ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(L/2+7.5,0);ctx.stroke();
   }
   else if(sh==='rbuggy'){
-   ctx.fillRect(-L/2+2,-Wd/2+2,L-4,Wd-4);ctx.strokeRect(-L/2+2,-Wd/2+2,L-4,Wd-4);
-   ctx.fillStyle='#363c42';ctx.fillRect(-L/2+2,-7.8,L*0.65,15.6);
-   for(let i=0;i<4;i++){ctx.fillStyle='#e8eef5';ctx.fillRect(-L/2+4,-6.2+i*3.7,L*0.55,2.5);ctx.fillStyle='#ff5b4a';ctx.fillRect(-L/2+4+L*0.51,-6.2+i*3.7,3.0,2.5);}
+   // Tapered desert dune-buggy frame with tubular roll-cage & angled MLRS pod
+   ctx.beginPath();ctx.moveTo(-L/2+2,-Wd/2+2.5);ctx.lineTo(L/2-5,-Wd/2+3.5);ctx.lineTo(L/2+2,0);ctx.lineTo(L/2-5,Wd/2-3.5);ctx.lineTo(-L/2+2,Wd/2-2.5);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle='#363c42';ctx.beginPath();ctx.roundRect(-L/2+2,-7.8,L*0.66,15.6,2.2);ctx.fill();
+   for(let i=0;i<4;i++){ctx.fillStyle='#e8eef5';ctx.fillRect(-L/2+4,-6.2+i*3.7,L*0.56,2.5);ctx.fillStyle='#ff5b4a';ctx.beginPath();ctx.arc(-L/2+4+L*0.57,-5.0+i*3.7,1.5,0,7);ctx.fill();}
   }
   else if(sh==='flame'){
-   ctx.fillRect(-L/2+1,-Wd/2+2,L-2,Wd-4);ctx.strokeRect(-L/2+1,-Wd/2+2,L-2,Wd-4);
+   // Sloped Dragon/Inferno chassis with pressurized fuel cylinders & twin nozzle shroud
+   ctx.beginPath();ctx.moveTo(-L/2+1,-Wd/2+2);ctx.lineTo(L/2-4,-Wd/2+2.4);ctx.lineTo(L/2+2,0);ctx.lineTo(L/2-4,Wd/2-2.4);ctx.lineTo(-L/2+1,Wd/2-2);ctx.closePath();ctx.fill();ctx.stroke();
    ctx.fillStyle=e.type==='demo_truck'?'#6bd938':'#d96b19';
-   ctx.fillRect(-L/2+3,-Wd/2+3,10.5,5.8);ctx.fillRect(-L/2+3,Wd/2-8.8,10.5,5.8);
-   ctx.fillStyle=dk;ctx.beginPath();ctx.arc(0,0,7.2,0,7);ctx.fill();ctx.strokeStyle=lt;ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='#262a2e';ctx.fillRect(0,-4.0,L/2+6,8.0);
-   ctx.fillStyle=e.type==='demo_truck'?'#8aff4d':'#ff9a2a';ctx.fillRect(L/2+4,-3.0,4.0,6.0);
+   ctx.beginPath();ctx.roundRect(-L/2+3,-Wd/2+3,11.5,5.8,2.5);ctx.roundRect(-L/2+3,Wd/2-8.8,11.5,5.8,2.5);ctx.fill();
+   ctx.fillStyle=dk;ctx.beginPath();ctx.arc(0,0,7.6,0,7);ctx.fill();ctx.strokeStyle=lt;ctx.lineWidth=1.1;ctx.stroke();
+   ctx.fillStyle='#262a2e';ctx.beginPath();ctx.roundRect(0,-4.2,L/2+6.5,8.4,2.0);ctx.fill();
+   ctx.fillStyle=e.type==='demo_truck'?'#8aff4d':'#ff9a2a';ctx.fillRect(L/2+4.5,-3.0,4.2,6.0);
   }
   else{
-   ctx.fillStyle='rgba(0,0,0,.38)';ctx.fillRect(-L/2+3,-Wd/2+4,L,Wd);
+   // Sloped composite glacis hull (chamfered front beak + rear engine deck + side skirts)
    ctx.fillStyle=hg;
    ctx.beginPath();
-   ctx.moveTo(-L/2+1,-Wd/2+1.5);ctx.lineTo(L/2-4,-Wd/2+1.5);ctx.lineTo(L/2+1,-Wd/2+4.5);
-   ctx.lineTo(L/2+1,Wd/2-4.5);ctx.lineTo(L/2-4,Wd/2-1.5);ctx.lineTo(-L/2+1,Wd/2-1.5);ctx.closePath();
+   ctx.moveTo(-L/2+2,-Wd/2+1.5);
+   ctx.lineTo(L/2-5,-Wd/2+1.5);
+   ctx.lineTo(L/2+2.5,-Wd/2+5.5);
+   ctx.lineTo(L/2+2.5,Wd/2-5.5);
+   ctx.lineTo(L/2-5,Wd/2-1.5);
+   ctx.lineTo(-L/2+2,Wd/2-1.5);
+   ctx.lineTo(-L/2-1,0);
+   ctx.closePath();
    ctx.fill();ctx.stroke();
-   ctx.strokeStyle='rgba(255,255,255,.38)';ctx.lineWidth=1.1;
-   ctx.beginPath();ctx.moveTo(-L/2+2,-Wd/2+2.2);ctx.lineTo(L/2-4.5,-Wd/2+2.2);ctx.stroke();
-   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.5;
+   // Upper glacis specular bevel & reactive armor skirts
+   ctx.strokeStyle='rgba(255,255,255,.42)';ctx.lineWidth=1.2;
+   ctx.beginPath();ctx.moveTo(-L/2+2,-Wd/2+2.3);ctx.lineTo(L/2-5.2,-Wd/2+2.3);ctx.lineTo(L/2+1.5,-Wd/2+5.8);ctx.stroke();
    ctx.fillStyle=dk;
-   for(let sx=-L/2+4;sx<L/2-6;sx+=7){ctx.fillRect(sx,-Wd/2+1.5,5.2,2.3);ctx.fillRect(sx,Wd/2-3.8,5.2,2.3);}
-   ctx.fillStyle='#20252a';ctx.fillRect(-L/2+3,-Wd/2+4.5,6.8,Wd*0.36);ctx.fillRect(-L/2+3,Wd/2-4.5-Wd*0.36,6.8,Wd*0.36);
-   ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(L/2-5,-Wd/2+3.5);ctx.lineTo(L/2-5,Wd/2-3.5);ctx.stroke();
-   ctx.fillStyle='#fff8c4';ctx.fillRect(L/2-2,-Wd/2+3.5,2.2,2.6);ctx.fillRect(L/2-2,Wd/2-6.1,2.2,2.6);
+   for(let sx=-L/2+4;sx<L/2-6;sx+=7){ctx.beginPath();ctx.roundRect(sx,-Wd/2+1.5,5.5,2.4,0.8);ctx.roundRect(sx,Wd/2-3.9,5.5,2.4,0.8);ctx.fill();}
+   // Rear engine radiator grilles
+   ctx.fillStyle='#1d2227';ctx.beginPath();ctx.roundRect(-L/2+3,-Wd/2+4.5,7.2,Wd*0.36,1.2);ctx.roundRect(-L/2+3,Wd/2-4.5-Wd*0.36,7.2,Wd*0.36,1.2);ctx.fill();
+   // Sloped front glacis weld seam & headlights
+   ctx.strokeStyle='rgba(255,255,255,.32)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(L/2-5,-Wd/2+3.5);ctx.lineTo(L/2-5,Wd/2-3.5);ctx.stroke();
+   ctx.fillStyle='#fff8c4';ctx.beginPath();ctx.arc(L/2-1.5,-Wd/2+5.2,1.5,0,7);ctx.arc(L/2-1.5,Wd/2-5.2,1.5,0,7);ctx.fill();
    if(e.type==='battlebus'){
-    ctx.fillStyle=dk;ctx.fillRect(-L/2+5,-Wd/2+4.5,L-10,Wd-9);ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.2;ctx.strokeRect(-L/2+5,-Wd/2+4.5,L-10,Wd-9);
+    ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(-L/2+5,-Wd/2+4.5,L-10,Wd-9,2.5);ctx.fill();ctx.strokeStyle='#ffd34d';ctx.lineWidth=1.2;ctx.stroke();
     ctx.fillStyle='#9fe3ff';for(let bi=-L/2+7;bi<L/2-7;bi+=6){ctx.fillRect(bi,-Wd/2+5.5,3.6,2.1);ctx.fillRect(bi,Wd/2-7.6,3.6,2.1);}
    }
+
+   // Rotating Turret & Weapons Assembly
    ctx.rotate(e.tang-e.ang);
-   const rec=(e.recT&&e.recT>G.t)?-(e.recT-G.t)*30:0;
+   const rec=(e.recT&&e.recT>G.t)?-(e.recT-G.t)*32:0;
    ctx.save();ctx.translate(rec,0);
    ctx.fillStyle='#1f2328';
    if(sh==='arty'){
     if(e.type==='nuke_cannon'){
-     ctx.fillStyle='#3b4248';ctx.fillRect(-6,-5.2,L*1.2,10.4);
-     ctx.fillStyle='#ffd34d';ctx.fillRect(L*0.45,-5.2,5.2,10.4);ctx.fillStyle='#ff4d3d';ctx.fillRect(L*0.85,-5.8,6.2,11.6);
-     ctx.fillStyle='#181c20';ctx.fillRect(L*1.08,-6.8,6.2,13.6);
+     // Massive tapered nuclear cannon barrel with recoil recuperator & muzzle brake
+     ctx.fillStyle='#3b4248';ctx.beginPath();ctx.roundRect(-6,-5.4,L*1.22,10.8,2.2);ctx.fill();
+     ctx.fillStyle='#ffd34d';ctx.fillRect(L*0.45,-5.4,5.4,10.8);ctx.fillStyle='#ff4d3d';ctx.fillRect(L*0.85,-6.0,6.4,12.0);
+     ctx.fillStyle='#181c20';ctx.beginPath();ctx.roundRect(L*1.10,-7.0,6.6,14.0,1.6);ctx.fill();
     }else{
-     ctx.fillRect(-2,-4.0,L*1.06,8.0);ctx.fillStyle=dk;ctx.fillRect(2,-5.0,11.5,10.0);ctx.fillStyle='#4a5058';ctx.fillRect(L*0.95,-5.2,5.8,10.4);
+     ctx.beginPath();ctx.roundRect(-2,-4.0,L*1.08,8.0,2.0);ctx.fill();
+     ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(2,-5.2,12.0,10.4,2.0);ctx.fill();
+     ctx.fillStyle='#4a5058';ctx.beginPath();ctx.roundRect(L*0.96,-5.4,6.2,10.8,1.5);ctx.fill();
     }
    }else if(sh==='heavy'){
-    ctx.fillRect(0,-8.2,L*0.92,5.4);ctx.fillRect(0,2.8,L*0.92,5.4);
-    ctx.fillStyle=dk;ctx.fillRect(2,-8.8,11.5,6.6);ctx.fillRect(2,2.2,11.5,6.6);
-    ctx.fillStyle='#111';ctx.fillRect(L*0.87,-8.8,4.8,6.6);ctx.fillRect(L*0.87,2.2,4.8,6.6);
+    // Twin super-heavy tank cannons with thermal sleeves & slotted muzzle brakes
+    ctx.beginPath();ctx.roundRect(0,-8.4,L*0.94,5.4,1.6);ctx.roundRect(0,3.0,L*0.94,5.4,1.6);ctx.fill();
+    ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(2,-9.0,12.0,6.6,1.6);ctx.roundRect(2,2.4,12.0,6.6,1.6);ctx.fill();
+    ctx.fillStyle='#111';ctx.fillRect(L*0.88,-9.0,5.2,6.6);ctx.fillRect(L*0.88,2.4,5.2,6.6);
    }else if(sh==='aa'){
     if(e.type==='avenger'){
-     ctx.fillStyle='#3a4b5e';ctx.fillRect(-5,-6.8,19.5,13.6);ctx.fillStyle='#5ce1ff';ctx.fillRect(10.5,-5.2,9.5,3.7);ctx.fillRect(10.5,1.5,9.5,3.7);
+     ctx.fillStyle='#3a4b5e';ctx.beginPath();ctx.roundRect(-5,-7.0,20.0,14.0,2.4);ctx.fill();
+     ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.roundRect(10.5,-5.4,10.0,3.8,1.4);ctx.roundRect(10.5,1.6,10.0,3.8,1.4);ctx.fill();
     }else{
-     for(let i=-1;i<=1;i++)ctx.fillRect(0,i*4-1.4,L*0.82,2.8);
-     ctx.fillStyle='#4a5058';ctx.fillRect(L*0.58,-5.8,3.2,11.6);
+     for(let i=-1;i<=1;i++){ctx.beginPath();ctx.roundRect(0,i*4-1.4,L*0.84,2.8,1.0);ctx.fill();}
+     ctx.fillStyle='#4a5058';ctx.fillRect(L*0.58,-6.0,3.4,12.0);
     }
    }else if(sh==='sam'){
-    ctx.fillStyle='#e4ebf2';ctx.fillRect(-4,-9.8,L*0.7,7.0);ctx.fillRect(-4,2.8,L*0.7,7.0);
-    ctx.fillStyle='#c93b2b';ctx.fillRect(L*0.60,-9.8,3.6,7.0);ctx.fillRect(L*0.60,2.8,3.6,7.0);
+    ctx.fillStyle='#e4ebf2';ctx.beginPath();ctx.roundRect(-4,-10.0,L*0.72,7.2,2.0);ctx.roundRect(-4,2.8,L*0.72,7.2,2.0);ctx.fill();
+    ctx.fillStyle='#c93b2b';ctx.beginPath();ctx.moveTo(L*0.62,-10.0);ctx.lineTo(L*0.76,-6.4);ctx.lineTo(L*0.62,-2.8);ctx.moveTo(L*0.62,10.0);ctx.lineTo(L*0.76,6.4);ctx.lineTo(L*0.62,2.8);ctx.fill();
    }else if(sh==='mlrs'){
-    ctx.fillStyle='#4a525a';ctx.fillRect(-9,-9.8,L*0.82,19.6);ctx.fillStyle='#d8e0e8';
-    for(let i=0;i<3;i++){ctx.fillRect(-7,-8.0+i*5.8,L*0.76,3.8);ctx.fillStyle='#ff5b4a';ctx.fillRect(-7+L*0.70,-8.0+i*5.8,3.2,3.8);ctx.fillStyle='#d8e0e8';}
+    ctx.fillStyle='#4a525a';ctx.beginPath();ctx.roundRect(-9,-10.0,L*0.84,20.0,2.5);ctx.fill();
+    for(let i=0;i<3;i++){ctx.fillStyle='#d8e0e8';ctx.beginPath();ctx.roundRect(-7,-8.2+i*5.9,L*0.78,3.9,1.2);ctx.fill();ctx.fillStyle='#ff5b4a';ctx.fillRect(-7+L*0.71,-8.2+i*5.9,3.4,3.9);}
    }else{
-    ctx.fillRect(0,-3.4,L*0.90,6.8);ctx.fillStyle=dk;ctx.fillRect(3,-4.4,10.5,8.8);
-    ctx.fillStyle='#3f464e';ctx.fillRect(L*0.46,-4.0,6.4,8.0);
-    ctx.fillStyle='#111';ctx.fillRect(L*0.84,-4.7,4.8,9.4);
-    ctx.fillStyle='#5c646e';ctx.fillRect(4,4.4,L*0.44,1.7);
+    // Main battle tank smoothbore cannon with bore evacuator & muzzle brake
+    ctx.beginPath();ctx.roundRect(0,-3.4,L*0.92,6.8,1.8);ctx.fill();
+    ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(3,-4.6,11.0,9.2,1.8);ctx.fill();
+    ctx.fillStyle='#3f464e';ctx.beginPath();ctx.roundRect(L*0.46,-4.2,6.8,8.4,2.0);ctx.fill();
+    ctx.fillStyle='#111';ctx.beginPath();ctx.roundRect(L*0.86,-4.9,5.0,9.8,1.2);ctx.fill();
+    ctx.fillStyle='#5c646e';ctx.fillRect(4,4.5,L*0.46,1.8);
    }
    ctx.restore();
-   const tr=e.r*0.62;
-   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.moveTo(-tr*0.92,-tr*0.68);ctx.lineTo(tr*0.68,-tr*0.8);ctx.lineTo(tr*1.14,1.6);ctx.lineTo(tr*0.68,tr*1.08);ctx.lineTo(-tr*0.92,tr*0.96);ctx.closePath();ctx.fill();
+
+   // Sculpted Sloped Turret Housing (rounded polygonal armor + commander cupola + CITV optic + whip antenna)
+   const tr=e.r*0.65;
+   ctx.fillStyle='rgba(0,0,0,.36)';
+   ctx.beginPath();ctx.moveTo(-tr*0.95,-tr*0.66);ctx.quadraticCurveTo(0,-tr*1.05,tr*1.12,1.6);ctx.quadraticCurveTo(0,tr*1.18,-tr*0.95,tr*0.94);ctx.closePath();ctx.fill();
    const tg=ctx.createLinearGradient(-tr,-tr,tr,tr);tg.addColorStop(0,lt);tg.addColorStop(0.5,c);tg.addColorStop(1,dk);
-   ctx.fillStyle=tg;ctx.beginPath();ctx.moveTo(-tr*1.06,-tr*0.84);ctx.lineTo(tr*0.58,-tr*0.96);ctx.lineTo(tr*1.04,0);ctx.lineTo(tr*0.58,tr*0.96);ctx.lineTo(-tr*1.06,tr*0.84);ctx.closePath();ctx.fill();
+   ctx.fillStyle=tg;
+   ctx.beginPath();
+   ctx.moveTo(-tr*1.08,-tr*0.82);
+   ctx.lineTo(tr*0.45,-tr*0.98);
+   ctx.quadraticCurveTo(tr*1.18,-tr*0.55,tr*1.12,0);
+   ctx.quadraticCurveTo(tr*1.18,tr*0.55,tr*0.45,tr*0.98);
+   ctx.lineTo(-tr*1.08,tr*0.82);
+   ctx.quadraticCurveTo(-tr*1.22,0,-tr*1.08,-tr*0.82);
+   ctx.closePath();
+   ctx.fill();
    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.8;ctx.stroke();
-   ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-tr*0.96,-tr*0.76);ctx.lineTo(tr*0.52,-tr*0.88);ctx.stroke();
-   ctx.fillStyle='#24292e';ctx.fillRect(-tr*1.04,-tr*0.56,tr*0.36,tr*1.12);
-   ctx.fillStyle=lt;ctx.fillRect(-tr*0.35,-tr*0.88,tr*0.36,tr*1.76);
-   ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.2,-tr*0.22,tr*0.34,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='#5ce1ff';ctx.fillRect(tr*0.35,-tr*0.46,2.9,3.4);
-   ctx.strokeStyle='rgba(235,245,255,.72)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-tr*0.85,-tr*0.4);ctx.lineTo(-tr*1.6,-tr*0.9);ctx.stroke();
+   ctx.strokeStyle='rgba(255,255,255,.38)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-tr*0.96,-tr*0.74);ctx.lineTo(tr*0.42,-tr*0.88);ctx.stroke();
+   // Bustle rack, hatch, CITV thermal viewer & antenna
+   ctx.fillStyle='#24292e';ctx.beginPath();ctx.roundRect(-tr*1.06,-tr*0.56,tr*0.36,tr*1.12,1.2);ctx.fill();
+   ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.2,-tr*0.22,tr*0.36,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
+   ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.roundRect(tr*0.36,-tr*0.48,3.2,3.6,1.0);ctx.fill();
+   ctx.strokeStyle='rgba(235,245,255,.75)';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-tr*0.85,-tr*0.4);ctx.lineTo(-tr*1.65,-tr*0.95);ctx.stroke();
   }
   if(e.salv){ctx.fillStyle='#ffd34d';for(let i=0;i<e.salv;i++)ctx.fillRect(-L/2+2+i*5,-Wd/2-5,3.2,3.2);}
  }
@@ -2513,7 +2697,7 @@ function drawUnit(e){
  if(e.d.hero){
   ctx.fillStyle='rgba(13,17,23,.82)';ctx.fillRect(x-22,y-e.r-23,44,11);
   ctx.strokeStyle='#ffd34d';ctx.lineWidth=1;ctx.strokeRect(x-22,y-e.r-23,44,11);
-  ctx.fillStyle='#ffd34d';ctx.font='700 9.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+e.d.name.split(' ').pop().toUpperCase(),x,y-e.r-14.5);ctx.textAlign='left';
+  ctx.fillStyle='#ffd34d';ctx.font='700 9.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+trUnit(e.d.name).split(' ').pop().toUpperCase(),x,y-e.r-14.5);ctx.textAlign='left';
  }else if(e.d.armor==='inf'&&(sel||Z>=0.95)){
   const tag=sh==='rinf'?'AT/AA':sh==='sniper'?'SNIPER':sh==='hacker'?'HACK':sh==='worker'?'WRK':'';
   if(tag){ctx.fillStyle=sh==='rinf'?'#ff8a2a':sh==='sniper'?'#5ce1ff':sh==='hacker'?'#5dff9a':'#ffd34d';ctx.font='700 8.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText(tag,x,y+e.r+8.5);ctx.textAlign='left';}
@@ -2582,9 +2766,9 @@ function camUpdate(dt){
 }
 function setMouse(x,y){mouse.x=x;mouse.y=y;mouse.wx=cam.x+x/Z;mouse.wy=cam.y+y/Z;}
 function entityAt(wx,wy){
- const tol=(IS_TOUCH?14:5)/Math.min(1,Z);
+ const baseTol=(IS_TOUCH?14:6)/Math.min(1,Z);
  let best=null,bd=1e9;
- for(const e of G.ents){if(e.kind!=='u'||!entVisible(e))continue;const d=dist(wx,wy,e.x,e.y-altOf(e))-e.r;if(d<tol&&d<bd){bd=d;best=e;}}
+ for(const e of G.ents){if(e.kind!=='u'||!entVisible(e))continue;const tol=e.d.air?baseTol+12:baseTol;const d=dist(wx,wy,e.x,e.y-altOf(e))-e.r;if(d<tol&&d<bd){bd=d;best=e;}}
  if(best)return best;
  for(let i=G.ents.length-1;i>=0;i--){const e=G.ents[i];if(e.kind!=='u'&&entVisible(e)&&wx>=e.tx*TILE&&wx<(e.tx+e.w)*TILE&&wy>=e.ty*TILE&&wy<(e.ty+e.h)*TILE)return e;}
  return null;
@@ -2616,7 +2800,7 @@ function rightClick(wx,wy,q){
  const own=ownSel();if(!own.length)return;
  const t=entityAt(wx,wy);
  issue({k:'rc',ids:own.map(e=>e.id),x:Math.round(wx),y:Math.round(wy),tid:t?t.id:null,q:!!q});
- if(typeof SFX!=='undefined')SFX.ack(own[0],!!(t&&t.team>=0&&enemy(ME,t.team)));
+ _sfxCall('ack',own[0],!!(t&&t.team>=0&&enemy(ME,t.team)));
  if(typeof EVA!=='undefined'&&EVA.unitVoice)EVA.unitVoice(own[0],'act');
  const en=t&&t.team>=0&&enemy(ME,t.team);
  G.fx.push({k:'mark',x:wx,y:wy,col:en?'#f55':t&&(t.kind==='d'||t.d.neutral)?'#ffd34d':'#6f6',life:0.5,max:0.5});
@@ -2649,7 +2833,8 @@ function doPatrol(shift){
 function selType(map){const types=new Set(ownUnits().map(u=>u.type));if(!types.size)return;G.sel=G.ents.filter(u=>u.team===ME&&u.kind==='u'&&types.has(u.type)&&(map||(u.x>cam.x&&u.x<cam.x+VW&&u.y>cam.y&&u.y<cam.y+VH)));if(map)msg('Selected all '+G.sel.length+' of that type','#9fd6ff',true);}
 function doAmove(shift){
  const us=ownUnits().filter(u=>u.d.wpn);const [cx,cy,r]=modeZoneGeom(260);
- if(us.length){issue({k:'am',ids:us.map(u=>u.id),x:cx,y:cy,r,q:!!shift});msg('Attacking & holding area (radius '+r+') — units auto-engage & return','#ff6b5b',true);}
+ const hovered=entityAt(cx,cy);const tgt=(hovered&&hovered.team>=0&&enemy(ME,hovered.team))?hovered:null;
+ if(us.length){issue({k:'am',ids:us.map(u=>u.id),x:cx,y:cy,r,tid:tgt?tgt.id:null,q:!!shift});msg(tr('amoveExec')+' ('+r+')','#ff6b5b',true);if(typeof EVA!=='undefined'&&EVA.unitVoice)EVA.unitVoice(us[0],'act');}
  G.fx.push({k:'ring',x:cx,y:cy,r,col:'#ff6b5b',life:0.7,max:0.7});if(!shift)G.amove=false;
 }
 function doGuard(shift){
@@ -2687,7 +2872,16 @@ cv.addEventListener('pointerdown',ev=>{
  if(ev.pointerType==='mouse'){
   setMouse(ev.clientX,ev.clientY);
   if(ev.button===0){const inMode=!!(G.place||G.target||G.amove||G.guardMode||G.patrolMode||G.fattackMode||G.rallyMode);mouse.down=true;mouse.sx=mouse.wx;mouse.sy=mouse.wy;mouse.drag=false;mouse.box=!inMode;mouse.px=ev.clientX;mouse.py=ev.clientY;}
-  else if(ev.button===2){if(cancelModes())return;if(setup.scheme==='classic'){G.sel=[];return;}rightClick(mouse.wx,mouse.wy,ev.shiftKey);}
+  else if(ev.button===2){
+   if(G.amove){doAmove(ev.shiftKey);return;}
+   if(G.guardMode){doGuard(ev.shiftKey);return;}
+   if(G.patrolMode){doPatrol(ev.shiftKey);return;}
+   if(G.fattackMode){doForceAttack();return;}
+   if(G.target){castPlayer();return;}
+   if(cancelModes())return;
+   if(setup.scheme==='classic'){G.sel=[];return;}
+   rightClick(mouse.wx,mouse.wy,ev.shiftKey);
+  }
   else if(ev.button===1){gest={pan:true,x:ev.clientX,y:ev.clientY};}
   return;
  }
@@ -2802,6 +2996,8 @@ $('touchBar').addEventListener('pointerdown',ev=>{const b=ev.target.closest('[da
  else if(a==='guard'){if(ownUnits().some(u=>u.d.wpn)){cancelModes();G.guardMode=true;}else msg('Select combat units first','#ff6b5b',true);}
  else if(a==='patrol'){if(ownUnits().some(u=>u.d.wpn)){cancelModes();G.patrolMode=true;}else msg('Select combat units first','#ff6b5b',true);}
  else if(a==='stop'){const us=ownUnits();if(us.length)issue({k:'st',ids:us.map(u=>u.id)});}
+ else if(a==='rtb'){const us=ownUnits().filter(u=>u.d.air==='jet');if(us.length){issue({k:'rtb',ids:us.map(u=>u.id)});msg(tr('rtbMsg'),'#9fd6ff',true);}}
+ else if(a==='seljets'){G.sel=G.ents.filter(u=>u.team===ME&&u.kind==='u'&&u.d.air==='jet');if(!G.sel.length)msg(tr('noJets'),'#ff6b5b',true);}
  else if(a==='desel'){cancelModes();G.sel=[];}
  else if(a==='base')goBase();
  else if(a==='zin')setZoom(Z*1.2);else if(a==='zout')setZoom(Z/1.2);});
@@ -2847,32 +3043,34 @@ function getCmds(){
  if(units.length){
   if(units.some(u=>u.d.builder)){
    for(const t of FA(ME).builds){const d=B[t];const reqOk=!d.req||hasB(ME,d.req);
-    out.push({act:'b:'+t,label:d.name,cost:bldCost(t,ME),dis:!reqOk,tip:reqOk?(d.desc||''):'Requires '+B[d.req].name});}
+    out.push({act:'b:'+t,label:trUnit(d.name),cost:bldCost(t,ME),dis:!reqOk,tip:reqOk?(d.desc||''):'Requires '+trUnit(B[d.req].name)});}
   }
   if(units.some(u=>u.d.wpn)){
-   const st0=units.find(u=>u.d.wpn).stance||0,stNames=['Stance: Guard','Stance: Hunt','Stance: Hold'];
-   out.push({act:'amove',label:'Attack Move',key:'A',tip:'Move, engaging enemies on the way (Shift: add waypoint)'});
-   out.push({act:'guard',label:'Area Guard',key:'D',tip:'Select a circular zone on the map — units & jets guard that perimeter, attack intruders, and return to the zone'});
-   out.push({act:'patrol',label:'Patrol',key:'P',tip:'Patrol back and forth between two points'});
-   out.push({act:'fattack',label:'Force Fire',key:'F',tip:'Bombard a ground location continuously (great for artillery)'});
+   const st0=units.find(u=>u.d.wpn).stance||0,stNames=tr('cmdStance');
+   out.push({act:'amove',label:tr('cmdAmove'),key:'A',tip:'Move, engaging enemies on the way (Shift: add waypoint)'});
+   out.push({act:'guard',label:tr('cmdGuard'),key:'D',tip:'Select a circular zone on the map — units & jets guard that perimeter, attack intruders, and return to the zone'});
+   out.push({act:'patrol',label:tr('cmdPatrol'),key:'P',tip:'Patrol back and forth between two points'});
+   out.push({act:'fattack',label:tr('cmdFattack'),key:'F',tip:'Bombard a ground location continuously (great for artillery)'});
    out.push({act:'stance',label:stNames[st0],key:'T',tip:'Cycle unit combat behavior: Guard/Return, Aggressive Hunt, or Hold Position'});
-   if(units.some(u=>u.type==='burton'))out.push({act:'demo',label:'Plant C4',key:'B',tip:'Col. Burton plants a 950-damage timed demolition charge (3s fuse)'});
+   if(units.some(u=>u.type==='burton'))out.push({act:'demo',label:tr('cmdC4'),key:'B',tip:'Col. Burton plants a 950-damage timed demolition charge (3s fuse)'});
   }
-  if(!units.some(u=>u.d.builder)){out.push({act:'seltype',label:'Select Type',key:'E',tip:'Select all units of this type on screen (press E twice: whole map)'});
-   out.push({act:'army',label:'Select Army',key:'Q',tip:'Select every combat unit you own'});}
-  out.push({act:'scatter',label:'Scatter',key:'J',tip:'Spread out (dodge artillery & superweapons)'});
-  if(units.some(u=>u.d.cap))out.push({act:'gather',label:'Gather',key:'H',tip:'Gather from nearest depot'});
-  out.push({act:'stop',label:'Stop',key:'S'});
+  if(!units.some(u=>u.d.builder)){out.push({act:'seltype',label:tr('cmdSelType'),key:'E',tip:'Select all units of this type on screen (press E twice: whole map)'});
+   out.push({act:'army',label:tr('cmdArmy'),key:'Q',tip:'Select every combat unit you own'});}
+  out.push({act:'scatter',label:tr('cmdScatter'),key:'J',tip:'Spread out (dodge artillery & superweapons)'});
+  if(units.some(u=>u.d.cap))out.push({act:'gather',label:tr('cmdGather'),key:'H',tip:'Gather from nearest depot'});
+  if(units.some(u=>u.d.air==='jet'))out.push({act:'rtb',label:tr('cmdRtb'),key:'R',tip:tr('tipRtb')});
+  out.push({act:'stop',label:tr('cmdStop'),key:'S'});
   return out;
  }
  const b=own[0];
  if(b.kind==='b'){
-  if(b.built&&b.d.makes)for(const t of b.d.makes){const why=canQueue(b,t);out.push({act:'q:'+t,label:U[t].name,cost:costOf(t,ME),dis:!!why,tip:why||(U[t].desc+' (Shift: x5)')});}
-  if(b.built&&b.d.ups)b.d.ups.forEach((u,ui)=>{const why=canQueue(b,'up:'+u);out.push({act:'q:up:'+u,label:UPG[u].name,cost:G.upg[ME].has(u)?0:UPG[u].cost,dis:!!why,tip:why||UPG[u].desc,cls:'up',key:ui===0?'U':'I'});});
-  if(b.built&&b.d.super){const r=superReady(b);out.push({act:'sw:'+b.id,label:'FIRE '+SW[b.d.super].name,dis:!r,tip:r?'Select a target':'Charging '+fmtT(b.readyAt-G.t),cls:'sw',key:'G'});}
-  if(b.built&&b.d.makes)out.push({act:'rally',label:'Set Rally Point',key:'L',tip:'Click/tap where new units should gather (Shortcut: L)'});
-  if(b.d.garrison&&b.gar&&b.gar.length)out.push({act:'evac',label:'Evacuate ('+b.gar.length+')',key:'V',tip:'Unload all garrisoned infantry (Shortcut: V)'});
-  if(b.d.shape!=='hq'&&!b.d.neutral)out.push({act:'sell',label:b.built?'Sell':'Cancel',key:'X',tip:b.built?'Refund 50% (Shortcut: X)':'Refund 75% (Shortcut: X)'});
+  if(b.built&&b.d.makes)for(const t of b.d.makes){const why=canQueue(b,t);out.push({act:'q:'+t,label:trUnit(U[t].name),cost:costOf(t,ME),dis:!!why,tip:why||(U[t].desc+' (Shift: x5)')});}
+  if(b.built&&b.d.ups)b.d.ups.forEach((u,ui)=>{const why=canQueue(b,'up:'+u);out.push({act:'q:up:'+u,label:trUnit(UPG[u].name),cost:G.upg[ME].has(u)?0:UPG[u].cost,dis:!!why,tip:why||UPG[u].desc,cls:'up',key:ui===0?'U':'I'});});
+  if(b.built&&b.d.super){const r=superReady(b);out.push({act:'sw:'+b.id,label:trUnit(SW[b.d.super].name),dis:!r,tip:r?'Select a target':'Charging '+fmtT(b.readyAt-G.t),cls:'sw',key:'G'});}
+  if(b.built&&b.d.shape==='airfield')out.push({act:'seljets',label:tr('cmdSelJets'),key:'Y',tip:tr('tipSelJets')});
+  if(b.built&&b.d.makes)out.push({act:'rally',label:tr('cmdRally'),key:'L',tip:tr('tipRally')});
+  if(b.d.garrison&&b.gar&&b.gar.length)out.push({act:'evac',label:tr('cmdEvac')+' ('+b.gar.length+')',key:'V',tip:'Unload all garrisoned infantry (Shortcut: V)'});
+  if(b.d.shape!=='hq'&&!b.d.neutral)out.push({act:'sell',label:b.built?tr('cmdSell'):tr('cmdCancel'),key:'X',tip:b.built?'Refund 50% (Shortcut: X)':'Refund 75% (Shortcut: X)'});
  }
  return out;
 }
@@ -2881,30 +3079,30 @@ function uiTick(dt){
  uiT-=dt;if(uiT>0)return;uiT=0.12;
  $('money').textContent='$'+Math.floor(G.money[ME]);
  const pw=G.pw[ME];const pe=$('power');
- if(G.fac[ME]==='militia'){pe.textContent='No power needed';pe.className='';}else{pe.textContent=`⚡ Power ${pw.sup} / ${pw.dem}`;pe.className=lowPower(ME)?'low':'';}
- const r=G.rank[ME],nx=RANKXP[r+1];$('rank').innerHTML=`★ Rank ${r}<span style="color:#9fb0c2;font-size:14px"> ${r<5?`(${G.xp[ME]}/${nx} XP)`:'(MAX)'}</span>`;
+ if(G.fac[ME]==='militia'){pe.textContent=tr('powNoPow');pe.className='';}else{pe.textContent=`⚡ ${tr('powLbl')} ${pw.sup} / ${pw.dem}`;pe.className=lowPower(ME)?'low':'';}
+ const r=G.rank[ME],nx=RANKXP[r+1];$('rank').innerHTML=`★ ${tr('rankLbl')} ${r}<span style="color:#9fb0c2;font-size:14px"> ${r<5?`(${G.xp[ME]}/${nx} XP)`:'(MAX)'}</span>`;
  $('clock').textContent=(G.mp?'ONLINE · ':'')+fmtT(G.t);
- $('pauseBtn').textContent=G.mp?'Online':paused?'Resume (F9)':'Pause (F9)';
+ $('pauseBtn').textContent=G.mp?'Online':paused?tr('resumeHud'):tr('pause');
  // powers
- let ph=`<div id="ptsHdr">${SUB_GEN[subFor(ME)].name} &middot; Pts: ${G.pts[ME]}</div>`;
+ let ph=`<div id="ptsHdr">${SUB_GEN[subFor(ME)].name} &middot; ${tr('ptsLbl')}: ${G.pts[ME]}</div>`;
  for(const b of G.ents)if(b.team===ME&&b.d.super&&b.built){const rem=b.readyAt-G.t;const rd=rem<=0;
-  ph+=`<div class="pw sw${rd?' ready':''}" data-act="sw:${b.id}"><span class="k">G</span><div class="n">☢ ${SW[b.d.super].name}</div><div class="s">${rd?'READY — click, then target':'Charging '+fmtT(rem)}</div></div>`;}
+  ph+=`<div class="pw sw${rd?' ready':''}" data-act="sw:${b.id}"><span class="k">G</span><div class="n">☢ ${trUnit(SW[b.d.super].name)}</div><div class="s">${rd?'READY — click, then target':'Charging '+fmtT(rem)}</div></div>`;}
  powList(ME).forEach((p,i)=>{const unl=G.unl[ME].has(p.id);let cls='pw',st;
   if(unl){if(p.passive){st='Active — '+p.desc;cls+=' ready';}else{const cd=Math.ceil((G.pcd[ME][p.id]||0)-G.t);if(cd>0)st=`Recharging ${cd}s`;else{st='READY — '+p.desc;cls+=' ready';}}}
   else if(G.rank[ME]>=p.rank&&G.pts[ME]>0){st='Click to unlock (1 pt)';cls+=' unl';}
   else{st=G.rank[ME]<p.rank?`Requires Rank ${p.rank}`:'Need a General Point';cls+=' lock';}
-  ph+=`<div class="${cls}" data-act="pw:${p.id}"><span class="k">${PKEYS[i]}</span><div class="n">${p.name}</div><div class="s">${st}</div></div>`;});
+  ph+=`<div class="${cls}" data-act="pw:${p.id}"><span class="k">${PKEYS[i]}</span><div class="n">${trUnit(p.name)}</div><div class="s">${st}</div></div>`;});
  if(ph!==lastPowSig){$('powers').innerHTML=ph;lastPowSig=ph;}
  // super timers (all)
  let sh='';for(const b of G.ents)if(b.d&&b.d.super&&b.built&&b.team>=0){const rem=b.readyAt-G.t;sh+=`<div style="color:${PL(b.team)}">${b.team===ME?'Your ':esc(PN(b.team))+' · '}${SW[b.d.super].name} ${rem>0?fmtT(rem):'READY'}</div>`;}
  $('side').innerHTML=playersHTML()+sh;
  // info
  const sel=G.sel;let ih='';
- if(!sel.length)ih=`<h3>${FA(ME).name}</h3><div class="muted">${FA(ME).desc}</div>`;
+ if(!sel.length)ih=`<h3>${trFac(ME)}</h3><div class="muted">${FA(ME).desc}</div>`;
  else if(sel.length===1){const e=sel[0];
   if(e.kind==='d')ih=`<h3>Supply Depot</h3><div>Supplies remaining: <b>$${e.amount}</b></div><div class="muted">Right-click with a gatherer to collect.</div>`;
   else{const f=e.hp/e.maxHp,col=f>0.6?'#4cd964':f>0.3?'#ffcc00':'#ff3b30';
-   ih=`<h3 style="color:${PL(e.team)}">${e.d.name}${e.vet?' '+'★'.repeat(e.vet):''}${e.salv?' <span style="color:#ffd34d;font-size:14px">salvage '+e.salv+'</span>':''}</h3><div class="hpbar"><i style="width:${f*100}%;background:${col}"></i></div><div>${Math.ceil(e.hp)} / ${e.maxHp} HP ${e.team>=0&&e.team!==ME?'&nbsp; <span style="color:'+PL(e.team)+'">'+esc(PN(e.team))+' · '+FA(e.team).name+(ally(ME,e.team)?' (ally)':'')+'</span>':e.team<0?'&nbsp; <span style="color:#bbb">Neutral</span>':''}</div>`;
+   ih=`<h3 style="color:${PL(e.team)}">${trUnit(e.d.name)}${e.vet?' '+'★'.repeat(e.vet):''}${e.salv?' <span style="color:#ffd34d;font-size:14px">salvage '+e.salv+'</span>':''}</h3><div class="hpbar"><i style="width:${f*100}%;background:${col}"></i></div><div>${Math.ceil(e.hp)} / ${e.maxHp} HP ${e.team>=0&&e.team!==ME?'&nbsp; <span style="color:'+PL(e.team)+'">'+esc(PN(e.team))+' · '+FA(e.team).name+(ally(ME,e.team)?' (ally)':'')+'</span>':e.team<0?'&nbsp; <span style="color:#bbb">Neutral</span>':''}</div>`;
    if(e.kind==='u'){if(e.d.wpn)ih+=`<div class="muted">Damage ${e.d.wpn.dmg}${e.d.wpn.burst?'×'+e.d.wpn.burst:''} · Range ${e.d.wpn.range} · ${e.d.wpn.air?'Hits air':'Ground only'} · Kills ${e.kills}</div>`;
     if(e.d.air==='jet')ih+=`<div class="muted">Ammo ${e.ammo}/${e.d.ammo} · ${e.parked?'On airfield':'Airborne'}</div>`;
     if(e.d.cap)ih+=`<div class="muted">Cargo: $${e.carry} · ${e.order&&e.order.t==='gather'?'Gathering':e.order&&e.order.t==='build'?'Building':'Idle'}</div>`;
@@ -2927,10 +3125,10 @@ function uiTick(dt){
  $('msgs').innerHTML=G.msgs.filter(m=>G.t-m.t<6).slice(-4).map(m=>`<div style="color:${m.col};opacity:${Math.min(1,(6-(G.t-m.t))/1.5)}">${m.text}</div>`).join('');
  let hint='';if(G.place)hint=`Placing ${B[G.place.type].name} — left-click to build (Shift: keep placing), right-click/Esc to cancel`;
  else if(G.target)hint=(G.target.startsWith('sw:')?'SUPERWEAPON':powList(ME).find(p=>p.id===G.target).name)+' — click/tap a target (map or minimap); Esc/right-click cancels';
- else if(G.amove)hint='Attack Area (A) — click or drag to size attack radius; units sweep & hold the zone, auto-engaging & returning';
- else if(G.patrolMode)hint='Patrol Area (P) — click or drag to set patrol zone; units & jets cycle back and forth and auto-engage enemies';
- else if(G.guardMode)hint='Guard Area (D) — click or drag to size guard perimeter; units & jets intercept intruders and return to post';
- else if(G.fattackMode)hint='Force Fire — click/tap ground coordinates to bombard continuously';
+ else if(G.amove)hint=tr('hintAmove');
+ else if(G.patrolMode)hint=tr('hintPatrol');
+ else if(G.guardMode)hint=tr('hintGuard');
+ else if(G.fattackMode)hint=tr('hintFattack');
  if(G.mp&&MP.waitT>0.6)hint=MP.waitT>20?'A player is not responding… '+(MP.lag?'('+esc(MP.lag)+') ':'')+'(Menu → Leave game to forfeit)':'Waiting for '+(MP.lag?esc(MP.lag):'other players')+'…';
  if(G.meOut&&!hint)hint='Spectating — you were eliminated';
  if(G.mp&&MP.desync&&!hint)hint='⚠ Out of sync with the host — the host decides the result. Reload both games and rematch.';
@@ -3208,15 +3406,15 @@ function renderSetup(){
  const host=setup.mode!=='client',sk=setup.mode==='sk',online=!sk;
  if(setup.tab==='on'&&sk){$('slots').innerHTML='<tr><td style="color:#8a9aac">Host a game or join one to see the player slots.</td></tr>';$('mapOpts').innerHTML='';$('startBtn').classList.add('hidden');$('setupNote').textContent='';return;}
  const me=mySlotIdx();
- const facOpts=sel=>['random',...FKEYS].map(k=>`<option value="${k}"${sel===k?' selected':''}>${k==='random'?'Random':FAC[k].name}</option>`).join('');
- const teamOpts=sel=>[0,1,2,3,4].map(t=>`<option value="${t}"${sel===t?' selected':''}>${t?'Team '+t:'— (solo)'}</option>`).join('');
+ const facOpts=sel=>['random',...FKEYS].map(k=>`<option value="${k}"${sel===k?' selected':''}>${k==='random'?((typeof EVA!=='undefined'&&EVA&&EVA.lang==='ru')?'Случайно':'Random'):trUnit(FAC[k].name)}</option>`).join('');
+ const teamOpts=sel=>[0,1,2,3,4].map(t=>`<option value="${t}"${sel===t?' selected':''}>${t?tr('teamLbl')+t:tr('solo')}</option>`).join('');
  const subOpts=(fac,sel)=>subOptsFor(fac).map(k=>`<option value="${k}"${sel===k?' selected':''}>${SUB_GEN[k].name}</option>`).join('');
- let h='<tr style="color:#8a9aac;font-size:12px"><td></td><td>Player</td><td>Faction</td><td>Doctrine (Zero Hour)</td><td>Team</td></tr>';
+ let h=`<tr style="color:#8a9aac;font-size:12px"><td></td><td>${tr('colPlayer')}</td><td>${tr('colFaction')}</td><td>${tr('colDoctrine')}</td><td>${tr('colTeam')}</td></tr>`;
  setup.slots.forEach((s,i)=>{
   const mine=i===me,canEdit=mine||(host&&s.kind==='ai');
   let who;
-  if(s.kind==='you'&&sk)who=`<b>You</b>`;
-  else if(i===me)who=`<b>You</b> <span style="color:#8a9aac">(${esc(s.name||myName())})</span>`;
+  if(s.kind==='you'&&sk)who=`<b>${tr('you')}</b>`;
+  else if(i===me)who=`<b>${tr('you')}</b> <span style="color:#8a9aac">(${esc(s.name||myName())})</span>`;
   else if(s.kind==='human'||(s.kind==='you'&&!host))who=esc(s.name||'Player')+(s.kind==='you'?' <span style="color:#8a9aac">(host)</span>':'');
   else if(host){const o=sk?[['closed','Closed'],['ai:easy','AI Easy'],['ai:normal','AI Normal'],['ai:hard','AI Hard']]:[['open','Open (friend)'],['closed','Closed'],['ai:easy','AI Easy'],['ai:normal','AI Normal'],['ai:hard','AI Hard']];
    const cur=s.kind==='ai'?'ai:'+s.diff:s.kind;who=`<select data-slot="${i}" data-f="kind">${o.map(([v,n])=>`<option value="${v}"${cur===v?' selected':''}>${n}</option>`).join('')}</select>`;}
@@ -3232,14 +3430,14 @@ function renderSetup(){
  const chip=(grp,v,label,on)=>`<div class="chip${on?' on':''}" data-map="${grp}" data-v="${v}">${label}</div>`;
  const m=setup.map;
  $('mapOpts').innerHTML=host?
-  '<span>Size</span>'+Object.entries(MAPSZ).map(([k,v])=>chip('size',k,v.name,m.size===k)).join('')+
-  '<span style="margin-left:10px">Climate</span>'+Object.entries(BIOME).map(([k,v])=>chip('biome',k,v.name,m.biome===k)).join('')+
-  '<span style="margin-left:10px">Resources</span>'+['low','normal','high'].map(k=>chip('res',k,k[0].toUpperCase()+k.slice(1),m.res===k)).join('')+
-  '<span style="margin-left:10px">Cash</span>'+[5000,10000,20000].map(k=>chip('cash',k,'$'+k/1000+'k',m.cash===k)).join('')
+  `<span>${tr('lblSize')}</span>`+Object.entries(MAPSZ).map(([k,v])=>chip('size',k,tr('sz'+k[0].toUpperCase()+k.slice(1))||v.name,m.size===k)).join('')+
+  `<span style="margin-left:10px">${tr('lblClimate')}</span>`+Object.entries(BIOME).map(([k,v])=>chip('biome',k,k==='temperate'?tr('bioTemp'):k==='desert'?tr('bioDes'):tr('bioSnow'),m.biome===k)).join('')+
+  `<span style="margin-left:10px">${tr('lblRes')}</span>`+['low','normal','high'].map(k=>chip('res',k,k==='low'?tr('resLow'):k==='normal'?tr('resNorm'):tr('resHigh'),m.res===k)).join('')+
+  `<span style="margin-left:10px">${tr('lblCash')}</span>`+[5000,10000,20000].map(k=>chip('cash',k,'$'+k/1000+'k',m.cash===k)).join('')
   :`<span style="color:#8a9aac">${(MAPSZ[m.size]||MAPSZ.auto).name} · ${BIOME[m.biome].name} · ${m.res} resources · $${m.cash}</span>`;
  const n=setup.slots.filter(s=>['you','human','ai'].includes(s.kind)).length;
  $('startBtn').classList.toggle('hidden',!host);
- $('startBtn').textContent=online?`Start online battle (${n} players)`:`Start Battle (${n} players)`;
+ $('startBtn').textContent=`${tr('start')} (${n})`;
  $('setupNote').textContent=online&&!host?'Waiting for the host to start the battle…':(m.size!=='auto'&&n>4&&(m.size==='small'||m.size==='medium')?'Tip: Large or Huge (or Auto) suits 5+ players.':'');
 }
 $('menu').addEventListener('change',ev=>{
@@ -3264,6 +3462,316 @@ $('menu').addEventListener('click',ev=>{
  if(ev.target.closest('#mpJoinCode')){const c=String($('mpCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length===4){setup.myFac=setup.slots[0].fac;netJoin(c);}else mpStatus('Type the 4-letter code from the host.');return;}
 });
 $('pname').addEventListener('change',()=>{savePrefs();if(setup.mode==='host'){setup.slots[0].name=myName();broadcastLobby();renderSetup();}});
+const LANG_STR={
+ en:{
+  code:'en-US',
+  subtitle:"Generals' War — HD 2.5D Faction Units & Ordnance, Multi-Stage Detonations, EVA Voice & Multi-Language",
+  share:'📤 Share game',qr:'▦ QR code',install:'⬇ Install app',saveHtml:'💾 Save Offline HTML',
+  evaOn:'🎙️ EVA Voice: ON',evaOff:'🔇 EVA Voice: OFF',zhTheme:'🎼 Zero Hour Theme',zhThemeOn:'🎼 Zero Hour Theme: ON',
+  topZh:'🎼 ZH Theme',topZhOn:'🎼 ZH Theme: ON',sfxOn:'🔊 SFX',sfxOff:'🔇 SFX',bgmOn:'🎵 Music: ON',bgmOff:'🎵 Music',
+  chat:'💬 Chat',pause:'Pause (F9)',resumeHud:'Resume (F9)',menu:'Menu',powersBtn:'★ Powers',
+  tabSk:'Skirmish vs AI',tabZh:"★ Generals' Challenge",tabOn:'Online / LAN',tabHelp:'Doctrines & Controls',
+  hdrPlayers:'PLAYERS',hdrMap:'MAP',colPlayer:'Player',colFaction:'Faction',colDoctrine:'Doctrine (Zero Hour)',colTeam:'Team',
+  you:'You',openSlot:'Open (friend)',closedSlot:'Closed',solo:'— (solo)',teamLbl:'Team ',
+  lblSize:'Size',lblClimate:'Climate',lblRes:'Resources',lblCash:'Cash',
+  szAuto:'Auto (by players)',szSmall:'Small',szMedium:'Medium',szLarge:'Large',szHuge:'Huge',
+  bioTemp:'Temperate',bioDes:'Desert',bioSnow:'Snow',
+  resLow:'Low',resNorm:'Normal',resHigh:'High',
+  start:'Start Battle',resume:'Resume',leave:'Leave game',watch:'Keep watching',again:'Back to menu',
+  victory:'VICTORY',defeat:'DEFEAT',
+  cmdAmove:'Attack Move',cmdGuard:'Area Guard',cmdPatrol:'Patrol',cmdFattack:'Force Fire',
+  cmdStance:['Stance: Guard','Stance: Hunt','Stance: Hold'],cmdC4:'Plant C4',
+  cmdSelType:'Select Type',cmdArmy:'Select Army',cmdScatter:'Scatter',cmdGather:'Gather',
+  cmdStop:'Stop',cmdRtb:'Return to Base',cmdSelJets:'Select Jets',cmdRally:'Set Rally Point',
+  cmdEvac:'Evacuate',cmdSell:'Sell',cmdCancel:'Cancel',
+  tipRtb:'Recall aircraft to airfield to rearm and repair (R)',
+  tipSelJets:'Select all jets owned by you (Y)',
+  tipRally:'Click/tap where new units should gather (L)',
+  amoveExec:'Attack-moving & holding area',rtbMsg:'Aircraft returning to airfield',noJets:'No jets available',
+  hintAmove:'Attack Area (A) — click or drag (left or right click) to sweep & hold zone',
+  hintGuard:'Guard Area (D) — click or drag to set guard perimeter',
+  hintPatrol:'Patrol Area (P) — click or drag to set patrol route',
+  hintFattack:'Force Fire (F) — click ground coordinates to bombard continuously',
+  powNoPow:'No power needed',powLbl:'Power',rankLbl:'Rank',ptsLbl:'Pts',readyLbl:'READY',chargingLbl:'Charging',
+  underAttack:'Warning! Our base is under attack!',
+  forcesAttack:'Our forces are under attack!',
+  built:'Construction complete: ',
+  ready:'Unit ready: ',
+  research:'Upgrade complete: ',
+  lowPow:'Warning! Low power!',
+  insufficient:'Insufficient funds!',
+  rankUp:'Promotion! You have been promoted, General!',
+  swWarn:'Warning! Enemy superweapon detected!',
+  swLaunch:'Warning! Superweapon launched!',
+  evacWarn:'Warning! Base & builders lost — remaining forces eliminated!'
+ },
+ ru:{
+  code:'ru-RU',
+  subtitle:'Война Генералов — 2.5D техника и пехота фракций, каскадные взрывы, голос EVA и локализация',
+  share:'📤 Поделиться',qr:'▦ QR-код',install:'⬇ Установить',saveHtml:'💾 Скачать HTML',
+  evaOn:'🎙️ Голос EVA: ВКЛ',evaOff:'🔇 Голос EVA: ВЫКЛ',zhTheme:'🎼 Тема Zero Hour',zhThemeOn:'🎼 Тема Zero Hour: ВКЛ',
+  topZh:'🎼 Тема ZH',topZhOn:'🎼 Тема ZH: ВКЛ',sfxOn:'🔊 Звуки',sfxOff:'🔇 Звуки',bgmOn:'🎵 Музыка: ВКЛ',bgmOff:'🎵 Музыка',
+  chat:'💬 Чат',pause:'Пауза (F9)',resumeHud:'Продолжить (F9)',menu:'Меню',powersBtn:'★ Способности',
+  tabSk:'Схватка с ИИ',tabZh:'★ Испытание Генералов',tabOn:'Сеть / LAN',tabHelp:'Доктрины и Управление',
+  hdrPlayers:'ИГРОКИ',hdrMap:'КАРТА',colPlayer:'Игрок',colFaction:'Фракция',colDoctrine:'Доктрина (Zero Hour)',colTeam:'Команда',
+  you:'Вы',openSlot:'Открыто (друг)',closedSlot:'Закрыто',solo:'— (один)',teamLbl:'Команда ',
+  lblSize:'Размер',lblClimate:'Климат',lblRes:'Ресурсы',lblCash:'Кредиты',
+  szAuto:'Авто (по игрокам)',szSmall:'Малая',szMedium:'Средняя',szLarge:'Большая',szHuge:'Огромная',
+  bioTemp:'Умеренный',bioDes:'Пустыня',bioSnow:'Снег',
+  resLow:'Мало',resNorm:'Норма',resHigh:'Много',
+  start:'Начать бой',resume:'Продолжить',leave:'Покинуть бой',watch:'Наблюдать',again:'В меню',
+  victory:'ПОБЕДА',defeat:'ПОРАЖЕНИЕ',
+  cmdAmove:'Атака в движении',cmdGuard:'Охрана зоны',cmdPatrol:'Патруль',cmdFattack:'Огонь по точке',
+  cmdStance:['Режим: Охрана','Режим: Охота','Режим: Удержание'],cmdC4:'Заложить C4',
+  cmdSelType:'Выбрать тип',cmdArmy:'Вся армия',cmdScatter:'Рассредоточиться',cmdGather:'Добыча ресурсов',
+  cmdStop:'Стоп',cmdRtb:'На аэродром',cmdSelJets:'Выбрать авиацию',cmdRally:'Точка сбора',
+  cmdEvac:'Эвакуация',cmdSell:'Продать',cmdCancel:'Отмена',
+  tipRtb:'Вернуть самолёты на аэродром для перезарядки и ремонта (R)',
+  tipSelJets:'Выбрать всю вашу авиацию (Y)',
+  tipRally:'Укажите точку сбора для новых войск (L)',
+  amoveExec:'Атака и зачистка зоны',rtbMsg:'Авиация возвращается на базу',noJets:'Нет доступных самолётов',
+  hintAmove:'Атака зоны (A) — кликните или растяните круг (ЛКМ или ПКМ) для зачистки и удержания',
+  hintGuard:'Охрана периметра (D) — кликните или растяните зону охраны для войск и авиации',
+  hintPatrol:'Патруль (P) — кликните или растяните маршрут патрулирования',
+  hintFattack:'Огонь по площади (F) — кликните по земле для непрерывного обстрела',
+  powNoPow:'Энергия не требуется',powLbl:'Энергия',rankLbl:'Ранг',ptsLbl:'Очки',readyLbl:'ГОТОВО',chargingLbl:'Зарядка',
+  underAttack:'Внимание! Наша база атакована!',
+  forcesAttack:'Наши войска под огнём!',
+  built:'Строительство завершено: ',
+  ready:'Боевая единица готова: ',
+  research:'Улучшение завершено: ',
+  lowPow:'Внимание! Недостаточно энергии!',
+  insufficient:'Недостаточно средств!',
+  rankUp:'Повышение! Новое звание генерала!',
+  swWarn:'Внимание! Обнаружено супероружие врага!',
+  swLaunch:'Внимание! Запуск супероружия!',
+  evacWarn:'Внимание! База и строители уничтожены — оставшиеся силы ликвидированы!'
+ },
+ zh:{
+  code:'zh-CN',
+  subtitle:'将军之战 — 2.5D高清阵营单位、多级爆炸特效、EVA语音播报与多语言',
+  share:'📤 分享游戏',qr:'▦ 二维码',install:'⬇ 安装应用',saveHtml:'💾 保存离线HTML',
+  evaOn:'🎙️ EVA语音: 开',evaOff:'🔇 EVA语音: 关',zhTheme:'🎼 绝命时刻主题曲',zhThemeOn:'🎼 绝命时刻主题曲: 开',
+  topZh:'🎼 主题曲',topZhOn:'🎼 主题曲: 开',sfxOn:'🔊 音效',sfxOff:'🔇 音效',bgmOn:'🎵 音乐: 开',bgmOff:'🎵 音乐',
+  chat:'💬 聊天',pause:'暂停 (F9)',resumeHud:'继续 (F9)',menu:'菜单',powersBtn:'★ 将军技能',
+  tabSk:'遭遇战 AI',tabZh:'★ 将军挑战赛',tabOn:'联机 / 局域网',tabHelp:'阵营与操作说明',
+  hdrPlayers:'玩家列表',hdrMap:'地图设置',colPlayer:'玩家',colFaction:'阵营',colDoctrine:'将军学说',colTeam:'队伍',
+  you:'你',openSlot:'空位 (好友)',closedSlot:'关闭',solo:'— (混战)',teamLbl:'队伍 ',
+  lblSize:'大小',lblClimate:'地形',lblRes:'资源',lblCash:'初始资金',
+  szAuto:'自动',szSmall:'小型',szMedium:'中型',szLarge:'大型',szHuge:'超大型',
+  bioTemp:'温带',bioDes:'沙漠',bioSnow:'雪地',
+  resLow:'较少',resNorm:'标准',resHigh:'丰富',
+  start:'开始战斗',resume:'继续游戏',leave:'离开战斗',watch:'继续观战',again:'返回主菜单',
+  victory:'胜利',defeat:'战败',
+  cmdAmove:'攻击移动',cmdGuard:'区域警戒',cmdPatrol:'巡逻',cmdFattack:'强制攻击',
+  cmdStance:['姿态: 警戒','姿态: 追击','姿态: 坚守'],cmdC4:'安放C4炸药',
+  cmdSelType:'选择同类',cmdArmy:'全选军队',cmdScatter:'散开规避',cmdGather:'采集资源',
+  cmdStop:'停止',cmdRtb:'返回机场',cmdSelJets:'选择战机',cmdRally:'设置集结点',
+  cmdEvac:'撤离驻军',cmdSell:'出售',cmdCancel:'取消',
+  tipRtb:'召回战机返回机场补充弹药并维修 (R)',tipSelJets:'选择所有己方战机 (Y)',tipRally:'设置新单位集结点 (L)',
+  amoveExec:'正在向目标区域攻击推进',rtbMsg:'战机正在返回机场',noJets:'没有可用战机',
+  hintAmove:'攻击移动 (A) — 点击或拖动设置攻击区域',hintGuard:'区域警戒 (D) — 点击或拖动设置警戒范围',
+  hintPatrol:'巡逻 (P) — 点击或拖动设置巡逻路线',hintFattack:'强制火力 (F) — 点击地面坐标持续炮击',
+  powNoPow:'无需电力',powLbl:'电力',rankLbl:'军衔',ptsLbl:'技能点',readyLbl:'就绪',chargingLbl:'充能中',
+  underAttack:'警告！我方基地正受到攻击！',forcesAttack:'我方部队正遭到攻击！',
+  built:'建造完成：',ready:'单位就绪：',research:'科技升级完成：',
+  lowPow:'警告！电力不足！',insufficient:'资金不足！',rankUp:'军衔晋升！将军！',
+  swWarn:'警告！发现敌方超级武器！',swLaunch:'警告！超级武器已发射！',
+  evacWarn:'警告！基地与工程单位已全灭！'
+ },
+ es:{
+  code:'es-ES',
+  subtitle:'Guerra de Generales — Unidades 2.5D por Facción, Explosiones en Cadena y Voz EVA',
+  share:'📤 Compartir',qr:'▦ Código QR',install:'⬇ Instalar App',saveHtml:'💾 Guardar HTML',
+  evaOn:'🎙️ Voz EVA: SÍ',evaOff:'🔇 Voz EVA: NO',zhTheme:'🎼 Tema Zero Hour',zhThemeOn:'🎼 Tema Zero Hour: SÍ',
+  topZh:'🎼 Tema ZH',topZhOn:'🎼 Tema ZH: SÍ',sfxOn:'🔊 Efectos',sfxOff:'🔇 Efectos',bgmOn:'🎵 Música: SÍ',bgmOff:'🎵 Música',
+  chat:'💬 Chat',pause:'Pausa (F9)',resumeHud:'Reanudar (F9)',menu:'Menú',powersBtn:'★ Poderes',
+  tabSk:'Escaramuza IA',tabZh:'★ Desafío de Generales',tabOn:'En Línea / LAN',tabHelp:'Doctrinas y Controles',
+  hdrPlayers:'JUGADORES',hdrMap:'MAPA',colPlayer:'Jugador',colFaction:'Facción',colDoctrine:'Doctrina',colTeam:'Equipo',
+  you:'Tú',openSlot:'Abierto',closedSlot:'Cerrado',solo:'— (solo)',teamLbl:'Equipo ',
+  lblSize:'Tamaño',lblClimate:'Clima',lblRes:'Recursos',lblCash:'Fondos',
+  szAuto:'Auto',szSmall:'Pequeño',szMedium:'Mediano',szLarge:'Grande',szHuge:'Enorme',
+  bioTemp:'Templado',bioDes:'Desierto',bioSnow:'Nieve',
+  resLow:'Bajos',resNorm:'Normal',resHigh:'Altos',
+  start:'Iniciar Batalla',resume:'Reanudar',leave:'Abandonar',watch:'Seguir viendo',again:'Volver al menú',
+  victory:'VICTORIA',defeat:'DERROTA',
+  cmdAmove:'Ataque en Mov.',cmdGuard:'Vigilar Zona',cmdPatrol:'Patrullar',cmdFattack:'Fuego Forzado',
+  cmdStance:['Actitud: Guardia','Actitud: Caza','Actitud: Firme'],cmdC4:'Colocar C4',
+  cmdSelType:'Sel. Tipo',cmdArmy:'Todo Ejército',cmdScatter:'Dispersar',cmdGather:'Recolectar',
+  cmdStop:'Detener',cmdRtb:'Volver a Base',cmdSelJets:'Sel. Aviones',cmdRally:'Punto Reunión',
+  cmdEvac:'Evacuar',cmdSell:'Vender',cmdCancel:'Cancelar',
+  tipRtb:'Ordenar regreso al aeródromo (R)',tipSelJets:'Seleccionar todos tus aviones (Y)',tipRally:'Fijar punto de reunión (L)',
+  amoveExec:'Atacando y asegurando zona',rtbMsg:'Aviones regresando a la base',noJets:'No hay aviones disponibles',
+  hintAmove:'Atacar Zona (A) — haz clic o arrastra para barrer y mantener la zona',
+  hintGuard:'Vigilar Zona (D) — haz clic o arrastra para fijar perímetro',
+  hintPatrol:'Patrullar (P) — haz clic o arrastra para fijar ruta',
+  hintFattack:'Fuego Forzado (F) — haz clic en el suelo para bombardear',
+  powNoPow:'Sin energía',powLbl:'Energía',rankLbl:'Rango',ptsLbl:'Pts',readyLbl:'LISTO',chargingLbl:'Cargando',
+  underAttack:'¡Alerta! ¡Nuestra base está bajo ataque!',forcesAttack:'¡Nuestras fuerzas están bajo ataque!',
+  built:'Construcción completada: ',ready:'Unidad lista: ',research:'Mejora completada: ',
+  lowPow:'¡Alerta! ¡Energía baja!',insufficient:'¡Fondos insuficientes!',rankUp:'¡Ascenso! ¡Has sido ascendido, General!',
+  swWarn:'¡Alerta! ¡Superarma enemiga detectada!',swLaunch:'¡Alerta! ¡Superarma lanzada!',
+  evacWarn:'¡Alerta! ¡Base y constructores destruidos!'
+ },
+ ar:{
+  code:'ar-SA',
+  subtitle:'حرب الجنرالات — وحدات ثنائية ونصف الأبعاد، انفجارات متتالية وصوت EVA',
+  share:'📤 مشاركة',qr:'▦ رمز QR',install:'⬇ تثبيت التطبيق',saveHtml:'💾 حفظ HTML',
+  evaOn:'🎙️ صوت EVA: يعمل',evaOff:'🔇 صوت EVA: متوقف',zhTheme:'🎼 موسيقى Zero Hour',zhThemeOn:'🎼 موسيقى Zero Hour: تعمل',
+  topZh:'🎼 لحن ZH',topZhOn:'🎼 لحن ZH: يعمل',sfxOn:'🔊 مؤثرات',sfxOff:'🔇 مؤثرات',bgmOn:'🎵 موسيقى: تعمل',bgmOff:'🎵 موسيقى',
+  chat:'💬 دردشة',pause:'إيقاف (F9)',resumeHud:'استئناف (F9)',menu:'القائمة',powersBtn:'★ القدرات',
+  tabSk:'مناوشة ضد الذكاء',tabZh:'★ تحدي الجنرالات',tabOn:'أونلاين / LAN',tabHelp:'العقائد والتحكم',
+  hdrPlayers:'اللاعبون',hdrMap:'الخريطة',colPlayer:'اللاعب',colFaction:'الفصيل',colDoctrine:'العقيدة',colTeam:'الفريق',
+  you:'أنت',openSlot:'مفتوح',closedSlot:'مغلق',solo:'— (فردي)',teamLbl:'فريق ',
+  lblSize:'الحجم',lblClimate:'المناخ',lblRes:'الموارد',lblCash:'التمويل',
+  szAuto:'تلقائي',szSmall:'صغير',szMedium:'متوسط',szLarge:'كبير',szHuge:'ضخم',
+  bioTemp:'معتدل',bioDes:'صحراء',bioSnow:'ثلج',
+  resLow:'قليل',resNorm:'عادي',resHigh:'كثير',
+  start:'ابدأ المعركة',resume:'استئناف',leave:'مغادرة',watch:'مشاهدة',again:'القائمة الرئيسية',
+  victory:'انتصار',defeat:'هزيمة',
+  cmdAmove:'هجوم متحرك',cmdGuard:'حراسة المنطقة',cmdPatrol:'دورية',cmdFattack:'قصف أرضي',
+  cmdStance:['وضع: حراسة','وضع: مطاردة','وضع: ثبات'],cmdC4:'زرع متفجرات C4',
+  cmdSelType:'تحديد النوع',cmdArmy:'كل الجيش',cmdScatter:'انتشار',cmdGather:'جمع الموارد',
+  cmdStop:'توقف',cmdRtb:'العودة للقاعدة',cmdSelJets:'تحديد الطائرات',cmdRally:'نقطة التجمع',
+  cmdEvac:'إخلاء',cmdSell:'بيع',cmdCancel:'إلغاء',
+  tipRtb:'إعادة الطائرات للمطار للتزود بالذخيرة (R)',tipSelJets:'تحديد جميع طائراتك (Y)',tipRally:'تحديد نقطة التجمع (L)',
+  amoveExec:'الهجوم وتأمين المنطقة',rtbMsg:'الطائرات تعود إلى المطار',noJets:'لا توجد طائرات متاحة',
+  hintAmove:'هجوم المنطقة (A) — انقر أو اسحب لتطهير المنطقة',hintGuard:'حراسة المنطقة (D) — انقر أو اسحب لتحديد المحيط',
+  hintPatrol:'دورية (P) — انقر أو اسحب لتحديد المسار',hintFattack:'قصف أرضي (F) — انقر على الأرض للقصف المستمر',
+  powNoPow:'لا يحتاج طاقة',powLbl:'الطاقة',rankLbl:'الرتبة',ptsLbl:'نقاط',readyLbl:'جاهز',chargingLbl:'شحن',
+  underAttack:'تحذير! قاعدتنا تتعرض للهجوم!',forcesAttack:'قواتنا تتعرض للهجوم!',
+  built:'اكتمل البناء: ',ready:'الوحدة جاهزة: ',research:'اكتمل التطوير: ',
+  lowPow:'تحذير! الطاقة منخفضة!',insufficient:'الرصيد غير كافٍ!',rankUp:'ترقية! تمت ترقيتك أيها الجنرال!',
+  swWarn:'تحذير! تم رصد سلاح خارق للعدو!',swLaunch:'تحذير! تم إطلاق السلاح الخارق!',
+  evacWarn:'تحذير! تم تدمير القاعدة والمهندسين!'
+ }
+};
+const RU_NAMES={
+ // Factions
+ 'USA':'США','China':'Китай','Russia':'Россия','Free Militia':'Свободное Ополчение',
+ // Units
+ 'Dozer':'Бульдозер','Supply Truck':'Грузовик снабжения','Rifleman':'Стрелок','Rocket Soldier':'Гранатомётчик',
+ 'Raider Jeep':'Джип «Рейдер»','Sentinel Tank':'Танк «Страж»','Thunder Artillery':'САУ «Гром»','Gunship':'Боевой вертолёт',
+ 'Falcon Jet':'Истребитель «Сокол»','Militiaman':'Ополченец','AT Trooper':'Бронебойщик','Cyber Operative':'Кибер-оперативник',
+ 'Rotary AA Tank':'ЗСУ «Вулкан»','Bear Tank':'Танк «Медведь»','Fire Lance Tank':'Огнемётный танк','Titan Tank':'Сверхтяжёлый танк «Титан»',
+ 'Ember Artillery':'РСЗО «Искра»','Firebird Jet':'Штурмовик «Жар-птица»','Hellhound Copter':'Вертолёт «Цербер»',
+ 'Line Infantry':'Пехотинец','Grenadier':'Гранатомётчик','Sniper':'Снайпер','Recon Car':'Бронеавтомобиль разведки',
+ 'Bulwark Tank':'Танк «Оплот»','Sky Shield':'ЗРК «Небесный щит»','Bogatyr Heavy Tank':'Тяжёлый танк «Богатырь»',
+ 'Storm Launcher':'РСЗО «Шторм»','Strix Gunship':'Ударный вертолёт «Стрикс»','Raven Bomber':'Бомбардировщик «Ворон»',
+ 'Worker':'Рабочий','Partisan':'Партизан','RPG Trooper':'Боец с РПГ','Gun Truck':'Тачанка',
+ 'Viper Tank':'Лёгкий танк «Гадюка»','Twin AA Truck':'Зенитный грузовик','Rocket Rig':'Ракетный багги',
+ 'Col. Burton':'Полковник Бёртон','Laser Avenger':'Лазерный «Мститель»','Aurora Bomber':'Бомбардировщик «Аврора»',
+ 'Black Lotus':'Чёрный Лотос','ECM / Inferno Tank':'Танк «Инферно»','Nuke Cannon':'Ядерная пушка',
+ 'Boris / Volkov':'Борис / Волков','Jarmen Kell':'Джармен Келл','Battle Bus':'Боевой автобус','Toxin / Demo Marauder':'Танк «Мародёр»',
+ // Buildings
+ 'Command Center':'Командный центр','Power Plant':'Электростанция','Supply Center':'Центр снабжения','Barracks':'Казармы',
+ 'War Factory':'Военный завод','Airfield':'Аэродром','Strategy Lab':'Стратегический центр','Aegis Battery':'Батарея «Эгида»',
+ 'Orbital Lance':'Орбитальное копьё','Command Post':'Командный пункт','Fusion Reactor':'Термоядерный реактор',
+ 'Broadcast Tower':'Башня пропаганды','Rotary Bunker':'Пулемётный бункер','Doomsday Silo':'Ядерная шахта',
+ 'Command Bunker':'Командный бункер','Thermal Plant':'Теплоэлектростанция','Garrison':'Гарнизон','Tank Works':'Танковый завод',
+ 'Air Base':'Авиабаза','Research Institute':'НИИ Обороны','Pillbox':'ДОТ','Flak Bunker':'Зенитный бункер',
+ 'Blizzard Device':'Установка «Буран»','Stronghold':'Цитадель','Supply Cache':'Склад припасов','Training Camp':'Тренировочный лагерь',
+ 'Arms Yard':'Оружейный двор','Bazaar':'Базар','Hornet Nest':'Гнездо «Шершень»','Gun Pit':'Орудийная точка',
+ 'Hellfire Battery':'Батарея «Адский огонь»','Oil Derrick':'Нефтяная вышка','Urban Outpost':'Городской блокпост',
+ 'Tech Hospital':'Полевой госпиталь','Tech Radar Spire':'Радарная вышка',
+ // Upgrades & Powers & Superweapons
+ 'Veteran Instructors':'Инструкторы-ветераны','Reactive Armor':'Динамическая защита','Countermeasures':'Тепловые ловушки',
+ 'Laser Guidance':'Лазерное наведение','Patriotic Fervor':'Патриотический подъём','Dense-core Shells':'Урановые снаряды',
+ 'Rotary Barrels':'Вращающиеся стволы','AP Bullets':'Бронебойные пули','AP Rockets':'Бронебойные ракеты',
+ 'Scrap Repair':'Полевой ремонт','Winter Gear':'Зимняя экипировка','Reactive Plating':'Реактивная броня','Guided Rockets':'Управляемые ракеты',
+ 'Orbital Lance':'Орбитальное копьё','Nuclear Missile':'Ядерная ракета','Hellfire Storm':'Огненный шторм','Blizzard Strike':'Удар «Буран»',
+ 'Drone Sweep':'Разведка дроном','Paratroopers':'Десант','Emergency Repair':'Срочный ремонт','Precision Strafe':'Точечный авиаудар',
+ 'Thermobaric Bomb':'Термобарическая бомба','Spy Satellite':'Спутник-шпион','Artillery Barrage':'Артналёт',
+ 'Carpet Bombing':'Ковровая бомбардировка','Napalm Storm':'Напалмовый удар','Recon Flight':'Авиаразведка',
+ 'Airborne Assault':'Воздушный десант','Cruise Missile':'Крылатая ракета','Partisan Ambush':'Засада партизан',
+ 'Bounty Hunters':'Охотники за наградой','Tunnel Raid':'Рейд из туннелей','Toxin Bomb':'Токсиновая бомба'
+};
+function tr(k){let lg='en';try{if(typeof EVA!=='undefined'&&EVA&&EVA.lang)lg=EVA.lang;else lg=localStorage.getItem('if_lang')||'en';}catch(e){}const t=LANG_STR[lg]||LANG_STR.en;return t[k]!=null?t[k]:(LANG_STR.en[k]||k);}
+function trUnit(name){if(!name)return '';let lg='en';try{if(typeof EVA!=='undefined'&&EVA&&EVA.lang)lg=EVA.lang;else lg=localStorage.getItem('if_lang')||'en';}catch(e){}if(lg==='ru'&&RU_NAMES[name])return RU_NAMES[name];return name;}
+function trFac(facKey){const n=FAC[facKey]?FAC[facKey].name:facKey;return trUnit(n);}
+function _sfxProp(p){try{return SFX&&SFX[p];}catch(e){return undefined;}}
+function _sfxCall(fn,a,b,c,d,e){try{if(SFX&&typeof SFX[fn]==='function')return SFX[fn](a,b,c,d,e);}catch(err){}return undefined;}
+
+const EVA={
+ on:true,lang:'en',lastSpoke:0,
+ setLang(l){
+  if(!LANG_STR[l])l='en';
+  this.lang=l;
+  try{localStorage.setItem('if_lang',l);}catch(e){}
+  const sel=$('langSel');if(sel)sel.value=l;
+  const subH2=document.querySelector('#menu .panel h2');if(subH2)subH2.textContent=tr('subtitle');
+  if($('shareBtn'))$('shareBtn').textContent=tr('share');
+  if($('qrBtn'))$('qrBtn').textContent=tr('qr');
+  if($('installBtn'))$('installBtn').textContent=tr('install');
+  if($('saveGameBtn'))$('saveGameBtn').textContent=tr('saveHtml');
+  if($('evaBtn'))$('evaBtn').textContent=this.on?tr('evaOn'):tr('evaOff');
+  if($('zhThemeBtn'))$('zhThemeBtn').textContent=!!(_sfxProp('bgm')&&_sfxProp('playMainOnly'))?tr('zhThemeOn'):tr('zhTheme');
+  if($('topZhThemeBtn'))$('topZhThemeBtn').textContent=!!(_sfxProp('bgm')&&_sfxProp('playMainOnly'))?tr('topZhOn'):tr('topZh');
+  if($('sfxBtn'))$('sfxBtn').textContent=(_sfxProp('on')===false)?tr('sfxOff'):tr('sfxOn');
+  if($('bgmBtn'))$('bgmBtn').textContent=!!(_sfxProp('bgm')&&!_sfxProp('playMainOnly'))?tr('bgmOn'):tr('bgmOff');
+  if($('chatBtn'))$('chatBtn').textContent=tr('chat');
+  if($('helpBtn'))$('helpBtn').textContent=tr('menu');
+  if($('powBtn'))$('powBtn').textContent=tr('powersBtn');
+  if($('watchBtn'))$('watchBtn').textContent=tr('watch');
+  if($('againBtn'))$('againBtn').textContent=tr('again');
+  const tabs={sk:'tabSk',zh:'tabZh',on:'tabOn',help:'tabHelp'};
+  document.querySelectorAll('.tab').forEach(el=>{const k=tabs[el.dataset.tab];if(k)el.textContent=tr(k);});
+  const h4s=document.querySelectorAll('#setup h4');
+  if(h4s[0])h4s[0].textContent=tr('hdrPlayers');
+  if(h4s[1])h4s[1].textContent=tr('hdrMap');
+  if($('startBtn'))$('startBtn').textContent=tr('start');
+  if($('resumeBtn'))$('resumeBtn').textContent=tr('resume');
+  if($('leaveBtn'))$('leaveBtn').textContent=tr('leave');
+  lastCmdSig='';lastPowSig='';
+  if(typeof renderSetup==='function'&&typeof setup!=='undefined'&&setup)renderSetup();
+ },
+ speak(text,urgent){
+  if(!this.on)return;
+  const now=performance.now();
+  if(!urgent&&now-this.lastSpoke<2100)return;
+  this.lastSpoke=now;
+  try{
+   const _ac=_sfxProp('ctx');if(_ac){
+    const c=_ac,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+    o.type='sine';o.frequency.setValueAtTime(urgent?920:680,t);o.frequency.exponentialRampToValueAtTime(urgent?1240:1020,t+0.065);
+    g.gain.setValueAtTime(0.028,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.08);
+   }
+   if('speechSynthesis' in window){
+    window.speechSynthesis.cancel();
+    let clean=String(text).replace(/[<>★✖⚡🔊🔇🎵🎙️🌐⚠️✅📡🎼]/g,'').trim();
+    if(this.lang==='en'){
+     if(/Construction complete:\s*(.+)/i.test(clean))clean=clean.replace(/Construction complete:\s*(.+)/i,'$1 construction complete.');
+     else if(/(.+?)\s+ready$/i.test(clean))clean=clean.replace(/(.+?)\s+ready$/i,'$1 ready for orders.');
+    }
+    const u=new SpeechSynthesisUtterance(clean);
+    u.lang=(LANG_STR[this.lang]||LANG_STR.en).code;
+    u.rate=urgent?1.02:0.96;u.pitch=urgent?0.96:0.90;u.volume=0.95;
+    const voices=window.speechSynthesis.getVoices?window.speechSynthesis.getVoices():[];
+    const prefix=u.lang.slice(0,2).toLowerCase();
+    const match=voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(prefix)&&/natural|google|microsoft|daniel|alex|samantha|milena|zira|david|aria|guy/i.test(v.name))||voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(prefix));
+    if(match)u.voice=match;
+    window.speechSynthesis.speak(u);
+   }
+  }catch(e){}
+ },
+ localizeMsg(text){
+  const t=LANG_STR[this.lang]||LANG_STR.en;
+  if(text.startsWith('Our base is under attack!'))return t.underAttack;
+  if(text.startsWith('Our forces are under attack!'))return t.forcesAttack;
+  if(text.startsWith('Construction complete: '))return t.built+trUnit(text.slice(23));
+  if(text.endsWith(' ready')&&!text.includes('!'))return t.ready+trUnit(text.slice(0,-6));
+  if(text.startsWith('Research complete: '))return t.research+trUnit(text.slice(19));
+  if(text.startsWith('Low power!'))return t.lowPow;
+  if(text==='Insufficient funds')return t.insufficient;
+  if(text.startsWith('Promoted to General Rank'))return t.rankUp;
+  if(text.startsWith('Warning:')&&text.includes('built a'))return t.swWarn;
+  if(text.startsWith('ALERT:')&&text.includes('launched'))return t.swLaunch;
+  return text;
+ }
+};
+try{const sl=localStorage.getItem('if_lang');EVA.setLang(sl||'en');}catch(e){EVA.setLang('en');}
+if($('langSel'))$('langSel').addEventListener('change',e=>{EVA.setLang(e.target.value);EVA.speak(tr('start'),true);});
 function renderHelp(){
  $('facInfo').innerHTML=FKEYS.map(k=>{
   const subs=Object.keys(SUB_GEN).filter(s=>SUB_GEN[s].fac===k).map(s=>`<div style="margin-top:4px;color:#cfe3ff"><b>• ${SUB_GEN[s].name}:</b> ${SUB_GEN[s].desc}</div>`).join('');
@@ -3277,7 +3785,7 @@ function enterGame(){
  $('menu').classList.add('hidden');$('over').classList.add('hidden');
  for(const id of ['top','bottom','powers','touchBar','powBtn','chatBox'])$(id).classList.remove('hidden');
  lastCmdSig='';lastPowSig='';resize();
- if(typeof SFX!=='undefined'&&!SFX.bgm&&!SFX.userMutedBgm)SFX.toggleBgm(true);
+ if(!_sfxProp('bgm')&&!_sfxProp('userMutedBgm'))_sfxCall('toggleBgm',true);
 }
 function exitToMenu(){
  running=false;G=null;MP.on=false;
@@ -3287,10 +3795,15 @@ function exitToMenu(){
  setup.mode='sk';setup.slots=defaultSlots('sk');setup.slots[0].fac=setup.myFac;setTab('sk');netInit();
 }
 $('startBtn').addEventListener('click',()=>{
- if(setup.mode==='host'){hostStart();return;}
- if(setup.mode==='client')return;
- const pl=buildPlayers();const err=validateStart(pl);if(err){$('setupNote').textContent=err;return;}
- savePrefs();newGame({players:pl,map:setup.map,mp:false,me:0});enterGame();
+ try{
+  if(!setup){setup={mode:'sk',tab:'sk',scheme:'classic',slots:defaultSlots('sk'),map:{size:'auto',biome:'temperate',res:'normal',cash:5000},myFac:'random'};}
+  if(setup.mode==='host'){hostStart();return;}
+  if(setup.mode==='client')return;
+  if(!Array.isArray(setup.slots)||!setup.slots.length)setup.slots=defaultSlots('sk');
+  if(!setup.map)setup.map={size:'auto',biome:'temperate',res:'normal',cash:5000};
+  const pl=buildPlayers();const err=validateStart(pl);if(err){$('setupNote').textContent=err;return;}
+  savePrefs();newGame({players:pl,map:setup.map,mp:false,me:0});enterGame();
+ }catch(e){onErr(e);}
 });
 $('pauseBtn').addEventListener('click',()=>{if(G&&!G.mp)paused=!paused;});
 $('helpBtn').addEventListener('click',()=>{if(!G)return;if(!G.mp)paused=true;$('menu').classList.remove('hidden');$('resumeBtn').classList.remove('hidden');$('leaveBtn').classList.remove('hidden');$('startBtn').classList.add('hidden');setTab('help');});
@@ -3358,82 +3871,166 @@ function frame(now){
 
 // ---- IF7_ZERO_HOUR: Web Audio Synth SFX/BGM, Generals' Challenge, Serverless LAN WebRTC & Chat ----
 const SFX={
- on:true,bgm:false,ctx:null,bgmTimer:null,lastSfx:{},
+ on:true,bgm:false,ctx:null,bgmTimer:null,lastSfx:{},noiseBuf:null,
  facOf(team){return (G&&G.fac&&team>=0&&G.fac[team])||(G&&G.fac&&G.fac[ME])||'usa';},
- init(){if(!this.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)this.ctx=new AC();}if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume();},
+ init(){
+  if(!this.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)this.ctx=new AC();}
+  if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume();
+  if(this.ctx&&!this.noiseBuf){
+   const sr=this.ctx.sampleRate,b=this.ctx.createBuffer(1,sr*1.5|0,sr),d=b.getChannelData(0);
+   for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+   this.noiseBuf=b;
+  }
+ },
+ noise(t,dur,filterType,freq0,freq1,gain0,q=1.2){
+  if(!this.ctx||!this.noiseBuf)return;
+  const c=this.ctx,s=c.createBufferSource();s.buffer=this.noiseBuf;
+  const f=c.createBiquadFilter();f.type=filterType;f.frequency.setValueAtTime(freq0,t);
+  if(freq1)f.frequency.exponentialRampToValueAtTime(Math.max(30,freq1),t+dur);
+  f.Q.value=q;
+  const g=c.createGain();g.gain.setValueAtTime(gain0,t);g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  s.connect(f);f.connect(g);g.connect(c.destination);
+  s.start(t,Math.random()*0.4,dur+0.02);
+ },
  canHear(x,y){if(!this.on||!G)return false;if(x==null)return true;const dx=x-(cam.x+VW/2),dy=y-(cam.y+VH/2);return dHypot(dx,dy)<Math.max(VW,VH)*0.95;},
- shot(proj,x,y,team,utype){if(!this.canHear(x,y))return;const now=performance.now(),fac=this.facOf(team),k='s_'+(utype||proj)+'_'+fac;if(now-(this.lastSfx[k]||0)<52)return;this.lastSfx[k]=now;
-  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,g=c.createGain(),o=c.createOscillator();
+ shot(proj,x,y,team,utype){
+  if(!this.canHear(x,y))return;
+  const now=performance.now(),fac=this.facOf(team),k='s_'+(utype||proj)+'_'+fac;
+  if(now-(this.lastSfx[k]||0)<48)return;
+  this.lastSfx[k]=now;this.init();if(!this.ctx)return;
+  const c=this.ctx,t=c.currentTime;
+  // Laser Avenger / High-Energy Beam
   if(utype==='avenger'){
-   o.type='sine';o.frequency.setValueAtTime(1480,t);o.frequency.exponentialRampToValueAtTime(240,t+0.11);
-   g.gain.setValueAtTime(0.06,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.11);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.12);return;
+   const o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain();
+   o.type='sawtooth';o.frequency.setValueAtTime(1850,t);o.frequency.exponentialRampToValueAtTime(210,t+0.13);
+   o2.type='sine';o2.frequency.setValueAtTime(920,t);o2.frequency.exponentialRampToValueAtTime(140,t+0.13);
+   g.gain.setValueAtTime(0.055,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+   o.connect(g);o2.connect(g);g.connect(c.destination);o.start(t);o2.start(t);o.stop(t+0.14);o2.stop(t+0.14);return;
   }
+  // Heavy Anti-Materiel Sniper / Jarmen Kell / Col. Burton
   if(utype==='sniper'||utype==='jarmen'||utype==='burton'){
-   o.type='sawtooth';o.frequency.setValueAtTime(920,t);o.frequency.exponentialRampToValueAtTime(95,t+0.09);
-   g.gain.setValueAtTime(0.055,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.095);return;
+   this.noise(t,0.16,'bandpass',2200,320,0.14,2.2);
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='sawtooth';o.frequency.setValueAtTime(360,t);o.frequency.exponentialRampToValueAtTime(52,t+0.12);
+   g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.13);return;
   }
-  const isHeavy=utype==='titan'||utype==='bogatyr'||utype==='nuke_cannon'||utype==='thunder';
-  const facMul=fac==='usa'?1.18:fac==='china'?0.84:fac==='russia'?0.80:1.05;
-  o.type=proj==='bullet'?(fac==='militia'?'square':'sawtooth'):proj==='flame'?'triangle':(fac==='china'||fac==='russia'?'sawtooth':'square');
-  const f0=(isHeavy?115:proj==='bullet'?540:proj==='rocket'?255:155)*facMul;
-  const dur=isHeavy?0.26:proj==='bullet'?0.05:(fac==='china'||fac==='russia'?0.18:0.13);
-  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(isHeavy?26:fac==='china'?34:45,t+dur);
-  g.gain.setValueAtTime(isHeavy?0.095:proj==='bullet'?0.035:(fac==='militia'?0.075:0.065),t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+0.01);},
- superweapon(swType,x,y,team){if(!this.on)return;this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+  // Gatling / Rotary Cannon (China Gatling Tank, Bunker, Hellhound, Quad Cannon)
+  if(utype==='gatling'||utype==='quad'||utype==='hellhound'||utype==='l_bunker'){
+   this.noise(t,0.055,'bandpass',1650,620,0.085,2.5);
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='sawtooth';o.frequency.setValueAtTime(240,t);o.frequency.exponentialRampToValueAtTime(68,t+0.05);
+   g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.055);return;
+  }
+  // Rifleman / Conscript / Technical / Raider Jeep
+  if(proj==='bullet'){
+   const f0=fac==='usa'?1950:fac==='china'?1550:fac==='russia'?1450:1750;
+   this.noise(t,0.065,'bandpass',f0,480,0.08,1.8);
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='triangle';o.frequency.setValueAtTime(210,t);o.frequency.exponentialRampToValueAtTime(58,t+0.045);
+   g.gain.setValueAtTime(0.042,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.05);return;
+  }
+  // Rocket / Missile / RPG / Patriot / Sky Shield / SCUD / Buggy
+  if(proj==='rocket'){
+   this.noise(t,0.24,'bandpass',1350,380,0.12,1.4);
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='sawtooth';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(62,t+0.18);
+   g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.19);return;
+  }
+  // Flame / Dragon Tank
+  if(proj==='flame'){
+   this.noise(t,0.22,'lowpass',850,240,0.11,1.0);return;
+  }
+  // Tank Main Cannon & Heavy Siege Artillery (Paladin, Battlemaster, Overlord, Bogatyr, Nuke Cannon, Inferno)
+  const isHeavy=utype==='titan'||utype==='bogatyr'||utype==='nuke_cannon'||utype==='thunder'||utype==='rocketart'||utype==='stormr';
+  const dur=isHeavy?0.42:0.28;
+  this.noise(t,dur,'lowpass',isHeavy?920:1150,75,isHeavy?0.24:0.17,1.1);
+  const o=c.createOscillator(),g=c.createGain();
+  o.type='sine';o.frequency.setValueAtTime(isHeavy?135:165,t);o.frequency.exponentialRampToValueAtTime(24,t+dur*0.85);
+  g.gain.setValueAtTime(isHeavy?0.18:0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.85);
+  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur*0.88);
+ },
+ superweapon(swType,x,y,team){
+  if(!this.on)return;this.init();if(!this.ctx)return;
+  const c=this.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
   if(swType==='lance'){
-   o.type='sine';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(1180,t+0.85);
-   g.gain.setValueAtTime(0.11,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.15);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.16);
-  }else if(swType==='nuke'){
-   o.type='sawtooth';o.frequency.setValueAtTime(165,t);o.frequency.linearRampToValueAtTime(490,t+0.55);o.frequency.linearRampToValueAtTime(150,t+1.15);
-   g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.2);
+   o.type='sine';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(1280,t+0.9);
+   g.gain.setValueAtTime(0.11,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.2);
    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.22);
+  }else if(swType==='nuke'){
+   o.type='sawtooth';o.frequency.setValueAtTime(165,t);o.frequency.linearRampToValueAtTime(510,t+0.55);o.frequency.linearRampToValueAtTime(150,t+1.2);
+   g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.25);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.26);
   }else if(swType==='blizzard'){
-   o.type='triangle';o.frequency.setValueAtTime(680,t);o.frequency.exponentialRampToValueAtTime(135,t+1.05);
-   g.gain.setValueAtTime(0.11,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.1);
+   this.noise(t,1.1,'bandpass',900,220,0.12,2.0);
+   o.type='triangle';o.frequency.setValueAtTime(640,t);o.frequency.exponentialRampToValueAtTime(120,t+1.05);
+   g.gain.setValueAtTime(0.10,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.1);
    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.12);
   }else{
    o.type='square';o.frequency.setValueAtTime(340,t);o.frequency.setValueAtTime(510,t+0.22);o.frequency.setValueAtTime(340,t+0.44);o.frequency.setValueAtTime(510,t+0.66);
    g.gain.setValueAtTime(0.085,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.95);
    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.96);
-  }},
- ack(ent,isAttack){if(!this.on||!ent)return;const now=performance.now();if(now-(this.lastSfx.ack||0)<120)return;this.lastSfx.ack=now;
-  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain(),fac=this.facOf(ME);
+  }
+ },
+ ack(ent,isAttack){
+  if(!this.on||!ent)return;
+  const now=performance.now();if(now-(this.lastSfx.ack||0)<120)return;this.lastSfx.ack=now;
+  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,fac=this.facOf(ME);
   const isVeh=ent.kind==='u'&&ent.d&&ent.d.armor==='veh';
+  // Authentic radio squelch + faction tactical commlink beep
+  this.noise(t,0.032,'bandpass',2600,1900,0.035,3.0);
+  const o=c.createOscillator(),g=c.createGain();
   o.type=isVeh?'sawtooth':(fac==='militia'?'square':'triangle');
-  const base=isVeh?(isAttack?155:195):(isAttack?420:520);
-  o.frequency.setValueAtTime(base,t);o.frequency.setValueAtTime(base*(isAttack?0.82:1.22),t+0.045);
-  g.gain.setValueAtTime(0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);
-  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.095);},
- boom(r,x,y){if(!this.canHear(x,y))return;const now=performance.now();if(now-(this.lastSfx.boom||0)<75)return;this.lastSfx.boom=now;
-  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,dur=Math.min(0.85,0.24+r*0.005);
-  const buf=c.createBuffer(1,c.sampleRate*dur|0,c.sampleRate),data=buf.getChannelData(0);
-  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,1.45);
-  const src=c.createBufferSource();src.buffer=buf;
-  const flt=c.createBiquadFilter();flt.type='lowpass';flt.frequency.setValueAtTime(Math.max(105,350-r*1.3),t);
-  const g=c.createGain();g.gain.setValueAtTime(Math.min(0.26,0.075+r*0.0018),t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  src.connect(flt);flt.connect(g);g.connect(c.destination);src.start(t);},
- play(kind,team){if(!this.on)return;this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain(),fac=this.facOf(team);
-  if(kind==='click'){o.type=fac==='militia'?'triangle':'sine';o.frequency.setValueAtTime(fac==='usa'?740:fac==='china'?580:640,t);g.gain.setValueAtTime(0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.05);}
-  else if(kind==='ready'){
-   o.type=fac==='china'?'sawtooth':fac==='militia'?'square':'triangle';
-   const n1=fac==='china'?392:fac==='militia'?330:440,n2=fac==='china'?587.3:fac==='militia'?493.9:660;
-   o.frequency.setValueAtTime(n1,t);o.frequency.setValueAtTime(n2,t+0.09);g.gain.setValueAtTime(0.065,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.28);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.29);}
-  else if(kind==='siren'){this.superweapon('nuke',null,null,team);}},
+  const base=isVeh?(isAttack?175:220):(isAttack?460:580);
+  o.frequency.setValueAtTime(base,t+0.015);o.frequency.setValueAtTime(base*(isAttack?0.84:1.25),t+0.055);
+  g.gain.setValueAtTime(0.042,t+0.015);g.gain.exponentialRampToValueAtTime(0.001,t+0.10);
+  o.connect(g);g.connect(c.destination);o.start(t+0.015);o.stop(t+0.105);
+ },
+ boom(r,x,y){
+  if(!this.canHear(x,y))return;
+  const now=performance.now();if(now-(this.lastSfx.boom||0)<70)return;this.lastSfx.boom=now;
+  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,dur=Math.min(1.15,0.32+r*0.006);
+  // Layer 1: Sub-bass concussive shockwave thump
+  const o=c.createOscillator(),og=c.createGain();
+  o.type='sine';o.frequency.setValueAtTime(Math.max(48,110-r*0.25),t);o.frequency.exponentialRampToValueAtTime(18,t+Math.min(0.65,dur*0.75));
+  og.gain.setValueAtTime(Math.min(0.28,0.10+r*0.002),t);og.gain.exponentialRampToValueAtTime(0.001,t+Math.min(0.68,dur*0.78));
+  o.connect(og);og.connect(c.destination);o.start(t);o.stop(t+Math.min(0.7,dur*0.8));
+  // Layer 2: Filtered debris & shrapnel roar
+  this.noise(t,dur,'lowpass',Math.max(220,780-r*1.8),55,Math.min(0.30,0.09+r*0.0022),0.9);
+ },
+ play(kind,team){
+  if(!this.on)return;this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,fac=this.facOf(team);
+  if(kind==='click'){
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='sine';o.frequency.setValueAtTime(fac==='usa'?880:fac==='china'?680:760,t);o.frequency.exponentialRampToValueAtTime(420,t+0.038);
+   g.gain.setValueAtTime(0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.042);
+   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.045);
+  }else if(kind==='ready'){
+   const notes=fac==='usa'?[523.25,659.25,783.99]:fac==='china'?[392.0,523.25,587.33]:fac==='russia'?[329.63,440.0,493.88]:[369.99,440.0,554.37];
+   notes.forEach((f,idx)=>{
+    const o=c.createOscillator(),g=c.createGain();
+    o.type=fac==='china'?'sawtooth':'triangle';o.frequency.setValueAtTime(f,t+idx*0.065);
+    g.gain.setValueAtTime(0.055,t+idx*0.065);g.gain.exponentialRampToValueAtTime(0.001,t+idx*0.065+0.18);
+    o.connect(g);g.connect(c.destination);o.start(t+idx*0.065);o.stop(t+idx*0.065+0.19);
+   });
+  }else if(kind==='siren'){this.superweapon('nuke',null,null,team);}
+ },
  toggleBgm(forceState, forceMain){
   if(typeof forceMain==='boolean')this.playMainOnly=forceMain;
   this.bgm=typeof forceState==='boolean'?forceState:!this.bgm;
   const b=$('bgmBtn'), zb=$('zhThemeBtn'), tzb=$('topZhThemeBtn');
-  if(b){b.style.borderColor=(this.bgm&&!this.playMainOnly)?'#ffd34d':'#3b5068';b.textContent=(this.bgm&&!this.playMainOnly)?'🎵 Music: ON':'🎵 Music';}
-  if(zb){zb.classList.toggle('on',this.bgm&&!!this.playMainOnly);zb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';zb.textContent=(this.bgm&&this.playMainOnly)?'🎼 Zero Hour Theme: ON':'🎼 Zero Hour Theme';}
-  if(tzb){tzb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';tzb.textContent=(this.bgm&&this.playMainOnly)?'🎼 ZH Theme: ON':'🎼 ZH Theme';}
+  if(b){b.style.borderColor=(this.bgm&&!this.playMainOnly)?'#ffd34d':'#3b5068';b.textContent=(this.bgm&&!this.playMainOnly)?tr('bgmOn'):tr('bgmOff');}
+  if(zb){zb.classList.toggle('on',this.bgm&&!!this.playMainOnly);zb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';zb.textContent=(this.bgm&&this.playMainOnly)?tr('zhThemeOn'):tr('zhTheme');}
+  if(tzb){tzb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';tzb.textContent=(this.bgm&&this.playMainOnly)?tr('topZhOn'):tr('topZh');}
   if(!this.bgm){clearInterval(this.bgmTimer);this.bgmTimer=null;return;}
   this.init();let step=0;
-  try{if(this.ctx){const c=this.ctx,t=c.currentTime;for(const f of [146.83,220.0,293.66,440.0,587.33]){const o=c.createOscillator(),g=c.createGain(),fl=c.createBiquadFilter();o.type='sawtooth';fl.type='lowpass';fl.frequency.setValueAtTime(1400,t);o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0.024,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.75);o.connect(fl);fl.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.78);}}}catch(e){}
-  // Zero Hour Main Theme (32-step heroic brass horn fanfare + choir fifths + driving war-drum ostinato)
+  // Orchestral brass power-chord intro swell
+  try{if(this.ctx){const c=this.ctx,t=c.currentTime;for(const f of [73.42,146.83,220.0,293.66,440.0]){const o=c.createOscillator(),g=c.createGain(),fl=c.createBiquadFilter();o.type='sawtooth';fl.type='lowpass';fl.frequency.setValueAtTime(1600,t);o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0.025,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.85);o.connect(fl);fl.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.88);}}}catch(e){}
+  // Bill Brown / Mikael Sandgren style Zero Hour OST Suites:
+  // 1. Zero Hour Main Theme (Heroic D-minor brass fanfare + driving war-drum ostinato)
   const mainTheme={
    bass:[
     73.42,73.42,146.83,110.0, 87.31,87.31,174.61,130.81, 98.0,98.0,196.0,146.83, 110.0,110.0,146.83,164.81,
@@ -3447,34 +4044,61 @@ const SFX={
     146.83,0,220.0,293.66, 261.63,220.0,196.0,174.61, 196.0,0,246.94,293.66, 329.63,293.66,261.63,220.0,
     293.66,0,329.63,349.23, 329.63,293.66,261.63,220.0, 246.94,261.63,293.66,329.63, 293.66,0,220.0,146.83
    ],
-   bType:'sawtooth',lType:'sawtooth',cutoff:1180
+   arp:[
+    587.33,440.0,523.25,440.0, 587.33,523.25,440.0,349.23, 392.0,493.88,587.33,493.88, 659.25,587.33,523.25,440.0,
+    587.33,440.0,659.25,587.33, 698.46,659.25,587.33,523.25, 493.88,587.33,659.25,587.33, 587.33,440.0,349.23,293.66
+   ],
+   bType:'sawtooth',lType:'sawtooth',cutoff:1240
   };
-  // Dramatic multi-voice orchestral brass + low war-drum ostinato + fifths/octaves inspired by Zero Hour themes
   const themes={
    main:mainTheme,
+   // USA: Heroic Hollywood military rock & brass (electric guitar chugs + triumphant horns)
    usa:{
-    bass:[73.42,73.42,146.83,73.42,87.31,87.31,98.0,110.0, 73.42,73.42,146.83,130.81,110.0,98.0,87.31,110.0],
-    brass:[293.66,0,440.0,392.0,349.23,0,392.0,440.0, 523.25,0,440.0,392.0,349.23,329.63,293.66,220.0],
-    harmony:[0,0,220.0,196.0,174.61,0,196.0,220.0, 261.63,0,220.0,196.0,174.61,164.81,146.83,0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:980
+    bass:[73.42,73.42,146.83,73.42, 87.31,87.31,174.61,87.31, 98.0,98.0,196.0,98.0, 110.0,110.0,130.81,110.0,
+          73.42,73.42,146.83,130.81, 110.0,98.0,87.31,73.42, 65.41,65.41,130.81,98.0, 87.31,110.0,146.83,110.0],
+    brass:[293.66,0,440.0,392.0, 349.23,0,392.0,440.0, 523.25,0,440.0,392.0, 349.23,329.63,293.66,220.0,
+           440.0,0,523.25,587.33, 523.25,440.0,392.0,349.23, 392.0,440.0,523.25,440.0, 587.33,0,440.0,293.66],
+    harmony:[146.83,0,220.0,196.0, 174.61,0,196.0,220.0, 261.63,0,220.0,196.0, 174.61,164.81,146.83,110.0,
+             220.0,0,261.63,293.66, 261.63,220.0,196.0,174.61, 196.0,220.0,261.63,220.0, 293.66,0,220.0,146.83],
+    arp:[440.0,523.25,587.33,523.25, 440.0,392.0,349.23,392.0, 523.25,587.33,659.25,587.33, 523.25,440.0,392.0,349.23,
+         440.0,587.33,659.25,587.33, 523.25,440.0,392.0,440.0, 523.25,587.33,659.25,698.46, 587.33,440.0,523.25,440.0],
+    bType:'sawtooth',lType:'sawtooth',cutoff:1120
    },
+   // China: Heavy industrial war march + pentatonic brass & gong-like fifths
    china:{
-    bass:[73.42,73.42,87.31,73.42,110.0,110.0,98.0,87.31, 73.42,73.42,110.0,130.81,146.83,130.81,110.0,87.31],
-    brass:[293.66,349.23,440.0,0,587.33,523.25,440.0,0, 440.0,523.25,587.33,659.25,587.33,440.0,349.23,293.66],
-    harmony:[146.83,0,220.0,0,293.66,0,220.0,0, 220.0,0,293.66,329.63,293.66,220.0,174.61,0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:820
+    bass:[73.42,73.42,87.31,73.42, 110.0,110.0,98.0,87.31, 73.42,73.42,110.0,130.81, 146.83,130.81,110.0,87.31,
+          73.42,73.42,110.0,73.42, 87.31,87.31,110.0,130.81, 146.83,146.83,130.81,110.0, 87.31,73.42,87.31,73.42],
+    brass:[293.66,349.23,440.0,0, 587.33,523.25,440.0,0, 440.0,523.25,587.33,659.25, 587.33,440.0,349.23,293.66,
+           440.0,0,587.33,659.25, 587.33,440.0,349.23,440.0, 523.25,587.33,659.25,587.33, 440.0,349.23,293.66,0],
+    harmony:[146.83,0,220.0,0, 293.66,0,220.0,0, 220.0,0,293.66,329.63, 293.66,220.0,174.61,0,
+             220.0,0,293.66,329.63, 293.66,220.0,174.61,220.0, 261.63,293.66,329.63,293.66, 220.0,174.61,146.83,0],
+    arp:[587.33,523.25,440.0,349.23, 440.0,523.25,587.33,440.0, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66,
+         587.33,659.25,587.33,440.0, 523.25,587.33,440.0,349.23, 440.0,523.25,587.33,659.25, 587.33,440.0,349.23,293.66],
+    bType:'sawtooth',lType:'sawtooth',cutoff:940
    },
+   // Russia: Dark Soviet Red-Alert / Generals iron-fist C-minor march
    russia:{
-    bass:[65.41,65.41,130.81,65.41,87.31,77.78,65.41,58.27, 65.41,65.41,98.0,87.31,77.78,65.41,58.27,65.41],
-    brass:[196.0,0,233.08,261.63,233.08,0,196.0,174.61, 261.63,0,293.66,311.13,293.66,261.63,233.08,196.0],
-    harmony:[130.81,0,155.56,174.61,155.56,0,130.81,116.54, 174.61,0,196.0,207.65,196.0,174.61,155.56,0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:640
+    bass:[65.41,65.41,130.81,65.41, 87.31,77.78,65.41,58.27, 65.41,65.41,98.0,87.31, 77.78,65.41,58.27,65.41,
+          65.41,65.41,130.81,98.0, 87.31,87.31,116.54,98.0, 77.78,77.78,87.31,98.0, 130.81,98.0,77.78,65.41],
+    brass:[196.0,0,233.08,261.63, 233.08,0,196.0,174.61, 261.63,0,293.66,311.13, 293.66,261.63,233.08,196.0,
+           261.63,0,311.13,392.0, 349.23,311.13,293.66,261.63, 233.08,261.63,293.66,311.13, 261.63,0,196.0,130.81],
+    harmony:[130.81,0,155.56,174.61, 155.56,0,130.81,116.54, 174.61,0,196.0,207.65, 196.0,174.61,155.56,0,
+             130.81,0,155.56,196.0, 174.61,155.56,146.83,130.81, 116.54,130.81,146.83,155.56, 130.81,0,98.0,65.41],
+    arp:[392.0,311.13,261.63,196.0, 349.23,311.13,261.63,233.08, 392.0,349.23,311.13,293.66, 311.13,293.66,261.63,233.08,
+         392.0,311.13,349.23,392.0, 466.16,392.0,349.23,311.13, 293.66,311.13,349.23,392.0, 311.13,261.63,233.08,196.0],
+    bType:'sawtooth',lType:'sawtooth',cutoff:760
    },
+   // Free Militia (GLA): Hijaz Phrygian-dominant Middle-Eastern electric guitar & darbuka groove
    militia:{
-    bass:[82.41,82.41,164.81,110.0,82.41,82.41,123.47,110.0, 82.41,98.0,110.0,123.47,130.81,123.47,110.0,98.0],
-    brass:[329.63,349.23,415.30,440.0,415.30,349.23,329.63,246.94, 440.0,493.88,523.25,493.88,440.0,415.30,349.23,329.63],
-    harmony:[164.81,0,207.65,220.0,207.65,0,164.81,0, 220.0,0,261.63,246.94,220.0,207.65,174.61,0],
-    bType:'square',lType:'sawtooth',cutoff:860
+    bass:[82.41,82.41,164.81,110.0, 82.41,82.41,123.47,110.0, 82.41,98.0,110.0,123.47, 130.81,123.47,110.0,98.0,
+          82.41,164.81,82.41,110.0, 87.31,174.61,87.31,110.0, 98.0,110.0,123.47,130.81, 123.47,110.0,98.0,82.41],
+    brass:[329.63,349.23,415.30,440.0, 415.30,349.23,329.63,246.94, 440.0,493.88,523.25,493.88, 440.0,415.30,349.23,329.63,
+           415.30,440.0,493.88,523.25, 493.88,440.0,415.30,349.23, 329.63,349.23,415.30,440.0, 415.30,349.23,329.63,246.94],
+    harmony:[164.81,0,207.65,220.0, 207.65,0,164.81,0, 220.0,0,261.63,246.94, 220.0,207.65,174.61,0,
+             207.65,220.0,246.94,261.63, 246.94,220.0,207.65,174.61, 164.81,174.61,207.65,220.0, 207.65,174.61,164.81,0],
+    arp:[659.25,523.25,493.88,440.0, 415.30,349.23,329.63,349.23, 415.30,440.0,493.88,523.25, 587.33,523.25,493.88,440.0,
+         659.25,587.33,523.25,493.88, 440.0,415.30,349.23,329.63, 349.23,415.30,440.0,493.88, 415.30,349.23,329.63,246.94],
+    bType:'square',lType:'sawtooth',cutoff:980
    }
   };
   this.bgmTimer=setInterval(()=>{
@@ -3484,195 +4108,65 @@ const SFX={
    const t=c.currentTime,s=step++;
    const th=this.playMainOnly?mainTheme:((s<32)?mainTheme:(themes[this.facOf(ME)]||themes.usa));
    const inCombat=G&&G.lastAttack&&G.lastAttack[ME]&&(G.t-G.lastAttack[ME].t<14);
-   // 1. Driving Low Bass & Fifth Ostinato
+   // 1. Driving Sub + Electric Bass Ostinato
    const bf=th.bass[s%th.bass.length];
    if(bf>0){
     const ob=c.createOscillator(),gb=c.createGain(),fb=c.createBiquadFilter();
-    ob.type=th.bType;fb.type='lowpass';fb.frequency.setValueAtTime(inCombat?th.cutoff*1.4:th.cutoff,t);
+    ob.type=th.bType;fb.type='lowpass';fb.frequency.setValueAtTime(inCombat?th.cutoff*1.45:th.cutoff,t);
     ob.frequency.setValueAtTime(bf,t);
-    gb.gain.setValueAtTime(inCombat?0.052:0.038,t);gb.gain.exponentialRampToValueAtTime(0.001,t+0.21);
-    ob.connect(fb);fb.connect(gb);gb.connect(c.destination);ob.start(t);ob.stop(t+0.22);
+    gb.gain.setValueAtTime(inCombat?0.056:0.042,t);gb.gain.exponentialRampToValueAtTime(0.001,t+0.19);
+    ob.connect(fb);fb.connect(gb);gb.connect(c.destination);ob.start(t);ob.stop(t+0.20);
    }
-   // 2. Dramatic Brass Lead + Choir/Synth Harmony
+   // 2. Dual-Detuned Brass / Lead Guitar Power Voice (chorus richness!)
    const lf=th.brass[s%th.brass.length];
    if(lf>0){
-    const ol=c.createOscillator(),gl=c.createGain(),fl=c.createBiquadFilter();
-    ol.type=th.lType;fl.type='lowpass';fl.frequency.setValueAtTime(inCombat?th.cutoff*2.2:th.cutoff*1.5,t);
-    ol.frequency.setValueAtTime(lf,t);
-    gl.gain.setValueAtTime(inCombat?0.036:0.022,t);gl.gain.exponentialRampToValueAtTime(0.001,t+0.23);
-    ol.connect(fl);fl.connect(gl);gl.connect(c.destination);ol.start(t);ol.stop(t+0.24);
+    for(const det of [-6,6]){
+     const ol=c.createOscillator(),gl=c.createGain(),fl=c.createBiquadFilter();
+     ol.type=th.lType;ol.detune.value=det;fl.type='lowpass';fl.frequency.setValueAtTime(inCombat?th.cutoff*2.3:th.cutoff*1.6,t);
+     ol.frequency.setValueAtTime(lf,t);
+     gl.gain.setValueAtTime(inCombat?0.024:0.015,t);gl.gain.exponentialRampToValueAtTime(0.001,t+0.21);
+     ol.connect(fl);fl.connect(gl);gl.connect(c.destination);ol.start(t);ol.stop(t+0.22);
+    }
    }
+   // 3. Orchestral Choir / Strings Fifth Harmony
    const hf=th.harmony[s%th.harmony.length];
    if(hf>0&&(inCombat||s%2===0)){
     const oh=c.createOscillator(),gh=c.createGain();
     oh.type='triangle';oh.frequency.setValueAtTime(hf,t);
-    gh.gain.setValueAtTime(inCombat?0.028:0.017,t);gh.gain.exponentialRampToValueAtTime(0.001,t+0.25);
-    oh.connect(gh);gh.connect(c.destination);oh.start(t);oh.stop(t+0.26);
+    gh.gain.setValueAtTime(inCombat?0.030:0.018,t);gh.gain.exponentialRampToValueAtTime(0.001,t+0.24);
+    oh.connect(gh);gh.connect(c.destination);oh.start(t);oh.stop(t+0.25);
    }
-   // 3. War Drums (Timpani / Kick + Snare Roll on combat)
+   // 4. High Tactical Synth / Guitar Arpeggio Pulse (signature Zero Hour rhythmic drive)
+   if(th.arp&&(inCombat||this.playMainOnly||s%2===0)){
+    const af=th.arp[s%th.arp.length];
+    if(af>0){
+     const oa=c.createOscillator(),ga=c.createGain();
+     oa.type='triangle';oa.frequency.setValueAtTime(af,t);
+     ga.gain.setValueAtTime(inCombat?0.018:0.010,t);ga.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+     oa.connect(ga);ga.connect(c.destination);oa.start(t);oa.stop(t+0.13);
+    }
+   }
+   // 5. Heavy War Drums (Kick + Snare + Hi-Hat 16th pulse)
    if(s%4===0||(inCombat&&(s%2===0))){
     const ok=c.createOscillator(),gk=c.createGain();
-    ok.type='sine';ok.frequency.setValueAtTime(s%8===0?125:105,t);ok.frequency.exponentialRampToValueAtTime(32,t+0.12);
-    gk.gain.setValueAtTime(inCombat?0.075:0.048,t);gk.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+    ok.type='sine';ok.frequency.setValueAtTime(s%8===0?135:110,t);ok.frequency.exponentialRampToValueAtTime(30,t+0.12);
+    gk.gain.setValueAtTime(inCombat?0.085:0.055,t);gk.gain.exponentialRampToValueAtTime(0.001,t+0.13);
     ok.connect(gk);gk.connect(c.destination);ok.start(t);ok.stop(t+0.14);
-   }else if(s%2===1){
-    const dur=0.055,nbuf=c.createBuffer(1,c.sampleRate*dur|0,c.sampleRate),nd=nbuf.getChannelData(0);
-    for(let i=0;i<nd.length;i++)nd[i]=(Math.random()*2-1)*(1-i/nd.length);
-    const nsrc=c.createBufferSource();nsrc.buffer=nbuf;
-    const nf=c.createBiquadFilter();nf.type='highpass';nf.frequency.setValueAtTime(s%4===3?1400:3600,t);
-    const ng=c.createGain();ng.gain.setValueAtTime(inCombat?(s%4===3?0.032:0.018):(s%4===3?0.018:0.009),t);ng.gain.exponentialRampToValueAtTime(0.001,t+dur);
-    nsrc.connect(nf);nf.connect(ng);ng.connect(c.destination);nsrc.start(t);
    }
-  },220);
+   if(s%4===2||(inCombat&&s%4===3)){
+    this.noise(t,0.08,'bandpass',1800,750,inCombat?0.045:0.025,1.2);
+   }else{
+    this.noise(t,0.03,'highpass',5200,3800,inCombat?0.018:0.010,1.0);
+   }
+  },185);
  }
 };
-$('sfxBtn').addEventListener('click',()=>{SFX.on=!SFX.on;$('sfxBtn').textContent=SFX.on?'🔊 SFX':'🔇 SFX';$('sfxBtn').style.borderColor=SFX.on?'#ffd34d':'#3b5068';if(SFX.on)SFX.play('click');});
+$('sfxBtn').addEventListener('click',()=>{SFX.on=!SFX.on;$('sfxBtn').textContent=SFX.on?tr('sfxOn'):tr('sfxOff');$('sfxBtn').style.borderColor=SFX.on?'#ffd34d':'#3b5068';if(SFX.on)SFX.play('click');});
 $('bgmBtn').addEventListener('click',()=>{SFX.toggleBgm(undefined,false);SFX.userMutedBgm=!SFX.bgm;});
 const toggleZhMain=()=>{const next=!(SFX.bgm&&SFX.playMainOnly);SFX.toggleBgm(next,next);SFX.userMutedBgm=!next;};
 if($('zhThemeBtn'))$('zhThemeBtn').addEventListener('click',toggleZhMain);
 if($('topZhThemeBtn'))$('topZhThemeBtn').addEventListener('click',toggleZhMain);
 
-const LANG_STR={
- en:{
-  code:'en-US',
-  start:'Start Battle',resume:'Resume',leave:'Leave game',
-  underAttack:'Warning! Our base is under attack!',
-  forcesAttack:'Our forces are under attack!',
-  built:'Construction complete: ',
-  ready:'Unit ready: ',
-  research:'Upgrade complete: ',
-  lowPow:'Warning! Low power!',
-  insufficient:'Insufficient funds!',
-  rankUp:'Promotion! You have been promoted, General!',
-  swWarn:'Warning! Enemy superweapon detected!',
-  swLaunch:'Warning! Superweapon launched!',
-  victory:'Victory! You are victorious, General!',
-  defeat:'You have been defeated!'
- },
- ru:{
-  code:'ru-RU',
-  start:'Начать бой',resume:'Продолжить',leave:'Покинуть бой',
-  underAttack:'Внимание! Наша база атакована!',
-  forcesAttack:'Наши войска под огнём!',
-  built:'Строительство завершено: ',
-  ready:'Боевая единица готова: ',
-  research:'Улучшение завершено: ',
-  lowPow:'Внимание! Недостаточно энергии!',
-  insufficient:'Недостаточно средств!',
-  rankUp:'Повышение! Новое звание генерала!',
-  swWarn:'Внимание! Обнаружено супероружие врага!',
-  swLaunch:'Внимание! Запуск супероружия!',
-  victory:'Победа! Враг разгромлен, Генерал!',
-  defeat:'Поражение! Ваша база уничтожена!'
- },
- zh:{
-  code:'zh-CN',
-  start:'开始战斗',resume:'继续游戏',leave:'离开战斗',
-  underAttack:'警告！我方基地正受到攻击！',
-  forcesAttack:'我方部队正遭到攻击！',
-  built:'建造完成：',
-  ready:'单位就绪：',
-  research:'科技升级完成：',
-  lowPow:'警告！电力不足！',
-  insufficient:'资金不足！',
-  rankUp:'军衔晋升！将军！',
-  swWarn:'警告！发现敌方超级武器！',
-  swLaunch:'警告！超级武器已发射！',
-  victory:'胜利！你赢得了这场战役，将军！',
-  defeat:'战败！你的部队已被消灭！'
- },
- es:{
-  code:'es-ES',
-  start:'Iniciar Batalla',resume:'Reanudar',leave:'Abandonar',
-  underAttack:'¡Alerta! ¡Nuestra base está bajo ataque!',
-  forcesAttack:'¡Nuestras fuerzas están bajo ataque!',
-  built:'Construcción completada: ',
-  ready:'Unidad lista: ',
-  research:'Mejora completada: ',
-  lowPow:'¡Alerta! ¡Energía baja!',
-  insufficient:'¡Fondos insuficientes!',
-  rankUp:'¡Ascenso! ¡Has sido ascendido, General!',
-  swWarn:'¡Alerta! ¡Superarma enemiga detectada!',
-  swLaunch:'¡Alerta! ¡Superarma lanzada!',
-  victory:'¡Victoria! ¡Has ganado la batalla, General!',
-  defeat:'¡Has sido derrotado!'
- },
- ar:{
-  code:'ar-SA',
-  start:'ابدأ المعركة',resume:'استئناف',leave:'مغادرة',
-  underAttack:'تحذير! قاعدتنا تتعرض للهجوم!',
-  forcesAttack:'قواتنا تتعرض للهجوم!',
-  built:'اكتمل البناء: ',
-  ready:'الوحدة جاهزة: ',
-  research:'اكتمل التطوير: ',
-  lowPow:'تحذير! الطاقة منخفضة!',
-  insufficient:'الرصيد غير كافٍ!',
-  rankUp:'ترقية! تمت ترقيتك أيها الجنرال!',
-  swWarn:'تحذير! تم رصد سلاح خارق للعدو!',
-  swLaunch:'تحذير! تم إطلاق السلاح الخارق!',
-  victory:'نصر! لقد انتصرت أيها الجنرال!',
-  defeat:'لقد هُزمت!'
- }
-};
-const EVA={
- on:true,lang:'en',lastSpoke:0,
- setLang(l){
-  if(!LANG_STR[l])l='en';
-  this.lang=l;
-  try{localStorage.setItem('if_lang',l);}catch(e){}
-  const sel=$('langSel');if(sel)sel.value=l;
-  const t=LANG_STR[l];
-  if($('startBtn'))$('startBtn').textContent=t.start;
-  if($('resumeBtn'))$('resumeBtn').textContent=t.resume;
-  if($('leaveBtn'))$('leaveBtn').textContent=t.leave;
- },
- speak(text,urgent){
-  if(!this.on)return;
-  const now=performance.now();
-  if(!urgent&&now-this.lastSpoke<2100)return;
-  this.lastSpoke=now;
-  try{
-   if(typeof SFX!=='undefined'&&SFX.ctx){
-    const c=SFX.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
-    o.type='sine';o.frequency.setValueAtTime(urgent?920:680,t);o.frequency.exponentialRampToValueAtTime(urgent?1240:1020,t+0.065);
-    g.gain.setValueAtTime(0.028,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
-    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.08);
-   }
-   if('speechSynthesis' in window){
-    window.speechSynthesis.cancel();
-    let clean=String(text).replace(/[<>★✖⚡🔊🔇🎵🎙️🌐⚠️✅📡]/g,'').trim();
-    if(this.lang==='en'){
-     if(/Construction complete:\s*(.+)/i.test(clean))clean=clean.replace(/Construction complete:\s*(.+)/i,'$1 construction complete.');
-     else if(/(.+?)\s+ready$/i.test(clean))clean=clean.replace(/(.+?)\s+ready$/i,'$1 ready for orders.');
-    }
-    const u=new SpeechSynthesisUtterance(clean);
-    u.lang=(LANG_STR[this.lang]||LANG_STR.en).code;
-    u.rate=urgent?1.02:0.96;u.pitch=urgent?0.96:0.90;u.volume=0.95;
-    const voices=window.speechSynthesis.getVoices?window.speechSynthesis.getVoices():[];
-    const prefix=u.lang.slice(0,2).toLowerCase();
-    const match=voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(prefix)&&/natural|google|microsoft|daniel|alex|samantha|milena|zira|david|aria|guy/i.test(v.name))||voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(prefix));
-    if(match)u.voice=match;
-    window.speechSynthesis.speak(u);
-   }
-  }catch(e){}
- },
- localizeMsg(text){
-  const t=LANG_STR[this.lang]||LANG_STR.en;
-  if(text.startsWith('Our base is under attack!'))return t.underAttack;
-  if(text.startsWith('Our forces are under attack!'))return t.forcesAttack;
-  if(text.startsWith('Construction complete: '))return t.built+text.slice(23);
-  if(text.endsWith(' ready')&&!text.includes('!'))return t.ready+text.slice(0,-6);
-  if(text.startsWith('Research complete: '))return t.research+text.slice(19);
-  if(text.startsWith('Low power!'))return t.lowPow;
-  if(text==='Insufficient funds')return t.insufficient;
-  if(text.startsWith('Promoted to General Rank'))return t.rankUp;
-  if(text.startsWith('Warning:')&&text.includes('built a'))return t.swWarn;
-  if(text.startsWith('ALERT:')&&text.includes('launched'))return t.swLaunch;
-  return text;
- }
-};
-try{const sl=localStorage.getItem('if_lang');if(sl)EVA.setLang(sl);}catch(e){}
-if($('langSel'))$('langSel').addEventListener('change',e=>{EVA.setLang(e.target.value);EVA.speak(LANG_STR[EVA.lang].start,true);});
 const ZH_UNIT_LINES={
  dozer:{sel:['Bulldozer. Yeah?','Construction unit ready.'],act:["Layin' the foundation.",'Building it right now.']},
  truck:{sel:['Supply truck ready.','Need a delivery?'],act:['Haulin supplies.','On the road.']},
@@ -3687,20 +4181,36 @@ const ZH_UNIT_LINES={
  heli:{sel:['Gunship airborne.','Rotors turning.'],act:['Cleared to engage.','Inbound on target.']},
  jet:{sel:['Aurora in flight. Avionics online.','Supersonic strike ready.'],act:['Locking on target!','Going supersonic!']}
 };
+const ZH_UNIT_LINES_RU={
+ dozer:{sel:['Бульдозер на связи.','Строительная машина готова.'],act:['Закладываю фундамент.','Начинаю строительство.']},
+ truck:{sel:['Грузовик снабжения готов.','Куда везти припасы?'],act:['Везу ресурсы.','Выезжаю на маршрут.']},
+ worker:{sel:['Дайте мне ботинки!','Я готов работать.'],act:['Хорошо, хорошо, уже работаю.','Сделаю немедленно.']},
+ inf:{sel:['Отделение готово.','Оружие к бою!'],act:['Выдвигаемся!','Вступаем в бой!']},
+ rinf:{sel:['Гранатомётчик готов!','Истребитель танков на позиции.'],act:['Цель на мушке!','Пуск ракеты!']},
+ sniper:{sel:['Следопыт на связи.','Один выстрел — одна цель.'],act:['Занимаю позицию.','Цель захвачена.']},
+ hacker:{sel:['Кибер-оперативник в сети.','Доступ к системам открыт.'],act:['Взламываю сеть врага.','Отключаю технику.']},
+ tank:{sel:['Танковая дивизия готова.','Боевой танк на связи.'],act:['Выдвигаемся!','Броня идёт вперёд!']},
+ heavy:{sel:['Сверхтяжёлый танк готов.','Нас не остановить.'],act:['Раздавим врага!','Полный вперёд!']},
+ arty:{sel:['Артиллерия на позиции.','Координаты приняты.'],act:['Накрываю квадрат!','Огонь по цели!']},
+ heli:{sel:['Боевой вертолёт в воздухе.','Винты на полную.'],act:['Разрешение на атаку получено.','Захожу на цель.']},
+ jet:{sel:['Авиация в воздухе. Системы в норме.','Сверхзвуковой удар готов.'],act:['Захват цели!','Перехожу на сверхзвук!']}
+};
 EVA.unitVoice=function(ent,mode){
- if(!this.on||!ent||ent.kind!=='u'||this.lang!=='en')return;
+ if(!this.on||!ent||ent.kind!=='u')return;
+ if(this.lang!=='en'&&this.lang!=='ru')return;
  const now=performance.now();
  if(now-(this.lastUnitVoice||0)<3200)return;
  this.lastUnitVoice=now;
  const sh=ent.d.shape;
- const bank=ZH_UNIT_LINES[sh]||ZH_UNIT_LINES.tank;
+ const dict=this.lang==='ru'?ZH_UNIT_LINES_RU:ZH_UNIT_LINES;
+ const bank=dict[sh]||dict.tank;
  const pool=bank[mode]||bank.sel;
  const line=pool[Math.floor(Math.random()*pool.length)];
  try{
   if('speechSynthesis' in window){
    window.speechSynthesis.cancel();
    const u=new SpeechSynthesisUtterance(line);
-   u.lang='en-US';u.rate=1.05;u.pitch=ent.d.armor==='veh'?0.82:0.95;u.volume=0.85;
+   u.lang=this.lang==='ru'?'ru-RU':'en-US';u.rate=1.04;u.pitch=ent.d.armor==='veh'?0.82:0.95;u.volume=0.88;
    window.speechSynthesis.speak(u);
   }
  }catch(e){}
@@ -3708,8 +4218,8 @@ EVA.unitVoice=function(ent,mode){
 if($('evaBtn'))$('evaBtn').addEventListener('click',()=>{
  EVA.on=!EVA.on;
  $('evaBtn').classList.toggle('on',EVA.on);
- $('evaBtn').textContent=EVA.on?'🎙️ EVA Voice: ON':'🔇 EVA Voice: OFF';
- if(EVA.on)EVA.speak('EVA online',true);
+ $('evaBtn').textContent=EVA.on?tr('evaOn'):tr('evaOff');
+ if(EVA.on)EVA.speak(EVA.lang==='ru'?'Система EVA активна':'EVA online',true);
 });
 
 // ---- Zero Hour Generals' Challenge ----

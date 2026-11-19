@@ -1,7 +1,7 @@
 {
-  "name": "Iron Front: Zero Hour v12",
+  "name": "Iron Front: Zero Hour v13",
   "short_name": "Iron Front ZH",
-  "description": "Real-Time Strategy Game — HD 2.5D Units & Ordnance, Multi-Stage Detonations, EVA Voice Alerts & Zero Hour Main Theme",
+  "description": "Real-Time Strategy Game — Faction-Distinct 2.5D Troops & Armor, 3D Shadows, Jet CAP Control, Full Russian Localization & Zero Hour Theme",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "landscape",
