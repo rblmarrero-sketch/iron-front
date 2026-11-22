@@ -2566,6 +2566,7 @@ const PAD={usa:'#555d68',china:'#5e524a',russia:'#525b63',militia:'#6b5e44',none
 function drawBld(e){
  const x=e.tx*TILE-cam.x,y=e.ty*TILE-cam.y,w=e.w*TILE,h=e.h*TILE;if(x>VW+140||y>VH+140||x+w<-140||y+h<-140)return;
  const c=PC(e.team),dk=PD(e.team),lt=PL(e.team),cx=x+w/2,cy=y+h/2,fac=e.team>=0?G.fac[e.team]:'none';
+ const active=e.built&&(!e.disT||e.disT<=G.t)&&!lowPower(e.team);
  ctx.save();if(!e.built)ctx.globalAlpha=0.48+0.48*e.prog;
  drawPrism3D(x+2,y+2,w-4,h-4,0,6,PAD[fac],'#252b33','#1a1f26',e.team>=0?c:'#11161d');
  if(VIEW3D){
@@ -2579,39 +2580,107 @@ function drawBld(e){
  }
  switch(e.d.shape){
   case 'hq':{
-   if(fac==='militia'){
+   if(fac==='usa'){
+    // USA Command Center: Modern Steel Glass-Visor Citadel, Helipad, & Sweeping Phased-Array Radar
+    drawPrism3D(x+10,y+12,w-20,h-22,6,28,'#3b4656','#202733','#151b23',c);
+    drawPrism3D(x+16,y+h-54,76,32,28,45,dk,'#131922','#0c1017',c);
+    const [wx0,wy0]=p3(x+20,y+h-22,39);
+    ctx.fillStyle='#7fd7ff';for(let i=0;i<4;i++)ctx.fillRect(wx0+i*17,wy0-6,12,5);
+    // Helipad with crisp 'H' & rotating radar dish
+    drawCyl3D(x+w-44,y+44,25,28,33,'#2b313a','#171b21',c);
+    const [hx,hy]=p3(x+w-44,y+44,33);
+    ctx.fillStyle='#ffd34d';ctx.font='700 15px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('H',hx,hy+5);ctx.textAlign='left';
+    const [rx,ry]=p3(x+42,y+42,28);
+    drawCyl3D(x+42,y+42,6,28,46,'#8c98a6','#46505c',c);
+    ctx.save();ctx.translate(rx,ry-20);ctx.rotate(active?G.t*2.4:0.4);
+    ctx.strokeStyle='#eef5fc';ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(-17,0);ctx.lineTo(17,0);ctx.stroke();
+    ctx.fillStyle='#5ce1ff';ctx.beginPath();ctx.arc(17,0,3.5,0,7);ctx.fill();ctx.restore();
+   }else if(fac==='china'){
+    // China Command Post: Terraced Imperial-Fortress Tiered Roofs, Crimson Pillars & Broadcasting Spire
+    drawPrism3D(x+8,y+10,w-16,h-18,6,24,'#4d3b33','#2b201b','#1d1511',c);
+    drawPrism3D(x+22,y+24,w-44,h-44,24,38,dk,'#381a16','#24100d','#ffd34d');
+    drawPrism3D(x+44,y+46,w-88,h-88,38,48,'#9e2a20','#5c1610','#3d0d0a','#ffd34d');
+    // Central gold-rimmed radar spire with sweeping red/gold broadcast rings
+    const [sx,sy]=p3(cx,cy,48);
+    drawCyl3D(cx,cy,5,48,66,'#ffd34d','#9a7a12',c);
+    if(active){
+     const p=(G.t*1.2)%1;
+     ctx.strokeStyle=`rgba(255,211,77,${(1-p)*0.75})`;ctx.lineWidth=2;
+     ctx.beginPath();ctx.ellipse(sx,sy-16,8+p*34,6+p*26,0,0,7);ctx.stroke();
+    }
+   }else if(fac==='russia'){
+    // Russia Command Bunker: Sloped Brutalist Concrete Monolith, Armored Blast Doors & Twin Telemetry Masts
+    drawPrism3D(x+8,y+10,w-16,h-18,6,32,'#49525c','#272d34','#1a1e24',c);
+    drawPrism3D(x+18,y+20,w-36,h-56,32,44,'#343c44','#1c2126','#13171b','#ffd34d');
+    // Heavy steel blast-door ribs
+    const [bx0,by0]=p3(x+24,y+h-12,6);
+    ctx.fillStyle='#1d2228';ctx.fillRect(bx0,by0-18,w-48,18);
+    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx0,by0-18,w-48,18);
+    // Twin rotating telemetry masts
+    for(const mx of [x+34,x+w-34]){
+     drawCyl3D(mx,y+34,5,44,62,'#8c98a6','#46505c',c);
+     const [tx,ty]=p3(mx,y+34,62);
+     ctx.save();ctx.translate(tx,ty);ctx.rotate(active?G.t*3.0+mx:0);
+     ctx.strokeStyle='#ffd34d';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(12,0);ctx.stroke();ctx.restore();
+    }
+   }else{
+    // Free Militia Stronghold: Sandbagged Mud-Brick Palace, Minaret Watchtowers & Golden Dome
     drawPrism3D(x+14,y+14,w-28,h-28,6,26,'#7a6846','#4f422b','#3b311f',c);
     drawCyl3D(cx,cy,26,26,38,'#c9b48a','#8a7652',c);
-    drawCyl3D(cx,cy,12,38,44,dk,'#241e14','#ffd34d');
-    for(const [px,py] of [[x+16,y+16],[x+w-16,y+16],[x+16,y+h-16],[x+w-16,y+h-16]])drawCyl3D(px,py,10,6,22,'#9c8860','#5c4e36',dk);
-    break;
+    drawCyl3D(cx,cy,13,38,46,'#d4a017','#7a5808','#ffd34d');
+    for(const [px,py] of [[x+16,y+16],[x+w-16,y+16],[x+16,y+h-16],[x+w-16,y+h-16]]){
+     drawCyl3D(px,py,10,6,26,'#9c8860','#5c4e36',dk);
+    }
+    const [fx,fy]=p3(cx,cy,46);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx,fy-22);ctx.stroke();
+    const wv=dSin(G.t*6+e.id)*2.5;ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(fx,fy-22);ctx.lineTo(fx+16,fy-18+wv);ctx.lineTo(fx,fy-12);ctx.fill();
    }
-   drawPrism3D(x+10,y+12,w-20,h-22,6,28,'#3a4452','#202731','#161b23',c);
-   drawPrism3D(x+w-42,y+16,24,18,28,35,'#7f8b99','#49525e','#323942','#191e24');
-   drawPrism3D(x+16,y+h-56,74,34,28,44,dk,'#131922','#0c1017',c);
-   const [wx0,wy0]=p3(x+20,y+h-22,38);
-   ctx.fillStyle='#7fd7ff';for(let i=0;i<4;i++)ctx.fillRect(wx0+i*16,wy0-6,11,5);
-   drawCyl3D(x+w-44,y+44,24,28,33,'#2b313a','#171b21',c);
-   const [hx,hy]=p3(x+w-44,y+44,33);
-   ctx.fillStyle='#ffd34d';ctx.font='700 15px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('HQ',hx,hy+5);ctx.textAlign='left';
-   const [rx,ry]=p3(x+44,y+44,28);
-   drawCyl3D(x+44,y+44,6,28,44,'#8c98a6','#46505c',c);
-   ctx.save();ctx.translate(rx,ry-18);ctx.rotate(G.t*2.0);
-   ctx.strokeStyle='#eef5fc';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-16,0);ctx.lineTo(16,0);ctx.stroke();
-   ctx.fillStyle=c;ctx.beginPath();ctx.arc(16,0,3.5,0,7);ctx.fill();ctx.restore();
    break;
   }
   case 'power':{
-   const R=Math.min(w,h)/2-10;
-   drawCyl3D(cx,cy,R,6,34,'#6d7682','#383f47',c);
-   drawCyl3D(cx,cy,R*0.68,34,36,'#1a2028','#11151b','#2c3540');
-   if(e.built){
-    const [gx,gy]=p3(cx,cy,35);
-    const pulse=0.55+0.35*dSin(G.t*3.8+e.id);
-    const glow=fac==='china'?'92,225,255':fac==='russia'?'255,145,60':'255,230,110';
-    const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,R*0.65);rg.addColorStop(0,safeCol(`rgba(${glow},${pulse})`,'rgba(255,230,110,0.6)'));rg.addColorStop(1,safeCol(`rgba(${glow},0)`,'rgba(255,230,110,0)'));
-    ctx.fillStyle=rg;ctx.beginPath();ctx.ellipse(gx,gy,R*0.65,R*0.52,0,0,7);ctx.fill();
-    if(Math.random()<0.14)G.fx.push({k:'smoke',x:e.x-10,y:e.y-22,vx:6,vy:-24,r:8,life:1.6,max:1.6});
+   if(fac==='usa'){
+    // USA Cold-Fusion / Turbine Power Plant: Twin Spinning Blue-Core Control Rods & Cooling Shroud
+    drawPrism3D(x+6,y+8,w-12,h-14,6,22,'#465261','#232a33','#171c23',c);
+    const rRod=Math.min(w,h)*0.22;
+    for(const ox of [-w*0.20,w*0.20]){
+     drawCyl3D(cx+ox,cy,rRod,22,34,'#7a8796','#3c444f',c);
+     if(active){
+      const [gx,gy]=p3(cx+ox,cy,34);
+      const pulse=0.55+0.35*dSin(G.t*5.0+e.id+ox);
+      const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,rRod*1.1);
+      rg.addColorStop(0,safeCol(`rgba(92,225,255,${pulse})`,'rgba(92,225,255,0.6)'));
+      rg.addColorStop(1,'rgba(92,225,255,0)');
+      ctx.fillStyle=rg;ctx.beginPath();ctx.arc(gx,gy,rRod*1.1,0,7);ctx.fill();
+      ctx.save();ctx.translate(gx,gy);ctx.rotate(G.t*4.5+(ox>0?1:0));
+      ctx.strokeStyle='#d4f5ff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-rRod*0.6,0);ctx.lineTo(rRod*0.6,0);ctx.stroke();ctx.restore();
+     }
+    }
+   }else if(fac==='china'){
+    // China Nuclear Fusion Reactor: Heavy Domed Containment Vessel with Pulsing Crimson/Gold Cherenkov Core
+    const R=Math.min(w,h)/2-10;
+    drawPrism3D(x+8,y+8,w-16,h-16,6,18,'#4f3c35','#2b201c','#1d1512',c);
+    drawCyl3D(cx,cy,R*0.86,18,36,'#6e564d','#3b2c27','#ffd34d');
+    drawCyl3D(cx,cy,R*0.54,36,40,'#1a2028','#11151b',c);
+    if(active){
+     const [gx,gy]=p3(cx,cy,39);
+     const pulse=0.6+0.35*dSin(G.t*4.2+e.id);
+     const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,R*0.62);
+     rg.addColorStop(0,safeCol(`rgba(255,110,45,${pulse})`,'rgba(255,110,45,0.6)'));
+     rg.addColorStop(0.55,safeCol(`rgba(255,215,90,${pulse*0.7})`,'rgba(255,215,90,0.4)'));
+     rg.addColorStop(1,'rgba(255,90,20,0)');
+     ctx.fillStyle=rg;ctx.beginPath();ctx.ellipse(gx,gy,R*0.62,R*0.50,0,0,7);ctx.fill();
+    }
+   }else{
+    // Russia Thermal Nuclear Plant: Twin Hyperbolic Cooling Towers venting Rising Steam Plumes
+    const rT=Math.min(w,h)*0.28;
+    drawPrism3D(x+6,y+10,w-12,h-16,6,18,'#475059','#252b30','#181c20',c);
+    for(const ox of [-w*0.22,w*0.22]){
+     drawCyl3D(cx+ox,cy-2,rT,18,38,'#7c858e','#434950',c);
+     drawCyl3D(cx+ox,cy-2,rT*0.72,38,39,'#14181d','#0d1014','#2e353d');
+     if(active&&Math.random()<0.18){
+      G.fx.push({k:'smoke',x:e.x+ox-6,y:e.y-24,vx:7+Math.random()*5,vy:-26,r:9,life:1.8,max:1.8});
+     }
+    }
    }
    break;
   }
@@ -2631,13 +2700,52 @@ function drawBld(e){
    break;
   }
   case 'factory':{
-   drawPrism3D(x+6,y+8,w-12,h-14,6,32,'#384352','#1e252e','#151a21',c);
-   const [bx,by]=p3(x+w/2-36,y+h-6,6);
-   ctx.fillStyle='#121822';ctx.fillRect(bx,by-20,72,20);
-   if(e.built){const bg=ctx.createLinearGradient(bx,by-20,bx,by);bg.addColorStop(0,safeCol('rgba(255,215,110,.28)','rgba(255,215,110,0.28)'));bg.addColorStop(1,safeCol('rgba(255,140,40,.08)','rgba(255,140,40,0.08)'));ctx.fillStyle=bg;ctx.fillRect(bx+2,by-18,68,17);}
-   ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-20,72,20);
-   drawCyl3D(x+26,y+24,8,32,38,'#7b8694','#3c434d',c);
-   drawCyl3D(x+w-26,y+24,8,32,38,'#7b8694','#3c434d',c);
+   const working=e.built&&e.queue&&e.queue.length>0;
+   if(fac==='usa'){
+    // USA War Factory: Clean High-Tech Assembly Hangar with Overhead Traveling Gantry Crane
+    drawPrism3D(x+6,y+8,w-12,h-14,6,32,'#424f61','#222a36','#161b24',c);
+    drawPrism3D(x+16,y+12,w-32,20,32,37,'#6e7d91','#39424f','#272d36',lt);
+    const [bx,by]=p3(x+w/2-38,y+h-6,6);
+    ctx.fillStyle='#121822';ctx.fillRect(bx,by-22,76,22);
+    if(working){
+     const scanX=bx+6+((Math.sin(G.t*5)+1)*0.5)*60;
+     ctx.strokeStyle='#5ce1ff';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(scanX,by-20);ctx.lineTo(scanX,by-2);ctx.stroke();
+     if(Math.random()<0.35)G.fx.push({k:'spark',x:e.x+(Math.random()-.5)*36,y:e.y+22,life:0.25,max:0.25,col:'#7fd7ff'});
+    }
+    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-22,76,22);
+   }else if(fac==='china'){
+    // China War Factory: Heavy Red-Steel Foundry with Twin Blast Furnaces & Molten Glow
+    drawPrism3D(x+6,y+8,w-12,h-14,6,32,'#543d36','#2e201c','#1f1512',c);
+    for(const sx of [x+24,x+w-24]){
+     drawCyl3D(sx,y+22,9,32,44,'#6e564d','#362924','#ffd34d');
+     if(active&&Math.random()<(working?0.35:0.12))G.fx.push({k:'smoke',x:sx+cam.x,y:y+cam.y+10,vx:8,vy:-26,r:8,life:1.7,max:1.7,dark:true});
+    }
+    const [bx,by]=p3(x+w/2-38,y+h-6,6);
+    ctx.fillStyle=working?'#4a140e':'#181210';ctx.fillRect(bx,by-22,76,22);
+    if(working){
+     ctx.fillStyle=`rgba(255,130,30,${0.45+0.35*dSin(G.t*9)})`;ctx.fillRect(bx+3,by-19,70,16);
+     if(Math.random()<0.4)G.fx.push({k:'spark',x:e.x+(Math.random()-.5)*40,y:e.y+22,life:0.28,max:0.28,col:'#ffd34d'});
+    }
+    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-22,76,22);
+   }else if(fac==='russia'){
+    // Russia Tank Works: Sawtooth Industrial Roofline, Heavy Smokestacks & Armored Bay
+    drawPrism3D(x+6,y+8,w-12,h-14,6,34,'#49535e','#262c33','#191d22',c);
+    for(let i=0;i<3;i++)drawPrism3D(x+14+i*44,y+12,34,h-34,34,40,'#636e7a','#333a42','#22272e',dk);
+    drawCyl3D(x+w-20,y+20,8,34,48,'#5c6570','#2c3138','#ffd34d');
+    if(active&&Math.random()<(working?0.38:0.14))G.fx.push({k:'smoke',x:x+w-20+cam.x,y:y+8+cam.y,vx:9,vy:-28,r:9,life:1.8,max:1.8,dark:true});
+    const [bx,by]=p3(x+w/2-38,y+h-6,6);
+    ctx.fillStyle='#14181e';ctx.fillRect(bx,by-22,76,22);
+    if(working&&Math.random()<0.4)G.fx.push({k:'spark',x:e.x+(Math.random()-.5)*36,y:e.y+22,life:0.26,max:0.26,col:'#ff9d3b'});
+    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-22,76,22);
+   }else{
+    // Free Militia Arms Yard: Open-Air Scrap Metal & Scaffolding Garage with Exposed Vehicle Bay
+    drawPrism3D(x+6,y+8,w-12,h-14,6,26,'#6e5d3e','#3f3522','#2b2416',c);
+    drawPrism3D(x+12,y+12,w-24,22,26,31,'#8c7853','#4f432d','#362e1e',dk);
+    const [bx,by]=p3(x+w/2-38,y+h-6,6);
+    ctx.fillStyle='#1a1610';ctx.fillRect(bx,by-20,76,20);
+    if(working&&Math.random()<0.45)G.fx.push({k:'spark',x:e.x+(Math.random()-.5)*40,y:e.y+20,life:0.25,max:0.25,col:'#ffe066'});
+    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-20,76,20);
+   }
    break;
   }
   case 'airfield':{
@@ -2698,8 +2806,60 @@ function drawBld(e){
    break;
   }
   case 'super':{
-   drawPrism3D(x+6,y+6,w-12,h-12,6,28,'#32363d','#1a1d22','#111317',c);
-   drawCyl3D(cx,cy,w*0.30,28,36,dk,'#181c22','#ffd34d');
+   const rem=Math.max(0,e.readyAt-G.t);
+   const charge=e.built?Math.max(0,Math.min(1,1-rem/Math.max(1,SW[e.d.super].charge))):0;
+   if(e.d.super==='lance'){
+    // USA Orbital Lance Uplink: 4 Rotating Parabolic Dish Petals & Vertical Cyan Ion Focusing Beam
+    drawPrism3D(x+6,y+6,w-12,h-12,6,26,'#3c4859','#1e2530','#141820',c);
+    drawCyl3D(cx,cy,w*0.32,26,34,'#242c38','#13171f','#5ce1ff');
+    const [lx,ly]=p3(cx,cy,34);
+    if(active){
+     for(let i=0;i<4;i++){
+      const a=G.t*0.9+i*Math.PI/2;
+      ctx.strokeStyle='#9fe3ff';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(lx+dCos(a)*14,ly+dSin(a)*11);ctx.lineTo(lx+dCos(a)*34,ly+dSin(a)*26);ctx.stroke();
+     }
+     if(charge>0.4){
+      const g=ctx.createLinearGradient(lx-10,0,lx+10,0);
+      g.addColorStop(0,'rgba(92,225,255,0)');g.addColorStop(0.5,`rgba(180,245,255,${0.25+charge*0.65})`);g.addColorStop(1,'rgba(92,225,255,0)');
+      ctx.fillStyle=g;ctx.fillRect(lx-8,ly-140,16,140);
+     }
+    }
+   }else if(e.d.super==='nuke'){
+    // China Doomsday Nuclear Silo: Armored Blast Hatch with Visible ICBM Warhead Rising as Charge Reaches 100%
+    drawPrism3D(x+6,y+6,w-12,h-12,6,28,'#4f3b34','#2b1f1b','#1d1411',c);
+    drawCyl3D(cx,cy,w*0.32,28,34,'#14181f','#0c0f14','#ffd34d');
+    const [nx,ny]=p3(cx,cy,34);
+    const lift=charge*24;
+    // ICBM Missile Tip rising inside silo
+    ctx.fillStyle='#e8eef5';ctx.fillRect(nx-6,ny-lift,12,18);
+    ctx.fillStyle='#ff3b30';ctx.beginPath();ctx.moveTo(nx-6,ny-lift);ctx.lineTo(nx,ny-lift-11);ctx.lineTo(nx+6,ny-lift);ctx.closePath();ctx.fill();
+    if(rem<=0&&active){
+     ctx.strokeStyle=`rgba(255,90,60,${0.5+0.5*dSin(G.t*10)})`;ctx.lineWidth=2.5;
+     ctx.beginPath();ctx.ellipse(nx,ny,w*0.34,w*0.27,0,0,7);ctx.stroke();
+    }
+   }else if(e.d.super==='blizzard'){
+    // Russia Blizzard Weather Device: Cryogenic Tesla-Cryo Rings & Swirling Frost Vortex
+    drawPrism3D(x+6,y+6,w-12,h-12,6,28,'#43505e','#222930','#161b20',c);
+    drawCyl3D(cx,cy,w*0.30,28,42,'#89b8d9','#3c5a73','#d8f0ff');
+    const [bx,by]=p3(cx,cy,42);
+    if(active){
+     ctx.save();ctx.translate(bx,by-6);ctx.rotate(-G.t*2.6);
+     ctx.strokeStyle='#d8f0ff';ctx.lineWidth=2.4;
+     for(let i=0;i<3;i++){ctx.rotate(Math.PI*2/3);ctx.beginPath();ctx.arc(0,0,16+charge*12,0,1.4);ctx.stroke();}
+     ctx.restore();
+    }
+   }else{
+    // Free Militia Hellfire SCUD Storm Battery: Multi-Tube Rocket Launcher Rack Elevated on Turntable
+    drawPrism3D(x+6,y+6,w-12,h-12,6,24,'#69583b','#3b311f','#292114',c);
+    drawCyl3D(cx,cy,w*0.32,24,30,'#3b424a','#1e2226','#ffd34d');
+    const [sx,sy]=p3(cx,cy,32);
+    ctx.save();ctx.translate(sx,sy);ctx.rotate(dSin(G.t*0.7)*0.45);
+    ctx.fillStyle='#4e5d3c';ctx.fillRect(-18,-12,36,24);
+    ctx.fillStyle='#ff8a2a';
+    for(let ry=-8;ry<=8;ry+=8)for(let rx=-10;rx<=10;rx+=10){ctx.beginPath();ctx.arc(rx,ry,2.6,0,7);ctx.fill();}
+    ctx.restore();
+   }
    break;
   }
  }
