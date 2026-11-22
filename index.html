@@ -2286,40 +2286,72 @@ function getUnitSprite(e){
  let hit=SPR_CACHE.get(key);
  if(hit)return hit;
 
- const pad=Math.ceil(rad*3.8)+28;
+ const pad=Math.ceil(rad*4.2)+34;
  const [c,g]=makeCanvas(pad*2*SPR_SC,pad*2*SPR_SC);
  g.scale(SPR_SC,SPR_SC);
  g.translate(pad,pad);
 
- const L=rad*2.44, Wd=rad*1.74;
+ const L=rad*2.58, Wd=rad*1.84;
  const isJetShape=(sh==='jet'||sh==='aurora'||sh==='bomber'||sh==='mig');
+ const olive=fac==='usa'?'#4e5d3c':fac==='china'?'#4a5438':fac==='russia'?'#3e4c3a':'#6b5b3e';
+ const oliveDk=fac==='usa'?'#2c3620':fac==='china'?'#29301e':fac==='russia'?'#222b20':'#423723';
+ const desertTan='#b89c68', sandDk='#7a633b';
 
  if(sh==='dozer'){
-  g.fillStyle='rgba(0,0,0,.46)';g.beginPath();g.roundRect(-L/2+3,-Wd/2+4,L+2,Wd+2,4);g.fill();
-  g.fillStyle='#161a20';g.fillRect(-L/2,-Wd/2-3.5,L*0.84,5.5);g.fillRect(-L/2,Wd/2-2,L*0.84,5.5);
-  for(let wx=-L/2+3;wx<L*0.72;wx+=5){g.fillStyle='#4f5863';g.fillRect(wx,-Wd/2-2.5,2.5,3.5);g.fillRect(wx,Wd/2-1,2.5,3.5);}
-  const bg=g.createLinearGradient(0,-Wd/2,0,Wd/2);bg.addColorStop(0,safeCol('#f0be24','#d4a017'));bg.addColorStop(1,safeCol('#9e740b','#8a6408'));
-  g.fillStyle=bg;g.strokeStyle='#0d1117';g.lineWidth=1.6;
-  g.beginPath();g.roundRect(-L/2+2,-Wd/2+1,L*0.74,Wd-2,3);g.fill();g.stroke();
-  g.fillStyle=c;g.fillRect(-L/2+4,-Wd/2+3,L*0.36,Wd-6);
-  g.fillStyle='#8a96a6';g.fillRect(L*0.18,-Wd/2-2.5,L*0.28,3.2);g.fillRect(L*0.18,Wd/2-0.7,L*0.28,3.2);
-  const blg=g.createLinearGradient(L*0.42,-Wd/2-5,L*0.48,Wd/2+5);blg.addColorStop(0,safeCol('#eef5fc','#dfe6ed'));blg.addColorStop(1,safeCol('#64707d','#4b5561'));
-  g.fillStyle=blg;g.beginPath();g.roundRect(L*0.42,-Wd/2-4.5,6.5,Wd+9,2);g.fill();g.stroke();
+  // Heavy Yellow Caterpillar Combat Dozer with hydraulic arms, ribbed blade & caged cab
+  g.fillStyle='#14181e';
+  g.beginPath();g.roundRect(-L*0.52,-Wd*0.64,L*0.86,6.8,2.5);g.fill();
+  g.beginPath();g.roundRect(-L*0.52,Wd*0.64-6.8,L*0.86,6.8,2.5);g.fill();
+  for(let wx=-L*0.46;wx<L*0.28;wx+=4.8){g.fillStyle='#5c6672';g.fillRect(wx,-Wd*0.61,2.4,4.8);g.fillRect(wx,Wd*0.61-4.8,2.4,4.8);}
+  const bg=g.createLinearGradient(0,-Wd*0.48,0,Wd*0.48);
+  bg.addColorStop(0,'#ffcf38');bg.addColorStop(0.5,'#e0a414');bg.addColorStop(1,'#8f6306');
+  g.fillStyle=bg;g.strokeStyle='#0d1117';g.lineWidth=1.7;
+  g.beginPath();g.roundRect(-L*0.46,-Wd*0.44,L*0.74,Wd*0.88,3);g.fill();g.stroke();
+  // Engine hood vents + armored cab roof
+  g.fillStyle='#242a32';g.fillRect(L*0.02,-Wd*0.32,L*0.22,Wd*0.64);
+  g.fillStyle=c;g.beginPath();g.roundRect(-L*0.38,-Wd*0.36,L*0.38,Wd*0.72,2.5);g.fill();g.stroke();
+  g.fillStyle='#9be3ff';g.fillRect(-L*0.05,-Wd*0.28,3.6,Wd*0.56);
+  // Twin hydraulic lift arms + curved steel dozer moldboard blade
+  g.fillStyle='#9aa6b5';g.fillRect(L*0.18,-Wd*0.62,L*0.30,3.8);g.fillRect(L*0.18,Wd*0.62-3.8,L*0.30,3.8);
+  const blg=g.createLinearGradient(L*0.44,-Wd*0.68,L*0.54,Wd*0.68);
+  blg.addColorStop(0,'#f5f9fc');blg.addColorStop(0.5,'#9aa6b5');blg.addColorStop(1,'#46505c');
+  g.fillStyle=blg;g.beginPath();g.roundRect(L*0.44,-Wd*0.68,7.2,Wd*1.36,2.5);g.fill();g.stroke();
+  g.fillStyle='#ffd34d';g.fillRect(L*0.45,-Wd*0.64,2.2,Wd*1.28);
  }else if(sh==='truck'){
-  g.fillStyle='rgba(0,0,0,.44)';g.beginPath();g.roundRect(-L/2+3,-Wd/2+4,L+2,Wd+2,4);g.fill();
-  for(const wx of [-L/2+3,-2,L/2-9])for(const wy of [-Wd/2-3.2,Wd/2-2.2]){
-   g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,7.5,5.4,1.5);g.fill();
-   g.fillStyle='#788491';g.fillRect(wx+2,wy+1.6,3.5,2.2);
+  // Distinct Supply Truck per faction: USA 6x6 Chinook/HEMTT Cargo Hauler, China Red-Star Box Truck, Russia Ural 6x6 Tanker
+  for(const wx of [-L*0.46,-L*0.12,L*0.26])for(const wy of [-Wd*0.62,Wd*0.62-5.6]){
+   g.fillStyle='#10141a';g.beginPath();g.roundRect(wx,wy,8.6,5.6,1.8);g.fill();
+   g.fillStyle='#7c8896';g.fillRect(wx+2.2,wy+1.6,4.2,2.4);
   }
-  g.fillStyle='#3b434e';g.strokeStyle='#0d1117';g.lineWidth=1.5;
-  g.beginPath();g.roundRect(-L/2+1,-Wd/2+1,L*0.64,Wd-2,2);g.fill();g.stroke();
-  g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=1;
-  for(let rx=-L/2+5;rx<L*0.1;rx+=4.5){g.beginPath();g.moveTo(rx,-Wd/2+2.5);g.lineTo(rx,Wd/2-2.5);g.stroke();}
-  const cg=g.createLinearGradient(L*0.14,-Wd/2,L*0.52,Wd/2);cg.addColorStop(0,safeCol(lt,'#9ec5ff'));cg.addColorStop(0.5,safeCol(c,'#4a90ff'));cg.addColorStop(1,safeCol(dk,'#1f4f9e'));
-  g.fillStyle=cg;g.beginPath();g.roundRect(L*0.14,-Wd/2+1,L*0.36,Wd-2,3);g.fill();g.stroke();
-  g.fillStyle='#9be3ff';g.fillRect(L*0.35,-Wd/2+3,4.2,Wd-6);
+  if(fac==='russia'){
+   // Cylindrical fuel/supply tanker body with metallic straps
+   const tg=g.createLinearGradient(0,-Wd*0.46,0,Wd*0.46);
+   tg.addColorStop(0,'#8ea18a');tg.addColorStop(0.45,olive);tg.addColorStop(1,oliveDk);
+   g.fillStyle=tg;g.strokeStyle='#0d1117';g.lineWidth=1.6;
+   g.beginPath();g.roundRect(-L*0.52,-Wd*0.44,L*0.66,Wd*0.88,7);g.fill();g.stroke();
+   g.fillStyle=c;g.fillRect(-L*0.36,-Wd*0.44,4.5,Wd*0.88);g.fillRect(-L*0.10,-Wd*0.44,4.5,Wd*0.88);
+  }else if(fac==='usa'){
+   // Canvas-ribbed military supply bed with golden supply crates visible
+   g.fillStyle=desertTan;g.strokeStyle='#0d1117';g.lineWidth=1.6;
+   g.beginPath();g.roundRect(-L*0.52,-Wd*0.46,L*0.66,Wd*0.92,2.5);g.fill();g.stroke();
+   g.strokeStyle=sandDk;g.lineWidth=1.6;
+   for(let rx=-L*0.44;rx<L*0.10;rx+=5.5){g.beginPath();g.moveTo(rx,-Wd*0.44);g.lineTo(rx,Wd*0.44);g.stroke();}
+   g.fillStyle='#ffd34d';g.fillRect(-L*0.48,-Wd*0.34,6,Wd*0.68);
+  }else{
+   // Armored cargo container with faction stripe
+   g.fillStyle='#4a3d35';g.strokeStyle='#0d1117';g.lineWidth=1.6;
+   g.beginPath();g.roundRect(-L*0.52,-Wd*0.46,L*0.66,Wd*0.92,2.5);g.fill();g.stroke();
+   g.fillStyle=c;g.fillRect(-L*0.48,-Wd*0.16,L*0.58,Wd*0.32);
+  }
+  // Forward armored cab + windshield + bumper
+  const cg=g.createLinearGradient(L*0.14,-Wd*0.46,L*0.52,Wd*0.46);
+  cg.addColorStop(0,safeCol(lt,'#9ec5ff'));cg.addColorStop(0.5,safeCol(c,'#4a90ff'));cg.addColorStop(1,safeCol(dk,'#1f4f9e'));
+  g.fillStyle=cg;g.strokeStyle='#0d1117';g.lineWidth=1.6;
+  g.beginPath();g.roundRect(L*0.15,-Wd*0.44,L*0.36,Wd*0.88,3.5);g.fill();g.stroke();
+  g.fillStyle='#9be3ff';g.fillRect(L*0.36,-Wd*0.34,4.6,Wd*0.68);
+  g.fillStyle='#1f252d';g.fillRect(L*0.50,-Wd*0.42,2.8,Wd*0.84);
+  g.fillStyle='#fff6b0';g.fillRect(L*0.50,-Wd*0.38,2.2,3);g.fillRect(L*0.50,Wd*0.38-3,2.2,3);
  }else if(sh==='heli'){
-  // Distinct Gunship silhouettes per faction (Comanche stealth / Helix twin-rotor / Hind Mi-24)
   g.fillStyle=dk;g.strokeStyle='#0d1117';g.lineWidth=1.5;
   g.beginPath();g.moveTo(-8,-3.5);g.lineTo(-34,-1.6);g.lineTo(-34,1.6);g.lineTo(-8,3.5);g.closePath();g.fill();g.stroke();
   g.fillStyle=c;g.fillRect(-35,-8.5,6,17);g.fillRect(-32.5,-2.5,6.5,5);
@@ -2332,64 +2364,35 @@ function getUnitSprite(e){
   g.fillStyle='#9fe3ff';g.beginPath();g.ellipse(12,0,6.8,4.6,0,0,7);g.fill();g.stroke();
   g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.ellipse(13.2,-1.5,3.4,1.5,0,0,7);g.fill();
  }else if(sh==='aurora'){
-  // USA Aurora Supersonic Strike Bomber: long sleek needle nose, wide swept-delta stealth wings, twin ramjet nacelles!
   const ag=g.createLinearGradient(0,-24,0,24);ag.addColorStop(0,'#525d6b');ag.addColorStop(0.5,'#262d36');ag.addColorStop(1,'#14181f');
   g.fillStyle=ag;g.strokeStyle='#090c10';g.lineWidth=1.8;
-  g.beginPath();
-  g.moveTo(32,0);           // Long needle supersonic nose
-  g.lineTo(10,-4.5);
-  g.lineTo(-14,-25);        // Wide swept-delta port wingtip
-  g.lineTo(-22,-25);
-  g.lineTo(-18,-9);
-  g.lineTo(-25,-6.5);       // Twin ramjet engine pods
-  g.lineTo(-25,6.5);
-  g.lineTo(-18,9);
-  g.lineTo(-22,25);         // Wide swept-delta starboard wingtip
-  g.lineTo(-14,25);
-  g.lineTo(10,4.5);
-  g.closePath();g.fill();g.stroke();
-  // Team-colored stealth chine stripes & leading edge highlights
-  g.strokeStyle=c;g.lineWidth=2.4;
-  g.beginPath();g.moveTo(12,-4.5);g.lineTo(-14,-23.5);g.moveTo(12,4.5);g.lineTo(-14,23.5);g.stroke();
+  g.beginPath();g.moveTo(32,0);g.lineTo(10,-4.5);g.lineTo(-14,-25);g.lineTo(-22,-25);g.lineTo(-18,-9);g.lineTo(-25,-6.5);g.lineTo(-25,6.5);g.lineTo(-18,9);g.lineTo(-22,25);g.lineTo(-14,25);g.lineTo(10,4.5);g.closePath();g.fill();g.stroke();
+  g.strokeStyle=c;g.lineWidth=2.4;g.beginPath();g.moveTo(12,-4.5);g.lineTo(-14,-23.5);g.moveTo(12,4.5);g.lineTo(-14,23.5);g.stroke();
   g.fillStyle=dk;g.beginPath();g.roundRect(-21,-5.5,34,11,4);g.fill();g.stroke();
-  // Twin canted V-tails + central fuel-air bomb bay hatch
   g.fillStyle=lt;g.fillRect(-21,-8.5,8,2.8);g.fillRect(-21,5.7,8,2.8);
   g.fillStyle='#ffd34d';g.fillRect(-6,-2.2,10,4.4);
-  // Gold-tinted supersonic cockpit canopy
   g.fillStyle='#7fd7ff';g.beginPath();g.ellipse(14,0,8.5,2.7,0,0,7);g.fill();g.stroke();
   g.fillStyle='rgba(255,255,255,.78)';g.beginPath();g.ellipse(15.5,-0.9,4.5,1.0,0,0,7);g.fill();
  }else if(sh==='bomber'){
-  // Russia Raven Strategic Flying-Wing / Tu-160 Heavy Bomber: massive swept wingspan & heavy ordnance
   const bg=g.createLinearGradient(0,-26,0,26);bg.addColorStop(0,safeCol(lt,'#9ec5ff'));bg.addColorStop(0.5,safeCol(c,'#4a90ff'));bg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   g.fillStyle=bg;g.strokeStyle='#090c10';g.lineWidth=1.8;
-  g.beginPath();
-  g.moveTo(27,0);g.lineTo(9,-6);g.lineTo(-12,-27);g.lineTo(-20,-27);g.lineTo(-15,-7);
-  g.lineTo(-24,-5);g.lineTo(-24,5);g.lineTo(-15,7);g.lineTo(-20,27);g.lineTo(-12,27);g.lineTo(9,6);
-  g.closePath();g.fill();g.stroke();
+  g.beginPath();g.moveTo(27,0);g.lineTo(9,-6);g.lineTo(-12,-27);g.lineTo(-20,-27);g.lineTo(-15,-7);g.lineTo(-24,-5);g.lineTo(-24,5);g.lineTo(-15,7);g.lineTo(-20,27);g.lineTo(-12,27);g.lineTo(9,6);g.closePath();g.fill();g.stroke();
   g.fillStyle='#242a32';g.fillRect(-8,-16,11,3.2);g.fillRect(-8,12.8,11,3.2);
   g.fillStyle=dk;g.beginPath();g.roundRect(-20,-4.5,38,9,3.5);g.fill();g.stroke();
   g.fillStyle='#ff4d3d';g.fillRect(-19,-7.5,7,3);g.fillRect(-19,4.5,7,3);
   g.fillStyle='#a8e8ff';g.beginPath();g.ellipse(14,0,7.5,3.2,0,0,7);g.fill();g.stroke();
  }else if(sh==='mig'){
-  // China Firebird / MiG Strike Fighter: forward canards, twin angled tails & napalm pods
   const mg=g.createLinearGradient(0,-20,0,20);mg.addColorStop(0,safeCol(lt,'#ffb0a6'));mg.addColorStop(0.5,safeCol(c,'#ff4d3d'));mg.addColorStop(1,safeCol(dk,'#9e2a20'));
   g.fillStyle=mg;g.strokeStyle='#090c10';g.lineWidth=1.7;
-  g.beginPath();
-  g.moveTo(23,0);g.lineTo(12,-3.5);g.lineTo(9,-9);g.lineTo(5,-9);g.lineTo(6,-4);
-  g.lineTo(-6,-19);g.lineTo(-12,-19);g.lineTo(-8,-4.5);g.lineTo(-18,-8.5);g.lineTo(-21,-8.5);
-  g.lineTo(-18,0);g.lineTo(-21,8.5);g.lineTo(-18,8.5);g.lineTo(-8,4.5);
-  g.lineTo(-12,19);g.lineTo(-6,19);g.lineTo(6,4);g.lineTo(5,9);g.lineTo(9,9);g.lineTo(12,3.5);
-  g.closePath();g.fill();g.stroke();
+  g.beginPath();g.moveTo(23,0);g.lineTo(12,-3.5);g.lineTo(9,-9);g.lineTo(5,-9);g.lineTo(6,-4);g.lineTo(-6,-19);g.lineTo(-12,-19);g.lineTo(-8,-4.5);g.lineTo(-18,-8.5);g.lineTo(-21,-8.5);g.lineTo(-18,0);g.lineTo(-21,8.5);g.lineTo(-18,8.5);g.lineTo(-8,4.5);g.lineTo(-12,19);g.lineTo(-6,19);g.lineTo(6,4);g.lineTo(5,9);g.lineTo(9,9);g.lineTo(12,3.5);g.closePath();g.fill();g.stroke();
   g.fillStyle='#ffd34d';g.fillRect(-3,-12.5,9,2.8);g.fillRect(-3,9.7,9,2.8);
   g.fillStyle=dk;g.beginPath();g.roundRect(-17,-3.4,31,6.8,3);g.fill();g.stroke();
   g.fillStyle='#a8e8ff';g.beginPath();g.ellipse(11,0,6.5,2.7,0,0,7);g.fill();g.stroke();
  }else if(sh==='jet'){
-  // USA Falcon Fighter Jet: crisp F-16/F-22 air superiority silhouette
   const jg=g.createLinearGradient(0,-19,0,19);jg.addColorStop(0,safeCol(lt,'#a8ccff'));jg.addColorStop(0.45,safeCol(c,'#4a90ff'));jg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   g.fillStyle=jg;g.strokeStyle='#0d1117';g.lineWidth=1.7;
   g.beginPath();g.moveTo(22,0);g.lineTo(5,-4.5);g.lineTo(-4,-18);g.lineTo(-10,-18);g.lineTo(-6,-4.5);g.lineTo(-15,-3.5);g.lineTo(-19,-9.5);g.lineTo(-21,-9.5);g.lineTo(-19,0);g.lineTo(-21,9.5);g.lineTo(-19,9.5);g.lineTo(-15,3.5);g.lineTo(-6,4.5);g.lineTo(-10,18);g.lineTo(-4,18);g.lineTo(5,4.5);g.closePath();g.fill();g.stroke();
-  g.strokeStyle='rgba(255,255,255,.28)';g.lineWidth=1.2;
-  g.beginPath();g.moveTo(4,-4.5);g.lineTo(-4,-17.5);g.moveTo(4,4.5);g.lineTo(-4,17.5);g.stroke();
+  g.strokeStyle='rgba(255,255,255,.28)';g.lineWidth=1.2;g.beginPath();g.moveTo(4,-4.5);g.lineTo(-4,-17.5);g.moveTo(4,4.5);g.lineTo(-4,17.5);g.stroke();
   g.fillStyle='#ff8a2a';g.fillRect(-1,-11.5,8.5,2.4);g.fillRect(-1,9.1,8.5,2.4);
   g.fillStyle=dk;g.beginPath();g.roundRect(-15.5,-3.5,29,7,3);g.fill();g.stroke();
   g.fillStyle=lt;g.fillRect(-16,-6.8,6.5,3.2);g.fillRect(-16,3.6,6.5,3.2);
@@ -2397,9 +2400,7 @@ function getUnitSprite(e){
   g.fillStyle=cg;g.beginPath();g.ellipse(10,0,7.2,3.1,0,0,7);g.fill();g.stroke();
   g.fillStyle='rgba(255,255,255,.72)';g.beginPath();g.ellipse(11,-1.1,4.0,1.1,0,0,7);g.fill();
  }else if(sh==='battlebus'){
-  // Free Militia Battle Bus: elongated armored yellow/team-striped school bus with armored window plates
   const bL=L*1.16, bW=Wd*0.95;
-  g.fillStyle='rgba(0,0,0,.48)';g.beginPath();g.roundRect(-bL/2+3,-bW/2+4,bL+2,bW+2,4);g.fill();
   for(const wx of [-bL/2+5,-2,bL/2-11])for(const wy of [-bW/2-3.2,bW/2-2.2]){
    g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.5,5.4,1.5);g.fill();
   }
@@ -2407,85 +2408,135 @@ function getUnitSprite(e){
   g.fillStyle=bg;g.strokeStyle='#0d1117';g.lineWidth=1.8;
   g.beginPath();g.roundRect(-bL/2,-bW/2,bL,bW,4);g.fill();g.stroke();
   g.fillStyle=c;g.fillRect(-bL/2+3,-bW/2+2,bL-10,3.2);g.fillRect(-bL/2+3,bW/2-5.2,bL-10,3.2);
-  // Armored firing slits along both sides + front windshield armor
   g.fillStyle='#1c222a';
   for(let sx=-bL/2+6;sx<bL/2-10;sx+=7){g.fillRect(sx,-bW/2+1,4.5,2.2);g.fillRect(sx,bW/2-3.2,4.5,2.2);}
   g.fillStyle='#9be3ff';g.fillRect(bL/2-6,-bW/2+3,3.5,bW-6);
  }else if(sh==='technical'){
-  // Free Militia Gun Truck: rugged off-road pickup with open cargo bed & roll cage
-  for(const wx of [-L/2+3,L/2-9])for(const wy of [-Wd/2-3.2,Wd/2-2.2]){
-   g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.5,5.4,1.6);g.fill();
+  // Free Militia Gun Truck: rusty desert-tan pickup with wooden side slats & welded bumper
+  for(const wx of [-L*0.44,L*0.24])for(const wy of [-Wd*0.60,Wd*0.60-5.4]){
+   g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.8,5.4,1.6);g.fill();
    g.fillStyle='#788491';g.fillRect(wx+2,wy+1.5,4,2.4);
   }
-  g.fillStyle='#5c4d36';g.strokeStyle='#0d1117';g.lineWidth=1.5;
-  g.beginPath();g.roundRect(-L/2+1,-Wd/2+1.5,L*0.56,Wd-3,2);g.fill();g.stroke();
-  g.fillStyle='#2a241b';g.fillRect(-L/2+3,-Wd/2+3.5,L*0.48,Wd-7);
-  g.fillStyle=c;g.beginPath();g.roundRect(L*0.06,-Wd/2+1.5,L*0.44,Wd-3,3);g.fill();g.stroke();
-  g.fillStyle='#9be3ff';g.fillRect(L*0.32,-Wd/2+3.5,4,Wd-7);
+  g.fillStyle='#6e583a';g.strokeStyle='#0d1117';g.lineWidth=1.5;
+  g.beginPath();g.roundRect(-L*0.48,-Wd*0.46,L*0.54,Wd*0.92,2);g.fill();g.stroke();
+  g.fillStyle='#2a2218';g.fillRect(-L*0.44,-Wd*0.36,L*0.46,Wd*0.72);
+  g.fillStyle=c;g.beginPath();g.roundRect(L*0.06,-Wd*0.46,L*0.44,Wd*0.92,3);g.fill();g.stroke();
+  g.fillStyle='#9be3ff';g.fillRect(L*0.32,-Wd*0.35,4,Wd*0.70);
+  g.fillStyle='#3a3228';g.fillRect(L*0.49,-Wd*0.45,3,Wd*0.90);
+ }else if(sh==='flame'){
+  // China Fire Lance Tank: armored hull + twin pressurized crimson napalm fuel drums on rear deck
+  g.fillStyle='#12161c';g.strokeStyle='#090c10';g.lineWidth=1.2;
+  g.beginPath();g.roundRect(-L/2-2,-Wd/2-4.8,L+4,7.4,2.5);g.fill();g.stroke();
+  g.beginPath();g.roundRect(-L/2-2,Wd/2-2.6,L+4,7.4,2.5);g.fill();g.stroke();
+  const hg=g.createLinearGradient(0,-Wd/2,0,Wd/2);
+  hg.addColorStop(0,safeCol(lt,'#ffb0a6'));hg.addColorStop(0.5,safeCol(c,'#ff4d3d'));hg.addColorStop(1,safeCol(dk,'#9e2a20'));
+  g.fillStyle=hg;g.strokeStyle='#0b0f14';g.lineWidth=1.8;
+  g.beginPath();g.roundRect(-L/2+1,-Wd/2+1,L-2,Wd-2,3);g.fill();g.stroke();
+  // Twin pressurized napalm tanks with hazard bands
+  for(const dy of [-Wd*0.24,Wd*0.24]){
+   g.fillStyle='#d93829';g.beginPath();g.roundRect(-L*0.42,dy-3.6,L*0.46,7.2,3.5);g.fill();g.stroke();
+   g.fillStyle='#ffd34d';g.fillRect(-L*0.26,dy-3.6,3.2,7.2);
+  }
+  // Forward flame projector housing
+  g.fillStyle='#1d2229';g.fillRect(L*0.12,-5,L*0.58,10);
+  g.fillStyle='#ff8a2a';g.beginPath();g.arc(L*0.70,0,3.8,0,7);g.fill();
  }else{
-  // Combat Vehicles (Tanks, Heavy Tanks, Nuke Cannon, ECM, Avenger, Quad, BTR, Artillery, Jeeps)
+  // Combat Vehicles & Tanks with Distinct Faction Hull Geometries & Military Camo
   const wheeled=sh==='jeep'||sh==='rbuggy'||sh==='btr'||sh==='avenger'||sh==='quad';
   if(wheeled){
-   const nw=(sh==='btr'||sh==='quad')?3:2;
+   const nw=(sh==='btr'||sh==='quad'||sh==='avenger')?3:2;
    for(let wi=0;wi<nw;wi++){
     const wx=-L/2+3+wi*((L-12)/(nw-1));
-    for(const wy of [-Wd/2-3.4,Wd/2-2.2]){
-     g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.8,5.6,1.6);g.fill();
-     g.fillStyle='#788491';g.fillRect(wx+2.2,wy+1.6,4.2,2.4);
+    for(const wy of [-Wd/2-3.8,Wd/2-2.0]){
+     g.fillStyle='#10141a';g.beginPath();g.roundRect(wx,wy,9.2,5.8,1.8);g.fill();
+     g.fillStyle='#788491';g.fillRect(wx+2.4,wy+1.6,4.4,2.6);
     }
    }
   }else{
-   g.fillStyle='#12161c';g.strokeStyle='#090c10';g.lineWidth=1.2;
-   g.beginPath();g.roundRect(-L/2-2.5,-Wd/2-4.6,L+5,7.4,2.6);g.fill();g.stroke();
-   g.beginPath();g.roundRect(-L/2-2.5,Wd/2-2.8,L+5,7.4,2.6);g.fill();g.stroke();
-   for(let rw=-L/2+4;rw<=L/2-4;rw+=6.2){
-    g.fillStyle='#5c6672';g.beginPath();g.arc(rw,-Wd/2-1.0,2.2,0,7);g.arc(rw,Wd/2+1.0,2.2,0,7);g.fill();
+   // Heavy armoured track sponsons + steel track links + mudguards
+   g.fillStyle='#10141a';g.strokeStyle='#07090c';g.lineWidth=1.3;
+   g.beginPath();g.roundRect(-L/2-3,-Wd/2-5.4,L+6,8.2,2.8);g.fill();g.stroke();
+   g.beginPath();g.roundRect(-L/2-3,Wd/2-2.8,L+6,8.2,2.8);g.fill();g.stroke();
+   g.fillStyle=oliveDk;
+   g.fillRect(-L/2-1,-Wd/2-4.8,L+2,3.4);g.fillRect(-L/2-1,Wd/2+1.4,L+2,3.4);
+   for(let rw=-L/2+3;rw<=L/2-3;rw+=5.6){
+    g.fillStyle='#6d7885';g.fillRect(rw,-Wd/2-4.2,2.2,5.6);g.fillRect(rw,Wd/2-1.4,2.2,5.6);
    }
   }
+
+  // Distinct Faction Hull Silhouette:
+  // - USA: Wide M1 Abrams sloped glacis + side armor skirts
+  // - China: Rounded T-series / Type-99 hull + external rear fuel drums
+  // - Russia: Wide heavy T-90/Armata hull with angled reactive armor blocks
+  // - Militia: Scavenged desert-tan chassis with bolted scrap plates
+  const hullBase=fac==='militia'?desertTan:olive;
+  const hullDark=fac==='militia'?sandDk:oliveDk;
   const hg=g.createLinearGradient(0,-Wd/2,0,Wd/2);
-  hg.addColorStop(0,safeCol(lt,'#9ec5ff'));hg.addColorStop(0.45,safeCol(c,'#4a90ff'));hg.addColorStop(1,safeCol(dk,'#1f4f9e'));
-  g.fillStyle=hg;g.strokeStyle='#0b0f14';g.lineWidth=1.8;
-  g.beginPath();
-  g.moveTo(-L/2+2,-Wd/2+1.5);g.lineTo(L/2-5.5,-Wd/2+1.5);g.lineTo(L/2+3.8,-Wd/2+5.8);
-  g.lineTo(L/2+3.8,Wd/2-5.8);g.lineTo(L/2-5.5,Wd/2-1.5);g.lineTo(-L/2+2,Wd/2-1.5);
-  g.lineTo(-L/2-1.2,0);g.closePath();g.fill();g.stroke();
+  hg.addColorStop(0,safeCol(lt,'#9ec5ff'));
+  hg.addColorStop(0.22,safeCol(c,'#4a90ff'));
+  hg.addColorStop(0.55,hullBase);
+  hg.addColorStop(1,hullDark);
+  g.fillStyle=hg;g.strokeStyle='#090d12';g.lineWidth=1.9;
+
+  if(fac==='usa'){
+   // Angular M1 Abrams / Bradley silhouette
+   g.beginPath();
+   g.moveTo(-L/2+1,-Wd/2+1);g.lineTo(L/2-6,-Wd/2+1);g.lineTo(L/2+4.5,-Wd/2+5.5);
+   g.lineTo(L/2+4.5,Wd/2-5.5);g.lineTo(L/2-6,Wd/2-1);g.lineTo(-L/2+1,Wd/2-1);
+   g.closePath();g.fill();g.stroke();
+   // Glacis V-armor seam & headlights
+   g.strokeStyle='rgba(255,255,255,.32)';g.lineWidth=1.3;
+   g.beginPath();g.moveTo(L*0.18,-Wd/2+2);g.lineTo(L*0.36,0);g.lineTo(L*0.18,Wd/2-2);g.stroke();
+   g.fillStyle='#fff6b0';g.fillRect(L/2+2.2,-Wd/2+6.5,2.2,2.4);g.fillRect(L/2+2.2,Wd/2-8.9,2.2,2.4);
+  }else if(fac==='china'){
+   // Rounded hull + twin rear cylindrical fuel drums
+   g.beginPath();g.roundRect(-L/2+2,-Wd/2+1.2,L+1,Wd-2.4,6.5);g.fill();g.stroke();
+   g.fillStyle=dk;
+   g.beginPath();g.roundRect(-L/2-3.5,-Wd*0.36,4.2,Wd*0.30,1.5);g.fill();g.stroke();
+   g.beginPath();g.roundRect(-L/2-3.5,Wd*0.06,4.2,Wd*0.30,1.5);g.fill();g.stroke();
+  }else if(fac==='russia'){
+   // Broad heavy hull with Kontakt-5 explosive reactive armor bricks on nose & flanks
+   g.beginPath();
+   g.moveTo(-L/2,-Wd/2);g.lineTo(L/2-4,-Wd/2);g.lineTo(L/2+4,-Wd/2+4.5);
+   g.lineTo(L/2+4,Wd/2-4.5);g.lineTo(L/2-4,Wd/2);g.lineTo(-L/2,Wd/2);
+   g.closePath();g.fill();g.stroke();
+   g.fillStyle=c;
+   for(let eb=-Wd/2+3;eb<Wd/2-4;eb+=4.8){g.fillRect(L*0.24,eb,4.2,3.4);}
+  }else{
+   // Militia bolted desert-tan chassis
+   g.beginPath();
+   g.moveTo(-L/2+2,-Wd/2+1.5);g.lineTo(L/2-5,-Wd/2+2);g.lineTo(L/2+3,0);
+   g.lineTo(L/2-5,Wd/2-2);g.lineTo(-L/2+2,Wd/2-1.5);
+   g.closePath();g.fill();g.stroke();
+   g.fillStyle=c;g.fillRect(-L*0.15,-Wd/2+2,L*0.38,3.2);g.fillRect(-L*0.15,Wd/2-5.2,L*0.38,3.2);
+  }
+
   // Distinct superstructure details per specialized vehicle
   if(sh==='ecm'){
-   // China ECM / Inferno Tank: rotating parabolic radar dish & incendiary canisters
-   g.fillStyle='#ffd34d';g.beginPath();g.arc(-2,0,7.5,0,7);g.fill();g.stroke();
-   g.fillStyle='#1b2026';g.fillRect(2,-6,8,3.2);g.fillRect(2,2.8,8,3.2);
+   g.fillStyle='#ffd34d';g.beginPath();g.arc(-2,0,8.0,0,7);g.fill();g.stroke();
+   g.fillStyle='#1b2026';g.fillRect(2,-6.5,8.5,3.4);g.fillRect(2,3.1,8.5,3.4);
   }else if(sh==='marauder'){
-   // GLA Marauder Tank: twin scrap-welded heavy cannons & spiked plow
-   g.fillStyle='#3b352c';g.fillRect(L/2,-Wd/2+2,4,Wd-4);
-   g.fillStyle='#1b2026';g.fillRect(0,-5.5,L*0.92,3.8);g.fillRect(0,1.7,L*0.92,3.8);
-  }else{
-   g.fillStyle='rgba(255,255,255,.22)';g.fillRect(L*0.18,-Wd/2+2.6,5.2,Wd-5.2);
-   if(sh==='tank'||sh==='heavy'){
-    g.fillStyle=dk;
-    for(let eb=-Wd/2+3.5;eb<Wd/2-5;eb+=5.5){g.fillRect(L*0.26,eb,3.8,3.6);}
-   }
+   g.fillStyle='#3b352c';g.fillRect(L/2,-Wd/2+2,4.5,Wd-4);
+   g.fillStyle='#1b2026';g.fillRect(0,-5.8,L*0.95,4.0);g.fillRect(0,1.8,L*0.95,4.0);
   }
-  g.fillStyle='rgba(0,0,0,.42)';g.fillRect(-L/2+4,-Wd/2+4.2,L*0.27,Wd-8.4);
-  g.strokeStyle='rgba(255,255,255,.15)';g.lineWidth=1;
-  for(let gx=-L/2+5.5;gx<-L/2+4+L*0.25;gx+=3.2){g.beginPath();g.moveTo(gx,-Wd/2+4.8);g.lineTo(gx,Wd/2-4.8);g.stroke();}
+  // Rear engine louver deck
+  g.fillStyle='rgba(0,0,0,.46)';g.fillRect(-L/2+4,-Wd/2+4.5,L*0.27,Wd-9);
+  g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=1;
+  for(let gx=-L/2+5.5;gx<-L/2+4+L*0.25;gx+=3.0){g.beginPath();g.moveTo(gx,-Wd/2+5);g.lineTo(gx,Wd/2-5);g.stroke();}
  }
 
  if(VIEW3D){
-  // Bake deeper 2.5D extruded lower hull / fuselage walls & metallic rim bevel
   const [c3,g3]=makeCanvas(pad*2*SPR_SC,pad*2*SPR_SC);
   g3.scale(SPR_SC,SPR_SC);
-  const depth=isJetShape?7.5:(sh==='heavy'||sh==='battlebus'||sh==='nukecannon')?10.0:7.5;
-  // Ground contact ambient occlusion
+  const depth=isJetShape?7.5:(sh==='heavy'||sh==='battlebus'||sh==='nukecannon')?10.5:8.0;
   g3.save();g3.globalAlpha=0.52;g3.filter='blur(2.5px)';
   g3.drawImage(c,0,0,c.width,c.height,5,6,pad*2,pad*2);
   g3.restore();
-  // Extruded dark armored side-skirt / under-fuselage tiers
   for(let z=depth;z>=1;z-=1.25){
    g3.save();g3.globalAlpha=0.92;
    g3.drawImage(c,0,0,c.width,c.height,-z*0.36,-z*0.62,pad*2,pad*2);
    g3.restore();
   }
-  // Shade lower side walls for strong 3D volume contrast, then stamp sunlit upper deck
   g3.fillStyle='rgba(6,10,16,0.52)';
   g3.globalCompositeOperation='source-atop';
   g3.fillRect(0,0,pad*2,pad*2);
@@ -2704,84 +2755,109 @@ function drawUnit(e){
   ctx.beginPath();ctx.ellipse(x,y+2,e.r+6,(e.r+6)*0.72,0,0,7);ctx.stroke();
  }
 
- // ---- 1. SINGLE REALISTIC 3D SOLDIER RENDERER (Tuned Size & 3D Anatomy) ----
+ // ---- 1. FACTION-DISTINCT 3D SOLDIER RENDERER (USA / China / Russia / Militia) ----
  if(e.d.armor==='inf'){
-  const sc=e.d.hero?1.45:1.32;
-  const walk=e.moving?dSin(G.t*17+e.id*2.3)*4.2:0;
-  const hBody=13.5*sc;
+  const sc=e.d.hero?1.48:1.34;
+  const walk=e.moving?dSin(G.t*17+e.id*2.3)*4.4:0;
+  const hBody=13.8*sc;
   const fac=e.team>=0?G.fac[e.team]:'usa';
-  const camoBase=fac==='usa'?'#53633e':fac==='china'?'#634138':fac==='russia'?'#44543e':'#756640';
-  const camoDark=fac==='usa'?'#2b361f':fac==='china'?'#382019':fac==='russia'?'#232d20':'#453b22';
+  const unifBase=fac==='usa'?'#556640':fac==='china'?'#4e5c3a':fac==='russia'?'#3d4c3b':'#7d6844';
+  const unifDark=fac==='usa'?'#2d3820':fac==='china'?'#29321d':fac==='russia'?'#20291f':'#4a3c24';
 
   // Ground contact & directional 3D cast shadow
-  ctx.fillStyle='rgba(0,0,0,.45)';
-  ctx.beginPath();ctx.ellipse(x+1.8,y+4.2,9.2,5.2,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.46)';
+  ctx.beginPath();ctx.ellipse(x+1.8,y+4.4,9.5,5.4,0,0,7);ctx.fill();
   ctx.fillStyle='rgba(0,0,0,.28)';
-  ctx.beginPath();ctx.ellipse(x+6.8,y+5.8,10.5,4.0,0.28,0,7);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+7.0,y+6.0,11.0,4.2,0.28,0,7);ctx.fill();
 
   // Articulated combat trousers & heavy boots
-  ctx.strokeStyle='#15191f';ctx.lineWidth=3.6;ctx.lineCap='round';
+  ctx.strokeStyle='#15191f';ctx.lineWidth=3.8;ctx.lineCap='round';
   ctx.beginPath();
-  ctx.moveTo(x-2.6,y-4.5);ctx.lineTo(x-3.2+walk*0.85,y+3.2);
-  ctx.moveTo(x+2.6,y-4.5);ctx.lineTo(x+3.2-walk*0.85,y+3.2);
+  ctx.moveTo(x-2.7,y-4.5);ctx.lineTo(x-3.3+walk*0.85,y+3.3);
+  ctx.moveTo(x+2.7,y-4.5);ctx.lineTo(x+3.3-walk*0.85,y+3.3);
   ctx.stroke();
   ctx.fillStyle='#0d1015';
-  ctx.beginPath();ctx.arc(x-3.2+walk*0.85,y+3.5,2.2,0,7);ctx.arc(x+3.2-walk*0.85,y+3.5,2.2,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(x-3.3+walk*0.85,y+3.6,2.3,0,7);ctx.arc(x+3.3-walk*0.85,y+3.6,2.3,0,7);ctx.fill();
 
-  // 3D Tactical Rucksack / Radio Pack
+  // 3D Tactical Rucksack / AT Rocket Tube Pack
   const bAng=e.ang+Math.PI;
-  const bpx=x+dCos(bAng)*4.6, bpy=y-hBody*0.52+dSin(bAng)*2.8;
-  ctx.fillStyle=camoDark;
-  ctx.beginPath();ctx.roundRect(bpx-4.6,bpy-5.4,9.2,10.8,2.4);ctx.fill();
+  const bpx=x+dCos(bAng)*4.8, bpy=y-hBody*0.52+dSin(bAng)*2.9;
+  ctx.fillStyle=unifDark;
+  ctx.beginPath();ctx.roundRect(bpx-4.8,bpy-5.6,9.6,11.2,2.5);ctx.fill();
   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.2;ctx.stroke();
+  if(sh==='rinf'){
+   // Spare anti-tank rocket tube strapped diagonally on back
+   ctx.strokeStyle='#6b7854';ctx.lineWidth=3.2;
+   ctx.beginPath();ctx.moveTo(bpx-4,bpy+6);ctx.lineTo(bpx+5,bpy-8);ctx.stroke();
+   ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.arc(bpx+5,bpy-8,2.1,0,7);ctx.fill();
+  }
 
-  // 3D Shaded Torso & Armored Shoulder Pauldrons
-  const tg=ctx.createLinearGradient(x-7.0,y-hBody,x+7.0,y);
+  // 3D Shaded Torso & Faction-Colored Shoulder Pauldrons
+  const tg=ctx.createLinearGradient(x-7.2,y-hBody,x+7.2,y);
   tg.addColorStop(0,safeCol(lt,'#b8d8ff'));
   tg.addColorStop(0.45,safeCol(c,'#4a90ff'));
   tg.addColorStop(1,safeCol(dk,'#1a3e7a'));
   ctx.fillStyle=tg;
-  ctx.beginPath();ctx.roundRect(x-6.2,y-hBody,12.4,hBody-2.5,3.4);ctx.fill();
-  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.35;ctx.stroke();
+  ctx.beginPath();ctx.roundRect(x-6.4,y-hBody,12.8,hBody-2.5,3.5);ctx.fill();
+  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.4;ctx.stroke();
 
-  // Tactical plate carrier & chest rig
-  ctx.fillStyle=camoBase;
-  ctx.beginPath();ctx.roundRect(x-4.4,y-hBody+2.8,8.8,hBody-6.8,1.8);ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.28)';
-  ctx.fillRect(x-3.4,y-hBody+2.5,6.8,2.6);
+  // Tactical plate carrier / webbing / ghillie cloak
+  ctx.fillStyle=sh==='sniper'?'#374a2c':unifBase;
+  ctx.beginPath();ctx.roundRect(x-4.5,y-hBody+2.8,9.0,hBody-6.8,1.8);ctx.fill();
+  ctx.fillStyle=c;
+  ctx.fillRect(x-6.4,y-hBody+1.2,3.2,4.2);ctx.fillRect(x+3.2,y-hBody+1.2,3.2,4.2);
 
   // Equipped Weapon & Forearm Grip
   ctx.save();ctx.translate(x,y-hBody*0.54);ctx.rotate(e.ang);
   if(sh==='rinf'){
-   ctx.fillStyle='#242b33';ctx.beginPath();ctx.roundRect(-10.5,-3.8,27.0,7.4,1.8);ctx.fill();
+   // Heavy Shoulder-Fired Anti-Tank / Stinger Launcher with warhead tip
+   ctx.fillStyle='#242b33';ctx.beginPath();ctx.roundRect(-11.5,-4.0,28.5,7.8,2.0);ctx.fill();
    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.2;ctx.stroke();
-   ctx.fillStyle=c;ctx.fillRect(-3.8,-3.8,8.8,7.4);
-   ctx.fillStyle='#ff9436';ctx.beginPath();ctx.arc(17.0,0,3.4,0,7);ctx.fill();
+   ctx.fillStyle=c;ctx.fillRect(-4.0,-4.0,9.2,7.8);
+   ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.moveTo(17,-3.5);ctx.lineTo(22.5,0);ctx.lineTo(17,3.5);ctx.closePath();ctx.fill();
   }else if(sh==='sniper'){
-   ctx.fillStyle='#14181e';ctx.fillRect(-2.5,-1.8,27.5,3.4);
-   ctx.fillStyle='#ffd34d';ctx.fillRect(4.5,-4.0,8.5,2.2);
-   if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,65,65,.8)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(25.0,0);ctx.lineTo(92,0);ctx.stroke();}
+   // Long-barrel scoped sniper rifle + laser rangefinder
+   ctx.fillStyle='#14181e';ctx.fillRect(-2.5,-1.9,29.0,3.6);
+   ctx.fillStyle='#ffd34d';ctx.fillRect(4.5,-4.2,9.0,2.3);
+   if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,65,65,.85)';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(26.5,0);ctx.lineTo(96,0);ctx.stroke();}
   }else if(sh==='worker'){
-   ctx.fillStyle='#e5b832';ctx.fillRect(0,-2.2,14.5,4.4);
+   ctx.fillStyle='#e5b832';ctx.fillRect(0,-2.3,15.0,4.6);
+  }else if(sh==='hacker'){
+   // Glowing cyber deck / laptop terminal
+   ctx.fillStyle='#1a222c';ctx.fillRect(2,-4.5,8.5,9.0);
+   ctx.fillStyle='#5dff9a';ctx.fillRect(3.2,-3.3,6.0,6.6);
   }else{
-   ctx.fillStyle='#161b22';ctx.fillRect(-1.5,-1.9,20.5,3.7);
-   ctx.fillStyle='#3c4654';ctx.fillRect(6.2,1.7,3.0,4.6);
+   // Assault rifle with magazine & muzzle
+   ctx.fillStyle='#161b22';ctx.fillRect(-1.5,-2.0,21.5,3.8);
+   ctx.fillStyle='#3c4654';ctx.fillRect(6.5,1.8,3.2,4.8);
   }
   ctx.restore();
 
-  // 3D Sculpted Helmet Dome & Tactical Visor
-  const hy=y-hBody-3.8;
-  const hg=ctx.createRadialGradient(x-1.8,hy-1.8,0.8,x,hy,5.8);
+  // Faction-Distinct 3D Headgear (USA Kevlar Visor / China Cap / Russia Ushanka / Militia Headwrap)
+  const hy=y-hBody-4.0;
+  const hg=ctx.createRadialGradient(x-1.8,hy-1.8,0.8,x,hy,6.0);
   hg.addColorStop(0,safeCol('#ffffff','#f4f8fc'));
   hg.addColorStop(0.42,safeCol(lt,'#a8ccff'));
   hg.addColorStop(1,safeCol(dk,'#1a3e7a'));
-  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,hy,5.5,0,7);ctx.fill();
-  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.35;ctx.stroke();
-  ctx.fillStyle=e.d.hero?'#ffd34d':'#7be8ff';
-  ctx.beginPath();ctx.ellipse(x+dCos(e.ang)*3.1,hy+dSin(e.ang)*1.5,2.8,1.7,e.ang,0,7);ctx.fill();
+  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,hy,5.7,0,7);ctx.fill();
+  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.4;ctx.stroke();
 
-  if(e.d.hero){ctx.fillStyle='#ffd34d';ctx.font='700 11.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+trUnit(e.d.name).split(' ').pop().toUpperCase(),x,y-31);ctx.textAlign='left';}
-  if(sel||e.hp<e.maxHp)hpBar(x,y-25,26,e.hp/e.maxHp);
+  if(fac==='russia'){
+   // Earflaps on winter combat helmet
+   ctx.fillStyle='#2a323b';ctx.fillRect(x-6.4,hy-1.5,2.2,5.0);ctx.fillRect(x+4.2,hy-1.5,2.2,5.0);
+  }else if(fac==='militia'){
+   // Desert scarf / keffiyeh wrap
+   ctx.fillStyle='#d4b886';ctx.beginPath();ctx.arc(x,hy+1.5,5.4,0.15,Math.PI-0.15);ctx.fill();
+  }else if(fac==='china'){
+   // Red/gold star emblem on helmet front
+   ctx.fillStyle='#ffd34d';ctx.beginPath();ctx.arc(x+dCos(e.ang)*2.2,hy-2.2,1.6,0,7);ctx.fill();
+  }
+  // Tactical Goggles / Visor
+  ctx.fillStyle=e.d.hero?'#ffd34d':fac==='china'?'#ff7b6b':'#7be8ff';
+  ctx.beginPath();ctx.ellipse(x+dCos(e.ang)*3.2,hy+dSin(e.ang)*1.5,2.9,1.8,e.ang,0,7);ctx.fill();
+
+  if(e.d.hero){ctx.fillStyle='#ffd34d';ctx.font='700 11.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+trUnit(e.d.name).split(' ').pop().toUpperCase(),x,y-32);ctx.textAlign='left';}
+  if(sel||e.hp<e.maxHp)hpBar(x,y-26,26,e.hp/e.maxHp);
   return;
  }
 
@@ -2876,15 +2952,27 @@ function drawUnit(e){
    ctx.fillStyle='#0d1014';ctx.beginPath();ctx.roundRect(L*0.90,-5.3,5.8,10.6,1.2);ctx.fill();
   }
   ctx.restore();
-  const tr=e.r*0.68;
-  // 3D turret collar shadow
-  if(VIEW3D){ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(2.2,2.5,tr*1.18,tr*0.98,0,0,7);ctx.fill();}
-  ctx.fillStyle=dk;ctx.fillRect(-tr*1.35,-tr*0.82,tr*0.55,tr*1.64);
-  const tg=ctx.createLinearGradient(-tr,-tr,tr,tr);tg.addColorStop(0,safeCol(lt,'#9ec5ff'));tg.addColorStop(0.5,safeCol(c,'#4a90ff'));tg.addColorStop(1,safeCol(dk,'#1f4f9e'));
-  ctx.fillStyle=tg;ctx.beginPath();ctx.ellipse(0,0,tr*1.14,tr*0.94,0,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.8;ctx.stroke();
-  ctx.fillStyle='#5ce1ff';ctx.fillRect(tr*0.35,-tr*0.52,4.2,3.4);
-  ctx.fillStyle='rgba(255,255,255,.28)';ctx.beginPath();ctx.ellipse(-tr*0.18,-tr*0.22,tr*0.65,tr*0.38,-0.3,0,7);ctx.fill();
-  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.2,tr*0.25,tr*0.38,0,7);ctx.fill();ctx.stroke();
+  const tr=e.r*0.72;
+  // 3D turret ring & collar shadow
+  if(VIEW3D){ctx.fillStyle='rgba(0,0,0,.48)';ctx.beginPath();ctx.ellipse(2.4,2.8,tr*1.22,tr*1.02,0,0,7);ctx.fill();}
+  // Rear turret stowage bustle + twin smoke grenade launcher pods
+  ctx.fillStyle=dk;ctx.fillRect(-tr*1.42,-tr*0.86,tr*0.62,tr*1.72);
+  ctx.fillStyle='#242a32';
+  ctx.fillRect(tr*0.18,-tr*1.05,4.2,2.6);ctx.fillRect(tr*0.18,tr*1.05-2.6,4.2,2.6);
+  // 3D Sculpted Turret Dome
+  const tg=ctx.createLinearGradient(-tr,-tr,tr,tr);
+  tg.addColorStop(0,safeCol(lt,'#9ec5ff'));tg.addColorStop(0.48,safeCol(c,'#4a90ff'));tg.addColorStop(1,safeCol(dk,'#1f4f9e'));
+  ctx.fillStyle=tg;ctx.beginPath();ctx.ellipse(0,0,tr*1.18,tr*0.96,0,0,7);ctx.fill();
+  ctx.strokeStyle='#0d1117';ctx.lineWidth=1.8;ctx.stroke();
+  // Armored gun mantlet + gunner thermal sight + commander cupola + whip antenna
+  ctx.fillStyle='#2b333d';ctx.beginPath();ctx.roundRect(tr*0.68,-tr*0.44,4.8,tr*0.88,1.5);ctx.fill();
+  ctx.fillStyle='#5ce1ff';ctx.fillRect(tr*0.36,-tr*0.54,4.4,3.4);
+  ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-tr*0.18,-tr*0.24,tr*0.66,tr*0.38,-0.3,0,7);ctx.fill();
+  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.22,tr*0.26,tr*0.40,0,7);ctx.fill();ctx.stroke();
+  // Whip radio antenna swaying slightly with movement
+  const antSway=e.moving?dSin(G.t*14+e.id)*3.5:0;
+  ctx.strokeStyle='rgba(220,235,248,.65)';ctx.lineWidth=1.1;
+  ctx.beginPath();ctx.moveTo(-tr*0.95,-tr*0.55);ctx.lineTo(-tr*1.65,-tr*1.15+antSway);ctx.stroke();
  }
  ctx.restore();
  if(e.vet){ctx.fillStyle='#ffd34d';for(let i=0;i<e.vet;i++){ctx.fillRect(x-e.r-7,y-e.r+i*5,6,3);}}
