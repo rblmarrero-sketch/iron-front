@@ -1633,8 +1633,17 @@ function aiThink(team,dt){
  }
  const armyN=units.filter(u=>u.d.wpn&&!u.wave).length;
  let reserve=0;if(A.boI<A.bo.length){const ty=RO[A.bo[A.boI]];if(ty){const nx=B[ty];if(!nx.req||has(nx.req))reserve=nx.super?(armyN>=A.waveSize?nx.cost:0):nx.cost;}}
- // upgrades
- if(D.upg&&G.t>360){for(const b of blds){if(!b.built||!b.d.ups||b.queue.length)continue;const id=b.d.ups.find(u=>!G.upg[team].has(u)&&!canQueue(b,'up:'+u));if(id&&money()-reserve>=UPG[id].cost+300){queueItem(b,'up:'+id);break;}}}
+ // research & building fortification upgrades (Tier II / III)
+ if(D.upg&&G.t>300){
+  for(const b of blds){if(!b.built||!b.d.ups||b.queue.length)continue;const id=b.d.ups.find(u=>!G.upg[team].has(u)&&!canQueue(b,'up:'+u));if(id&&money()-reserve>=UPG[id].cost+300){queueItem(b,'up:'+id);break;}}
+  const maxAiLv=A.diff==='hard'?3:2;
+  if(G.t>(A.diff==='hard'?240:360)&&money()-reserve>=1400){
+   const prio=['hq','def','defaa','power','supply','factory','super'];
+   const cand=blds.filter(b=>b.built&&(b.bLv||1)<maxAiLv&&prio.includes(b.d.shape))
+    .sort((a,b2)=>prio.indexOf(a.d.shape)-prio.indexOf(b2.d.shape)||(a.bLv||1)-(b2.bLv||1))[0];
+   if(cand){const bi=bldUpgInfo(cand);if(bi&&money()-reserve>=bi.cost+450)upgradeBld(cand);}
+  }
+ }
  // aircraft
  const af=blds.find(b=>b.d.shape==='airfield'&&b.built);
  if(af&&af.queue.length<2){
@@ -3126,9 +3135,9 @@ addEventListener('keydown',ev=>{
  if(k==='escape'){toggleChatInput(false);cancelModes();}
  else if(ev.ctrlKey&&k==='a'){ev.preventDefault();selectArmy();}
  else if(ev.ctrlKey&&k==='d'){ev.preventDefault();G.sel=[];}
- else if(!ev.ctrlKey&&!ev.metaKey&&k==='x'){const us=ownUnits().filter(u=>u.d.air!=='jet');if(us.length)issue({k:'sc',ids:us.map(u=>u.id)});return;}
- else if(!ev.ctrlKey&&!ev.metaKey&&k==='f'){selectAir();return;}
+ else if((ev.ctrlKey||ev.metaKey)&&k==='f'){ev.preventDefault();selectAir();return;}
  else if((ev.ctrlKey||ev.metaKey)&&k==='b'){ev.preventDefault();issue({k:'beacon',x:Math.round(mouse.wx),y:Math.round(mouse.wy)});return;}
+ else if(ev.altKey&&k==='t'){ev.preventDefault();setView3D(!VIEW3D);return;}
  else if(k==='f9'||k==='pause'||(k==='p'&&!ownUnits().some(u=>u.d.wpn))){ev.preventDefault&&ev.preventDefault();if(G.mp)msg('Pause is disabled online','#ff6b5b',true);else paused=!paused;}
  else if(k==='p'){cancelModes();G.patrolMode=true;}
  else if(dm&&dm!=='0'){
@@ -3142,8 +3151,9 @@ addEventListener('keydown',ev=>{
  else if(k==='a'&&ownUnits().some(u=>u.d.wpn)){cancelModes();G.amove=true;}
  else if(k==='d'&&!ev.ctrlKey&&ownUnits().some(u=>u.d.wpn)){cancelModes();G.guardMode=true;}
  else if(k==='f'&&ownUnits().some(u=>u.d.wpn)){cancelModes();G.fattackMode=true;}
+ else if(k==='f'&&!ownSel().length){selectAir();return;}
  else if(k==='s'){const us=ownUnits();if(us.length)issue({k:'st',ids:us.map(u=>u.id)});}
- else if(k==='t'){setView3D(!VIEW3D);}else if(k==='g'){const b=G.ents.find(e=>e.team===ME&&e.d.super&&superReady(e));if(b)doAct('sw:'+b.id);else msg('No superweapon ready','#ff6b5b',true);}
+ else if(k==='t'&&!ownUnits().some(u=>u.d.wpn)){setView3D(!VIEW3D);}else if(k==='g'){const b=G.ents.find(e=>e.team===ME&&e.d.super&&superReady(e));if(b)doAct('sw:'+b.id);else msg('No superweapon ready','#ff6b5b',true);}
  else{
   const up=k.toUpperCase();
   const btn=document.querySelector(`#cmds [data-key="${up}"]`);
