@@ -101,28 +101,40 @@ input.txt{user-select:text;-webkit-user-select:text}
 .facgrid div{border:1px solid #2c3a4a;border-radius:6px;padding:6px 8px;background:#121a24}
 .facgrid b{font-size:15px;color:#ffd34d}
 .hidden{display:none!important}
-/* ---------- mobile / small screens ---------- */
-body.mobile #bottom{height:118px;gap:6px;padding:6px}
-body.mobile #mini{width:132px;height:88px}
-body.mobile #info{font-size:12px;min-width:90px}
+button,.btn,.cmd,.tab,.chip,.pw,.q{touch-action:manipulation}
+/* ---------- mobile & tablet responsive layout ---------- */
+body.mobile #bottom{height:126px;gap:6px;padding:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+body.mobile #mini{width:138px;height:96px}
+body.mobile #info{font-size:12px;min-width:86px}
 body.mobile #info h3{font-size:15px}
 body.mobile #info .muted{display:none}
-body.mobile #cmds{grid-template-columns:repeat(4,70px);grid-auto-rows:38px;gap:4px;max-height:106px}
-body.mobile .cmd{font-size:11px;padding:2px 3px}
+body.mobile #cmds{grid-template-columns:repeat(4,minmax(66px,1fr));grid-auto-rows:42px;gap:4px;max-height:112px;flex:1}
+body.mobile .cmd{font-size:11.5px;padding:3px 4px}
 body.mobile .cmd .k{display:none}
-body.mobile #touchBar{display:flex;bottom:126px}
-body.mobile #powBtn{display:block}
-body.mobile #powers{display:none;top:76px;width:190px;max-height:calc(100% - 210px)}
+body.mobile #touchBar{display:grid;grid-template-columns:repeat(2,56px);gap:5px;right:6px;bottom:134px;max-height:calc(100vh - 180px)}
+body.mobile #touchBar button{width:56px;height:40px;font-size:12px;padding:2px}
+body.mobile #powBtn{display:block;min-height:34px}
+body.mobile #powers{display:none;top:78px;width:205px;max-height:calc(100% - 215px)}
 body.mobile #powers.open{display:flex}
-body.mobile #top{font-size:14px;gap:10px;height:32px}
+body.mobile #top{font-size:13.5px;gap:7px;height:36px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+body.mobile #top button,body.mobile #top select{padding:4px 7px;font-size:12.5px;flex:none}
+body.mobile #top input[type=range]{width:42px!important;flex:none}
 body.mobile #top .hm{display:none}
-body.mobile #msgs{font-size:14px;width:70%;top:40px}
-body.mobile #modeHint{bottom:126px;font-size:13px;width:70%}
-body.mobile #side{font-size:11px;top:40px}
+body.mobile #msgs{font-size:13.5px;width:68%;top:42px}
+body.mobile #modeHint{bottom:134px;font-size:13px;width:68%}
+body.mobile #side{font-size:11px;top:42px;right:126px}
 body.mobile .facgrid{grid-template-columns:repeat(2,1fr)}
-body.mobile .panel h1{font-size:32px}
+body.mobile .panel{padding:14px 16px}
+body.mobile .panel h1{font-size:28px;letter-spacing:2px}
 body.mobile .ctl{display:none}
-@media (max-width:640px){#cmds{grid-template-columns:repeat(3,64px)!important} #info{display:none}}
+body.tablet #bottom{height:142px;gap:8px;padding:8px}
+body.tablet #mini{width:172px;height:118px}
+body.tablet #cmds{grid-template-columns:repeat(4,82px);grid-auto-rows:44px}
+body.tablet #touchBar{display:grid;grid-template-columns:repeat(2,60px);gap:6px;bottom:150px}
+body.tablet #powBtn{display:block}
+body.tablet #powers{display:none;top:78px}
+body.tablet #powers.open{display:flex}
+@media (max-width:640px){#cmds{grid-template-columns:repeat(3,minmax(62px,1fr))!important} #info{display:none}}
 
 #chatBox{position:fixed;left:220px;bottom:178px;z-index:6;width:300px;pointer-events:none;font-size:13px;text-shadow:0 0 3px #000}
 #chatMsgs div{margin:2px 0;background:#0d1117b8;padding:2px 6px;border-radius:3px;width:fit-content;max-width:100%;word-break:break-word}
@@ -145,7 +157,7 @@ body.mobile .zhgrid{grid-template-columns:repeat(2,1fr)}
 <div id="top" class="hidden">
   <span id="money"></span><span id="power"></span><span id="rank"></span><span id="clock"></span>
   <span class="sp"></span>
-  <span id="pingBadge" style="font-size:13px;color:#9fb0c2"></span><button id="view3dBtn" title="Toggle 3D Perspective / Top-Down View (T)">🧊 3D View</button><button id="snapBtn" title="Download PNG Snapshot of Live Battlefield">📸 Snap</button><button id="sfxBtn" title="Toggle Sound Effects">🔊 SFX</button><button id="bgmBtn" title="Toggle Faction / Command Music">🎵 Music</button><button id="topZhThemeBtn" title="Play / Toggle Zero Hour Main Theme">🎼 ZH Theme</button><button id="chatBtn" class="hm" title="Chat / Ping (Enter)">💬 Chat</button><button id="pauseBtn" class="hm">Pause (F9)</button><button id="helpBtn">Menu</button>
+  <span id="pingBadge" style="font-size:13px;color:#9fb0c2"></span><button id="view3dBtn" title="Toggle 3D Perspective / Top-Down View (T)">🧊 3D View</button><button id="snapBtn" title="Download PNG Snapshot of Live Battlefield">📸 Snap</button><button id="sfxBtn" title="Toggle Sound Effects">🔊 SFX</button><input type="range" id="sfxVol" min="0" max="100" value="85" title="SFX Volume" style="width:52px;accent-color:#ffd34d;cursor:pointer;vertical-align:middle"><button id="bgmBtn" title="Toggle Faction / Command Music">🎵 Music</button><input type="range" id="bgmVol" min="0" max="100" value="65" title="Music Volume" style="width:52px;accent-color:#ffd34d;cursor:pointer;vertical-align:middle"><select id="bgmStyleSel" title="Soundtrack Style" style="padding:2px 4px;font-size:12px;border-color:#3b5068;color:#ffd34d;background:#141c26"><option value="auto">🎼 Auto (ZH + Faction)</option><option value="zh_metal">🎸 ZH Main Theme</option><option value="usa">🇺🇸 USA Rock/Brass</option><option value="china">🇨🇳 China Taiko/Orchestral</option><option value="russia">🇷🇺 Russia Heavy March</option><option value="militia">🏜️ GLA Hijaz/Oud</option><option value="ambient">🛰️ Tactical Ambient</option></select><button id="topZhThemeBtn" title="Play / Toggle Zero Hour Main Theme">🎼 ZH Theme</button><button id="chatBtn" class="hm" title="Chat / Ping (Enter)">💬 Chat</button><button id="pauseBtn" class="hm">Pause (F9)</button><button id="helpBtn">Menu</button>
 </div>
 <button id="powBtn" class="hidden">★ Powers</button>
 <div id="powers" class="hidden"></div>
@@ -195,7 +207,7 @@ body.mobile .zhgrid{grid-template-columns:repeat(2,1fr)}
   <div class="panel">
     <h1>IRON FRONT: ZERO HOUR</h1>
     <h2>Generals' War &mdash; HD 2.5D Units &amp; Ordnance, Multi-Stage Detonations, EVA Voice Alerts &amp; Multi-Language</h2>
-    <div class="chips" id="appBar" style="margin:-2px 0 8px;align-items:center"><div class="chip" id="shareBtn">&#128228; Share game</div><div class="chip" id="qrBtn">&#9638; QR code</div><div class="chip hidden" id="installBtn">&#11015; Install app</div><div class="chip" id="saveGameBtn" title="Download standalone HTML file">&#128190; Save Offline HTML</div><select id="langSel" title="Language / Язык / 语言 / Español / العربية" style="padding:4px 8px;border-color:#7fb2ff;color:#ffd34d"><option value="en">🌐 English</option><option value="ru">🇷🇺 Русский</option><option value="zh">🇨🇳 中文</option><option value="es">🇪🇸 Español</option><option value="ar">🇸🇦 العربية</option></select><div class="chip on" id="evaBtn" title="Toggle EVA Tactical Voice Alerts">🎙️ EVA Voice: ON</div><div class="chip on" id="menu3dBtn" title="Toggle 3D Perspective / Top-Down View (T)">🧊 3D View: ON</div><div class="chip" id="zhThemeBtn" title="Play / Toggle Zero Hour Main Theme">🎼 Zero Hour Theme</div><span id="netBadge" style="font-size:13px;color:#8a9aac"></span></div>
+    <div class="chips" id="appBar" style="margin:-2px 0 8px;align-items:center"><div class="chip" id="shareBtn">&#128228; Share game</div><div class="chip" id="qrBtn">&#9638; QR code</div><div class="chip hidden" id="installBtn">&#11015; Install app</div><div class="chip" id="saveGameBtn" title="Download standalone HTML file">&#128190; Save Offline HTML</div><select id="langSel" title="Language / Язык / 语言 / Español / العربية" style="padding:4px 8px;border-color:#7fb2ff;color:#ffd34d"><option value="en">🌐 English</option><option value="ru">🇷🇺 Русский</option><option value="zh">🇨🇳 中文</option><option value="es">🇪🇸 Español</option><option value="ar">🇸🇦 العربية</option></select><div class="chip on" id="evaBtn" title="Toggle EVA Tactical Voice Alerts">🎙️ EVA Voice: ON</div><div class="chip on" id="menu3dBtn" title="Toggle 3D Perspective / Top-Down View (T)">🧊 3D View: ON</div><div class="chip" id="zhThemeBtn" title="Play / Toggle Zero Hour Main Theme">🎼 Zero Hour Theme</div><select id="menuBgmStyle" title="Soundtrack Style" style="padding:4px 8px;border-color:#7fb2ff;color:#ffd34d"><option value="auto">🎼 Auto (ZH + Faction)</option><option value="zh_metal">🎸 ZH Main Theme</option><option value="usa">🇺🇸 USA Rock/Brass</option><option value="china">🇨🇳 China Taiko/Orchestral</option><option value="russia">🇷🇺 Russia Heavy March</option><option value="militia">🏜️ GLA Hijaz/Oud</option><option value="ambient">🛰️ Tactical Ambient</option></select><span id="netBadge" style="font-size:13px;color:#8a9aac"></span></div>
     <div id="qrBox" class="hidden" style="text-align:center;margin:4px 0 10px"><img id="qrImg" alt="QR code" style="width:176px;height:176px;image-rendering:pixelated;background:#fff;padding:8px;border-radius:6px"><div style="font-size:13px;color:#8a9aac">Scan with a phone camera to open the game</div></div>
     <div class="tabs"><div class="tab on" data-tab="sk">Skirmish vs AI</div><div class="tab" data-tab="zh">★ Generals' Challenge</div><div class="tab" data-tab="on">Online / LAN</div><div class="tab" data-tab="help">Doctrines &amp; Controls</div></div><div id="tabZh" class="hidden"><h4>ZERO HOUR GENERALS' CHALLENGE GAUNTLET</h4><div style="font-size:13.5px;color:#9fb0c2;margin-bottom:6px">Pick your faction &amp; Sub-Commander Doctrine in the slot below, then click any legendary General to challenge them on their home turf!</div><div class="zhgrid" id="zhList"></div></div>
     <div id="tabOn" class="hidden">
@@ -282,7 +294,11 @@ let W=0,H=0,Z=1,VW=0,VH=0;
 const IS_TOUCH=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
 function resize(){W=innerWidth;H=innerHeight;DPR=Math.max(1,Math.min(GFX.dprCap,(typeof devicePixelRatio==='number'&&devicePixelRatio)||1));
  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
- const mob=IS_TOUCH&&Math.min(W,H)<900||W<760;document.body.classList.toggle('mobile',mob);HUD_B=mob?118:170;VW=W/Z;VH=H/Z;}
+ const isTab=IS_TOUCH&&Math.min(W,H)>=640&&Math.max(W,H)<=1366;
+ const mob=(IS_TOUCH&&!isTab)||W<760;
+ document.body.classList.toggle('mobile',mob);
+ document.body.classList.toggle('tablet',isTab);
+ HUD_B=mob?126:isTab?142:170;VW=W/Z;VH=H/Z;}
 addEventListener('resize',resize);resize();
 // 8 player colours
 const PCOL=['#4a90ff','#ff4d3d','#3fd06b','#ffcf3d','#b36bff','#ff8a2a','#3dd8e0','#ff6fb5'];
@@ -298,7 +314,7 @@ const U={
  ranger:{name:'Rifleman',hp:145,spd:56,r:7,cost:200,time:5,armor:'inf',sight:240,shape:'inf',cap2:true,desc:'Rifle infantry, captures derricks',wpn:wp({dmg:11,range:160,rof:0.5,vsVeh:0.35,vsBld:0.3})},
  missile:{name:'Rocket Soldier',hp:125,spd:50,r:7,cost:300,time:6,armor:'inf',sight:250,shape:'rinf',desc:'Anti-tank & anti-air',wpn:wp({dmg:40,range:210,rof:2,vsInf:0.35,vsVeh:1.4,vsBld:0.9,vsAir:1.2,air:true,proj:'rocket'})},
  raider:{name:'Raider Jeep',hp:320,spd:125,r:12,cost:600,time:8,armor:'veh',sight:340,shape:'jeep',desc:'Fast scout',wpn:wp({dmg:14,range:180,rof:0.3,vsInf:1.3,vsVeh:0.5,vsBld:0.4})},
- paladin:{name:'Sentinel Tank',hp:740,spd:64,r:16,cost:1000,time:10,armor:'veh',sight:260,shape:'tank',turret:true,desc:'Main battle tank',wpn:wp({dmg:64,range:205,rof:1.5,vsInf:0.55,vsVeh:1.2,vsBld:1,proj:'shell',tag:'tank'})},
+ paladin:{name:'Sentinel Tank',hp:780,spd:66,r:16,cost:1000,time:10,armor:'veh',sight:270,shape:'tank',turret:true,desc:'Main battle tank',wpn:wp({dmg:66,range:210,rof:1.45,vsInf:0.55,vsVeh:1.25,vsBld:1,proj:'shell',tag:'tank'})},
  thunder:{name:'Thunder Artillery',hp:260,spd:45,r:15,cost:1200,time:13,armor:'veh',sight:240,shape:'arty',turret:true,req:'c_tech',desc:'Long-range siege',wpn:wp({dmg:85,range:430,min:110,rof:4,splash:60,vsInf:1.1,vsVeh:0.9,vsBld:1.3,proj:'arty'})},
  gunship:{name:'Gunship',hp:500,spd:110,r:16,cost:1400,time:14,armor:'veh',sight:300,shape:'heli',air:'heli',desc:'Attack helicopter',wpn:wp({dmg:30,range:220,rof:0.8,burst:2,vsInf:0.9,vsVeh:1.35,vsBld:1,proj:'rocket'})},
  falcon:{name:'Falcon Jet',hp:300,spd:260,r:16,cost:1500,time:14,armor:'veh',sight:300,shape:'jet',air:'jet',ammo:2,desc:'Strike jet, hits air & ground',wpn:wp({dmg:150,range:260,rof:0.6,vsInf:0.6,vsVeh:1.4,vsBld:1.2,vsAir:1.4,air:true,proj:'rocket'})},
@@ -309,11 +325,11 @@ const U={
  hunter:{name:'AT Trooper',hp:125,spd:50,r:7,cost:300,time:6,armor:'inf',sight:250,shape:'rinf',horde:true,desc:'Anti-tank & anti-air',wpn:wp({dmg:38,range:205,rof:2,vsInf:0.35,vsVeh:1.4,vsBld:0.9,vsAir:1.1,air:true,proj:'rocket'})},
  hacker:{name:'Cyber Operative',hp:90,spd:52,r:7,cost:600,time:8,armor:'inf',sight:240,shape:'hacker',hack:true,desc:'Idle: hacks +$4/s. Order onto an enemy vehicle/building to disable it'},
  gatling:{name:'Rotary AA Tank',hp:420,spd:70,r:14,cost:800,time:9,armor:'veh',sight:260,shape:'aa',turret:true,desc:'Shreds infantry & aircraft',wpn:wp({dmg:7,range:195,rof:0.12,vsInf:1.3,vsVeh:0.5,vsBld:0.4,vsAir:1.2,air:true,tag:'gatling'})},
- bear:{name:'Bear Tank',hp:580,spd:66,r:16,cost:800,time:9,armor:'veh',sight:250,shape:'tank',turret:true,horde:true,desc:'Cheap tank, horde bonus',wpn:wp({dmg:46,range:190,rof:1.6,vsInf:0.55,vsVeh:1.2,vsBld:1,proj:'shell',tag:'tank'})},
+ bear:{name:'Bear Tank',hp:610,spd:68,r:16,cost:800,time:9,armor:'veh',sight:250,shape:'tank',turret:true,horde:true,desc:'Cheap tank, horde bonus',wpn:wp({dmg:48,range:195,rof:1.5,vsInf:0.6,vsVeh:1.2,vsBld:1,proj:'shell',tag:'tank'})},
  flame:{name:'Fire Lance Tank',hp:500,spd:66,r:14,cost:1000,time:10,armor:'veh',sight:230,shape:'flame',desc:'Burns infantry & buildings',wpn:wp({dmg:14,range:135,rof:0.2,splash:28,vsInf:1.5,vsVeh:0.5,vsBld:1.4,proj:'flame'})},
  titan:{name:'Titan Tank',hp:1500,spd:40,r:22,cost:2000,time:18,armor:'veh',sight:270,shape:'heavy',turret:true,req:'l_tech',desc:'Super-heavy twin-cannon tank',wpn:wp({dmg:82,range:215,rof:1.6,burst:2,vsInf:0.6,vsVeh:1.3,vsBld:1.1,proj:'shell',tag:'tank'})},
  rocketart:{name:'Ember Artillery',hp:260,spd:46,r:15,cost:1000,time:11,armor:'veh',sight:240,shape:'arty',turret:true,req:'l_tech',desc:'Long-range splash artillery',wpn:wp({dmg:60,range:420,min:110,rof:3.6,splash:70,vsInf:1.2,vsVeh:0.8,vsBld:1.2,proj:'arty'})},
- firebird:{name:'Firebird Jet',hp:270,spd:250,r:16,cost:1300,time:12,armor:'veh',sight:300,shape:'jet',air:'jet',ammo:2,desc:'Napalm strike jet',wpn:wp({dmg:110,range:240,rof:0.6,splash:60,burn:true,vsInf:1.3,vsVeh:0.9,vsBld:1.1,proj:'rocket'})},
+ firebird:{name:'Firebird Jet',hp:270,spd:250,r:16,cost:1300,time:12,armor:'veh',sight:300,shape:'mig',air:'jet',ammo:2,desc:'Napalm strike jet',wpn:wp({dmg:110,range:240,rof:0.6,splash:60,burn:true,vsInf:1.3,vsVeh:0.9,vsBld:1.1,proj:'rocket'})},
  hellhound:{name:'Hellhound Copter',hp:400,spd:100,r:16,cost:1500,time:13,armor:'veh',sight:300,shape:'heli',air:'heli',desc:'Rotary-gun helicopter, hits air',wpn:wp({dmg:6,range:180,rof:0.15,vsInf:1.2,vsVeh:0.45,vsBld:0.35,vsAir:0.9,air:true,tag:'gatling'})},
  // ---- Russia ----
  r_dozer:{name:'Dozer',hp:360,spd:70,r:13,cost:1000,time:10,armor:'veh',sight:220,shape:'dozer',builder:true,desc:'Builds structures'},
@@ -321,32 +337,32 @@ const U={
  rifle_r:{name:'Line Infantry',hp:140,spd:54,r:7,cost:175,time:4,armor:'inf',sight:240,shape:'inf',desc:'Sturdy rifle infantry',wpn:wp({dmg:10,range:155,rof:0.5,vsVeh:0.3,vsBld:0.3})},
  grenadier:{name:'Grenadier',hp:130,spd:50,r:7,cost:300,time:6,armor:'inf',sight:250,shape:'rinf',desc:'Anti-tank & anti-air',wpn:wp({dmg:40,range:205,rof:2,vsInf:0.4,vsVeh:1.4,vsBld:1,vsAir:1.1,air:true,proj:'rocket'})},
  sniper:{name:'Sniper',hp:90,spd:52,r:7,cost:400,time:7,armor:'inf',sight:380,shape:'sniper',desc:'Long-range infantry killer',wpn:wp({dmg:75,range:340,rof:2.6,vsInf:1.6,vsVeh:0.08,vsBld:0.05})},
- recon:{name:'Recon Car',hp:340,spd:120,r:12,cost:650,time:8,armor:'veh',sight:360,shape:'jeep',desc:'Fast armored scout',wpn:wp({dmg:13,range:175,rof:0.3,vsInf:1.2,vsVeh:0.5,vsBld:0.4})},
- bulwark:{name:'Bulwark Tank',hp:780,spd:58,r:16,cost:1050,time:11,armor:'veh',sight:250,shape:'tank',turret:true,desc:'Heavily armored battle tank',wpn:wp({dmg:62,range:200,rof:1.7,vsInf:0.55,vsVeh:1.2,vsBld:1,proj:'shell',tag:'tank'})},
- skyshield:{name:'Sky Shield',hp:380,spd:64,r:14,cost:900,time:9,armor:'veh',sight:330,shape:'sam',turret:true,desc:'Long-range anti-air missiles',wpn:wp({dmg:34,range:340,rof:1.1,burst:2,vsInf:0,vsVeh:0,vsBld:0,vsAir:1.7,air:true,gnd:false,proj:'rocket'})},
+ recon:{name:'Recon Car',hp:340,spd:120,r:12,cost:650,time:8,armor:'veh',sight:360,shape:'btr',desc:'Fast armored scout',wpn:wp({dmg:13,range:175,rof:0.3,vsInf:1.2,vsVeh:0.5,vsBld:0.4})},
+ bulwark:{name:'Bulwark Tank',hp:840,spd:60,r:16,cost:1050,time:11,armor:'veh',sight:255,shape:'tank',turret:true,desc:'Heavily armored battle tank',wpn:wp({dmg:65,range:205,rof:1.65,vsInf:0.55,vsVeh:1.25,vsBld:1.05,proj:'shell',tag:'tank'})},
+ skyshield:{name:'Sky Shield',hp:410,spd:66,r:14,cost:900,time:9,armor:'veh',sight:350,shape:'sam',turret:true,desc:'Long-range anti-air missiles',wpn:wp({dmg:36,range:365,rof:1.05,burst:2,vsInf:0,vsVeh:0,vsBld:0,vsAir:1.75,air:true,gnd:false,proj:'rocket'})},
  bogatyr:{name:'Bogatyr Heavy Tank',hp:1800,spd:36,r:23,cost:2200,time:20,armor:'veh',sight:270,shape:'heavy',turret:true,req:'r_tech',desc:'Fortress on tracks',wpn:wp({dmg:92,range:220,rof:2,burst:2,vsInf:0.6,vsVeh:1.3,vsBld:1.2,proj:'shell',tag:'tank'})},
  stormr:{name:'Storm Launcher',hp:270,spd:48,r:15,cost:1100,time:12,armor:'veh',sight:240,shape:'mlrs',turret:true,req:'r_tech',desc:'Rocket artillery salvo',wpn:wp({dmg:30,range:430,min:120,rof:5.5,burst:6,splash:48,vsInf:1.2,vsVeh:0.8,vsBld:1.1,proj:'rocket'})},
  strix:{name:'Strix Gunship',hp:580,spd:95,r:17,cost:1600,time:14,armor:'veh',sight:300,shape:'heli',air:'heli',desc:'Armored attack helicopter',wpn:wp({dmg:30,range:210,rof:0.9,burst:2,vsInf:1,vsVeh:1.3,vsBld:1,proj:'rocket'})},
- raven:{name:'Raven Bomber',hp:380,spd:220,r:18,cost:1600,time:15,armor:'veh',sight:280,shape:'jet',air:'jet',ammo:1,desc:'Heavy bomb, wrecks buildings',wpn:wp({dmg:420,range:110,rof:1,splash:85,vsInf:0.8,vsVeh:1,vsBld:1.6,proj:'rocket'})},
+ raven:{name:'Raven Bomber',hp:380,spd:220,r:18,cost:1600,time:15,armor:'veh',sight:280,shape:'bomber',air:'jet',ammo:1,desc:'Heavy bomb, wrecks buildings',wpn:wp({dmg:420,range:110,rof:1,splash:85,vsInf:0.8,vsVeh:1,vsBld:1.6,proj:'rocket'})},
  // ---- Free Militia ----
  worker:{name:'Worker',hp:90,spd:58,r:7,cost:200,time:4,armor:'inf',sight:200,shape:'worker',builder:true,cap:55,desc:'Builds & gathers supplies'},
  rebel:{name:'Partisan',hp:120,spd:58,r:7,cost:150,time:4,armor:'inf',sight:240,shape:'inf',desc:'Cheap fast infantry',wpn:wp({dmg:9,range:150,rof:0.5,vsVeh:0.35,vsBld:0.3})},
  rpg:{name:'RPG Trooper',hp:100,spd:52,r:7,cost:300,time:6,armor:'inf',sight:250,shape:'rinf',desc:'Anti-tank & anti-air',wpn:wp({dmg:40,range:200,rof:2,vsInf:0.35,vsVeh:1.4,vsBld:0.9,vsAir:1.1,air:true,proj:'rocket'})},
- technical:{name:'Gun Truck',hp:300,spd:130,r:12,cost:500,time:6,armor:'veh',sight:330,shape:'jeep',desc:'Fast gun truck',wpn:wp({dmg:14,range:170,rof:0.35,vsInf:1.2,vsVeh:0.5,vsBld:0.4})},
- scorpion:{name:'Viper Tank',hp:390,spd:72,r:14,cost:600,time:7,armor:'veh',sight:250,shape:'tank',turret:true,desc:'Light tank',wpn:wp({dmg:36,range:185,rof:1.3,vsInf:0.6,vsVeh:1.15,vsBld:0.9,proj:'shell',tag:'tank'})},
- quad:{name:'Twin AA Truck',hp:300,spd:80,r:13,cost:700,time:8,armor:'veh',sight:260,shape:'aa',turret:true,desc:'Anti-air & anti-infantry',wpn:wp({dmg:8,range:200,rof:0.15,vsInf:1.1,vsVeh:0.6,vsBld:0.4,vsAir:1.3,air:true})},
+ technical:{name:'Gun Truck',hp:300,spd:130,r:12,cost:500,time:6,armor:'veh',sight:330,shape:'technical',desc:'Fast gun truck',wpn:wp({dmg:14,range:170,rof:0.35,vsInf:1.2,vsVeh:0.5,vsBld:0.4})},
+ scorpion:{name:'Viper Tank',hp:420,spd:78,r:14,cost:550,time:7,armor:'veh',sight:260,shape:'tank',turret:true,desc:'Fast light tank',wpn:wp({dmg:38,range:190,rof:1.25,vsInf:0.65,vsVeh:1.2,vsBld:0.95,proj:'shell',tag:'tank'})},
+ quad:{name:'Twin AA Truck',hp:300,spd:80,r:13,cost:700,time:8,armor:'veh',sight:260,shape:'quad',turret:true,desc:'Anti-air & anti-infantry',wpn:wp({dmg:8,range:200,rof:0.15,vsInf:1.1,vsVeh:0.6,vsBld:0.4,vsAir:1.3,air:true})},
  buggy:{name:'Rocket Rig',hp:180,spd:115,r:12,cost:900,time:9,armor:'veh',sight:280,shape:'rbuggy',req:'m_tech',desc:'Fast rocket barrage',wpn:wp({dmg:28,range:340,min:60,rof:3,burst:4,splash:30,vsInf:0.8,vsVeh:1,vsBld:1.1,proj:'rocket'})},
  // ---- Zero Hour Elite & Hero Units ----
  burton:{name:'Col. Burton',hp:460,spd:68,r:8,cost:1200,time:14,armor:'inf',sight:320,shape:'sniper',req:'c_tech',hero:true,desc:'USA Commando: heavy timed charges & anti-armor rifle',wpn:wp({dmg:110,range:230,rof:0.9,vsInf:1.5,vsVeh:1.3,vsBld:1.9,proj:'bullet'})},
- avenger:{name:'Laser Avenger',hp:540,spd:78,r:14,cost:1300,time:12,armor:'veh',sight:330,shape:'aa',turret:true,req:'c_tech',desc:'High-energy laser defense vehicle, shreds air & ground',wpn:wp({dmg:22,range:280,rof:0.18,vsInf:1.2,vsVeh:1.1,vsBld:0.8,vsAir:1.8,air:true,proj:'bullet'})},
- aurora:{name:'Aurora Bomber',hp:340,spd:330,r:17,cost:2000,time:17,armor:'veh',sight:320,shape:'jet',air:'jet',ammo:1,req:'c_tech',desc:'Supersonic strike bomber, massive fuel-air payload',wpn:wp({dmg:540,range:150,rof:1,splash:95,vsInf:1.2,vsVeh:1.4,vsBld:1.8,proj:'rocket'})},
+ avenger:{name:'Laser Avenger',hp:540,spd:78,r:14,cost:1300,time:12,armor:'veh',sight:330,shape:'avenger',turret:true,req:'c_tech',desc:'High-energy laser defense vehicle, shreds air & ground',wpn:wp({dmg:22,range:280,rof:0.18,vsInf:1.2,vsVeh:1.1,vsBld:0.8,vsAir:1.8,air:true,proj:'bullet'})},
+ aurora:{name:'Aurora Bomber',hp:340,spd:330,r:17,cost:2000,time:17,armor:'veh',sight:320,shape:'aurora',air:'jet',ammo:1,req:'c_tech',desc:'Supersonic strike bomber, massive fuel-air payload',wpn:wp({dmg:540,range:150,rof:1,splash:95,vsInf:1.2,vsVeh:1.4,vsBld:1.8,proj:'rocket'})},
  lotus:{name:'Black Lotus',hp:380,spd:66,r:8,cost:1200,time:14,armor:'inf',sight:320,shape:'hacker',req:'l_tech',hack:true,hero:true,desc:'Elite Cyber Agent: hacks +$10/s idle & rapidly disables enemies'},
- ecm:{name:'ECM / Inferno Tank',hp:820,spd:66,r:16,cost:1250,time:12,armor:'veh',sight:270,shape:'flame',req:'l_tech',desc:'Fires incendiary napalm shells from range',wpn:wp({dmg:72,range:260,rof:2.2,splash:65,burn:true,vsInf:1.5,vsVeh:1.1,vsBld:1.5,proj:'arty'})},
- nuke_cannon:{name:'Nuke Cannon',hp:420,spd:36,r:18,cost:1800,time:18,armor:'veh',sight:260,shape:'arty',turret:true,req:'l_tech',desc:'Tactical nuclear siege artillery',wpn:wp({dmg:240,range:470,min:140,rof:6.5,splash:110,vsInf:1.6,vsVeh:1.4,vsBld:1.7,proj:'arty'})},
+ ecm:{name:'ECM / Inferno Tank',hp:820,spd:66,r:16,cost:1250,time:12,armor:'veh',sight:270,shape:'ecm',req:'l_tech',desc:'Fires incendiary napalm shells from range',wpn:wp({dmg:72,range:260,rof:2.2,splash:65,burn:true,vsInf:1.5,vsVeh:1.1,vsBld:1.5,proj:'arty'})},
+ nuke_cannon:{name:'Nuke Cannon',hp:420,spd:36,r:18,cost:1800,time:18,armor:'veh',sight:260,shape:'nukecannon',turret:true,req:'l_tech',desc:'Tactical nuclear siege artillery',wpn:wp({dmg:240,range:470,min:140,rof:6.5,splash:110,vsInf:1.6,vsVeh:1.4,vsBld:1.7,proj:'arty'})},
  volkov:{name:'Boris / Volkov',hp:520,spd:62,r:8,cost:1200,time:14,armor:'inf',sight:340,shape:'rinf',req:'r_tech',hero:true,desc:'Russian Hero: heavy anti-armor & anti-air assault commando',wpn:wp({dmg:95,range:260,rof:1.0,vsInf:1.5,vsVeh:1.5,vsBld:1.5,vsAir:1.4,air:true,proj:'rocket'})},
 jarmen:{name:'Jarmen Kell',hp:380,spd:66,r:8,cost:1200,time:14,armor:'inf',sight:390,shape:'sniper',req:'m_tech',hero:true,desc:'Militia Hero Sniper: eliminates infantry & disables vehicles',wpn:wp({dmg:140,range:360,rof:2.0,vsInf:2.0,vsVeh:0.75,vsBld:0.4,proj:'bullet'})},
- battlebus:{name:'Battle Bus',hp:1150,spd:88,r:17,cost:1200,time:12,armor:'veh',sight:270,shape:'heavy',turret:true,req:'m_tech',desc:'Armored mobile bunker firing heavy RPGs & machine guns',wpn:wp({dmg:45,range:220,rof:0.9,burst:2,vsInf:1.2,vsVeh:1.25,vsBld:1.0,vsAir:1.1,air:true,proj:'rocket'})},
- demo_truck:{name:'Toxin / Demo Marauder',hp:920,spd:74,r:16,cost:1100,time:11,armor:'veh',sight:250,shape:'flame',req:'m_tech',desc:'Heavy corrosive & explosive assault tank',wpn:wp({dmg:85,range:195,rof:1.5,splash:55,vsInf:1.5,vsVeh:1.3,vsBld:1.5,proj:'shell',tag:'tank'})},
+ battlebus:{name:'Battle Bus',hp:1150,spd:88,r:17,cost:1200,time:12,armor:'veh',sight:270,shape:'battlebus',turret:true,req:'m_tech',desc:'Armored mobile bunker firing heavy RPGs & machine guns',wpn:wp({dmg:45,range:220,rof:0.9,burst:2,vsInf:1.2,vsVeh:1.25,vsBld:1.0,vsAir:1.1,air:true,proj:'rocket'})},
+ demo_truck:{name:'Toxin / Demo Marauder',hp:920,spd:74,r:16,cost:1100,time:11,armor:'veh',sight:250,shape:'marauder',req:'m_tech',desc:'Heavy corrosive & explosive assault tank',wpn:wp({dmg:85,range:195,rof:1.5,splash:55,vsInf:1.5,vsVeh:1.3,vsBld:1.5,proj:'shell',tag:'tank'})},
 };
 const B={
  // ---- USA ----
@@ -1142,8 +1158,42 @@ function updDisable(e,dt){
 // BUILDINGS
 // =====================================================================
 function lowPower(t){return t>=0&&G.pw[t].dem>G.pw[t].sup;}
+
+// ---- DIRECT BUILDING UPGRADES (Tier 1 -> Tier 2 -> Tier 3 with 3D visual armor/beacons) ----
+function bldUpgInfo(b){
+ if(!b||b.kind!=='b'||!b.built||b.dead||b.d.trap)return null;
+ const lv=b.bLv||1;
+ if(lv>=3)return null;
+ const nextLv=lv+1;
+ const cost=Math.round((b.d.cost||800)*(nextLv===2?0.55:0.85));
+ const sh=b.d.shape;
+ let title=`Tier ${nextLv} Upgrade`, bonus='+35% Max HP & Armor';
+ if(sh==='hq'){title=`Command Tier ${nextLv}`;bonus='+35% HP, +4 Power & +$4/s Command Radar';}
+ else if(sh==='power'){title=`Reactor Overcharge ${nextLv===2?'II':'III'}`;bonus='+35% HP & +50% Power Output';}
+ else if(sh==='supply'){title=`Logistics Hub ${nextLv===2?'II':'III'}`;bonus='+35% HP & +$3/s Supply Bonus';}
+ else if(sh==='def'||sh==='defaa'||sh==='civbunker'){title=`Turret Mk.${nextLv}`;bonus='+35% HP, +30% Firepower & Faster Reload';}
+ else if(sh==='barracks'||sh==='factory'||sh==='airfield'){title=`Rapid Bay Mk.${nextLv}`;bonus='+35% HP & +25% Production/Repair Speed';}
+ else if(sh==='super'){title=`Accelerator Mk.${nextLv}`;bonus='+35% HP & -20s Superweapon Charge';}
+ else if(sh==='tunnel'){title=`Deep Bunker Mk.${nextLv}`;bonus='+40% HP & Faster Garrison Healing';}
+ return {lv,nextLv,cost,title,bonus};
+}
+function upgradeBld(b){
+ const info=bldUpgInfo(b);
+ if(!info)return false;
+ if(G.money[b.team]<info.cost){if(b.team===ME)msg('Insufficient funds','#ff6b5b',true);return false;}
+ G.money[b.team]-=info.cost;
+ b.bLv=info.nextLv;
+ const addHp=Math.round(b.maxHp*0.35);
+ b.maxHp+=addHp;b.hp=Math.min(b.maxHp,b.hp+addHp);
+ if(b.d.super&&b.readyAt>G.t)b.readyAt=Math.max(G.t,b.readyAt-20);
+ calcPower();
+ boom(b.x,b.y,14);
+ G.fx.push({k:'ring',x:b.x,y:b.y,r:Math.max(b.w,b.h)*TILE*0.75,col:'#ffd34d',life:0.65,max:0.65});
+ if(b.team===ME){msg(`${b.d.name} upgraded to Tier ${b.bLv}! (${info.bonus})`,'#7be07b');_sfxCall('play','ready',b.team);}
+ return true;
+}
 function calcPower(){
- for(let t=0;t<G.NP;t++){let s=0,d=0;for(const e of G.ents)if(e.kind==='b'&&e.team===t&&e.built&&!e.dead){if(e.d.pow>0){const sg=subFor(t);s+=Math.round(e.d.pow*(sg==='usa_laser'?1.5:sg==='china_nuke'?1.4:1));}else d-=e.d.pow;}G.pw[t]={sup:s,dem:d};}
+ for(let t=0;t<G.NP;t++){let s=0,d=0;for(const e of G.ents)if(e.kind==='b'&&e.team===t&&e.built&&!e.dead){const lv=(e.bLv||1)-1;if(e.d.pow>0){const sg=subFor(t);const baseP=e.d.pow*(sg==='usa_laser'?1.5:sg==='china_nuke'?1.4:1);s+=Math.round(baseP*(1+lv*0.5))+(e.d.shape==='hq'?lv*4:0);}else d-=e.d.pow;}G.pw[t]={sup:s,dem:d};}
 }
 function updBld(b,dt){
  if(!b.built)return;
@@ -1169,7 +1219,7 @@ function updBld(b,dt){
  if(b.disT>G.t){if(FXRNG()<dt*5)G.fx.push({k:'spark',x:b.tx*TILE+FXRNG()*b.w*TILE,y:b.ty*TILE+FXRNG()*b.h*TILE,life:0.3,max:0.3,col:'#5dff9a'});return;}
  if(b.queue.length){
   const it=b.queue[0],isUp=it.startsWith('up:'),time=isUp?UPG[it.slice(3)].time:U[it].time;
-  b.qprog+=dt/time*(lowPower(b.team)?0.5:1);
+  b.qprog+=dt/time*(lowPower(b.team)?0.5:1)*(1+((b.bLv||1)-1)*0.25);
   if(b.qprog>=1){
    b.qprog=0;b.queue.shift();
    if(isUp){const id=it.slice(3);G.upg[b.team].add(id);if(b.team===ME)msg('Research complete: '+UPG[id].name,'#c9b6ff');}
@@ -1184,7 +1234,8 @@ function updBld(b,dt){
   if(b.tgt){const a=dAtan2(b.tgt.y-b.y,b.tgt.x-b.x);b.tang=turn(b.tang,a,dt*5);if(Math.abs(angDiff(b.tang,a))<0.2&&b.cd<=0)fire(b,b.tgt);}
  }
  if(b.d.super&&lowPower(b.team)){b.readyAt+=dt;}
- if(b.d.shape==='factory'&&b.team>=0){for(const u of G.ents)if(u.kind==='u'&&!u.dead&&u.team===b.team&&u.d.armor==='veh'&&!u.d.air&&u.hp<u.maxHp&&rectDist(u.x,u.y,b)<110)u.hp=Math.min(u.maxHp,u.hp+45*dt);}
+ if((b.bLv||1)>1&&b.team>=0&&(b.d.shape==='hq'||b.d.shape==='supply')){G.money[b.team]+=((b.bLv||1)-1)*(b.d.shape==='hq'?4:3)*dt;}
+ if(b.d.shape==='factory'&&b.team>=0){const hMul=1+((b.bLv||1)-1)*0.35;for(const u of G.ents)if(u.kind==='u'&&!u.dead&&u.team===b.team&&u.d.armor==='veh'&&!u.d.air&&u.hp<u.maxHp&&rectDist(u.x,u.y,b)<110)u.hp=Math.min(u.maxHp,u.hp+45*hMul*dt);}
  if(b.d.shape==='barracks'&&b.team>=0){for(const u of G.ents)if(u.kind==='u'&&!u.dead&&u.team===b.team&&u.d.armor==='inf'&&u.hp<u.maxHp&&rectDist(u.x,u.y,b)<105)u.hp=Math.min(u.maxHp,u.hp+14*dt);}
  if(b.d.super&&b.team===ME&&G.t>=b.readyAt&&!b.ann){b.ann=true;msg(b.d.name+' is ready! (G to fire)','#ffd34d');}
  if(b.hp<b.maxHp*0.5&&FXRNG()<dt*(b.hp<b.maxHp*0.25?8:3))
@@ -1276,6 +1327,7 @@ function applyCmd(team,c){
    if(b&&b.kind==='b'&&b.built&&((b.d.makes&&b.d.makes.includes(it))||(it.startsWith('up:')&&b.d.ups&&b.d.ups.includes(it.slice(3)))))
     for(let i=0;i<Math.min(5,num(c.n)||1);i++)if(!queueItem(b,it))break;break;}
   case 'cq':{const b=mine([c.bid])[0];const i=num(c.i)|0;if(b&&b.kind==='b'&&b.queue[i]===c.item){G.money[team]+=costOf(b.queue[i],team);b.queue.splice(i,1);if(i===0)b.qprog=0;}break;}
+  case 'bup':{const b=mine([c.bid])[0];if(b&&b.kind==='b')upgradeBld(b);break;}
   case 'sell':{const b=mine([c.bid])[0];if(b&&b.kind==='b'&&b.d.shape!=='hq')sellBld(b);break;}
   case 'pu':unlockPower(team,String(c.id));break;
   case 'quit':eliminate(team,true);break;
@@ -1300,13 +1352,13 @@ function queueItem(b,item){
 function multFor(w,t){if(t.kind==='b')return w.vsBld;if(isAir(t))return w.vsAir;return t.d.armor==='inf'?w.vsInf:w.vsVeh;}
 function dmgMul(e){
  const w=e.d.wpn,u=G.upg[e.team];let m=1+0.25*(e.vet||0)+0.2*(e.salv||0);
- const sg=subFor(e.team);if(sg==='usa_laser'&&e.d.armor==='veh')m*=1.15;if(sg==='usa_sw'&&e.kind==='b')m*=1.15;if(sg==='russia_arty'&&(e.kind==='b'||w.proj==='arty'||w.proj==='rocket'))m*=1.25;if(sg==='militia_toxin')m*=1.2;if(u.has('laser'))m*=1.2;if(u.has('uranium')&&w.tag==='tank')m*=1.25;if(u.has('chain')&&w.tag==='gatling')m*=1.25;
+ const sg=subFor(e.team);if(sg==='usa_laser'&&e.d.armor==='veh')m*=1.15;if(sg==='usa_sw'&&e.kind==='b')m*=1.15;if(e.kind==='b'&&(e.bLv||1)>1)m*=1+((e.bLv||1)-1)*0.30;if(sg==='russia_arty'&&(e.kind==='b'||w.proj==='arty'||w.proj==='rocket'))m*=1.25;if(sg==='militia_toxin')m*=1.2;if(u.has('laser'))m*=1.2;if(u.has('uranium')&&w.tag==='tank')m*=1.25;if(u.has('chain')&&w.tag==='gatling')m*=1.25;
  if(u.has('apbullets')&&w.proj==='bullet')m*=1.25;if((u.has('aprockets')||u.has('guided'))&&w.proj==='rocket')m*=1.25;
  return m;
 }
 function fire(e,t){
  const w=e.d.wpn;let rof=w.rof;
- if(e.kind==='b'&&lowPower(e.team))rof*=2.2;if(e.kind==='b'&&e.d.garrison&&e.gar&&e.gar.length)rof/=Math.max(1,e.gar.length*0.65);
+ if(e.kind==='b'){if(lowPower(e.team))rof*=2.2;if((e.bLv||1)>1)rof/=1+((e.bLv||1)-1)*0.22;}if(e.kind==='b'&&e.d.garrison&&e.gar&&e.gar.length)rof/=Math.max(1,e.gar.length*0.65);
  if(e.horde)rof/=G.upg[e.team].has('nationalism')?1.5:1.25;
  e.cd=rof*(0.9+RND()*0.2);
  shot(e,t);
@@ -2216,31 +2268,33 @@ function drawCyl3D(cx,cy,r,z0,z1,topCol,sideCol,rimCol){
  if(rimCol){ctx.strokeStyle=rimCol;ctx.lineWidth=2.4;ctx.stroke();}
 }
 
-// Bake detailed vehicle/aircraft/infantry sprites once per (shape, team, fac, viewMode)
+// Bake detailed vehicle/aircraft sprites once per (shape, team, fac, type, viewMode)
 function getUnitSprite(e){
  const team=e.team,col=team>=0?PCOL[G.pl[team].col]:'#bbb',dk=team>=0?PDARK[G.pl[team].col]:'#666',lt=team>=0?PLITE[G.pl[team].col]:'#ddd';
  const fac=team>=0?G.fac[team]:'usa';
  const sh=e.d.shape, rad=e.r||14;
- const key=`${sh}|${col}|${fac}|${VIEW3D?1:0}|${Math.round(rad)}`;
+ const key=`${sh}|${e.type}|${col}|${fac}|${VIEW3D?1:0}|${Math.round(rad)}`;
  let hit=SPR_CACHE.get(key);
  if(hit)return hit;
 
- const pad=Math.ceil(rad*3.4)+24;
+ const pad=Math.ceil(rad*3.8)+28;
  const [c,g]=makeCanvas(pad*2*SPR_SC,pad*2*SPR_SC);
  g.scale(SPR_SC,SPR_SC);
  g.translate(pad,pad);
 
- const L=rad*2.42, Wd=rad*1.72;
+ const L=rad*2.44, Wd=rad*1.74;
+ const isJetShape=(sh==='jet'||sh==='aurora'||sh==='bomber'||sh==='mig');
+
  if(sh==='dozer'){
-  g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.roundRect(-L/2+3,-Wd/2+4,L+2,Wd+2,4);g.fill();
+  g.fillStyle='rgba(0,0,0,.46)';g.beginPath();g.roundRect(-L/2+3,-Wd/2+4,L+2,Wd+2,4);g.fill();
   g.fillStyle='#161a20';g.fillRect(-L/2,-Wd/2-3.5,L*0.84,5.5);g.fillRect(-L/2,Wd/2-2,L*0.84,5.5);
   for(let wx=-L/2+3;wx<L*0.72;wx+=5){g.fillStyle='#4f5863';g.fillRect(wx,-Wd/2-2.5,2.5,3.5);g.fillRect(wx,Wd/2-1,2.5,3.5);}
-  const bg=g.createLinearGradient(0,-Wd/2,0,Wd/2);bg.addColorStop(0, safeCol('#f0be24', 'rgba(255,220,120,0.4)'));bg.addColorStop(1, safeCol('#9e740b', 'rgba(255,220,120,0.4)'));
+  const bg=g.createLinearGradient(0,-Wd/2,0,Wd/2);bg.addColorStop(0,safeCol('#f0be24','#d4a017'));bg.addColorStop(1,safeCol('#9e740b','#8a6408'));
   g.fillStyle=bg;g.strokeStyle='#0d1117';g.lineWidth=1.6;
   g.beginPath();g.roundRect(-L/2+2,-Wd/2+1,L*0.74,Wd-2,3);g.fill();g.stroke();
   g.fillStyle=c;g.fillRect(-L/2+4,-Wd/2+3,L*0.36,Wd-6);
   g.fillStyle='#8a96a6';g.fillRect(L*0.18,-Wd/2-2.5,L*0.28,3.2);g.fillRect(L*0.18,Wd/2-0.7,L*0.28,3.2);
-  const blg=g.createLinearGradient(L*0.42,-Wd/2-5,L*0.48,Wd/2+5);blg.addColorStop(0, safeCol('#eef5fc', 'rgba(255,220,120,0.4)'));blg.addColorStop(1, safeCol('#64707d', 'rgba(255,220,120,0.4)'));
+  const blg=g.createLinearGradient(L*0.42,-Wd/2-5,L*0.48,Wd/2+5);blg.addColorStop(0,safeCol('#eef5fc','#dfe6ed'));blg.addColorStop(1,safeCol('#64707d','#4b5561'));
   g.fillStyle=blg;g.beginPath();g.roundRect(L*0.42,-Wd/2-4.5,6.5,Wd+9,2);g.fill();g.stroke();
  }else if(sh==='truck'){
   g.fillStyle='rgba(0,0,0,.44)';g.beginPath();g.roundRect(-L/2+3,-Wd/2+4,L+2,Wd+2,4);g.fill();
@@ -2252,43 +2306,118 @@ function getUnitSprite(e){
   g.beginPath();g.roundRect(-L/2+1,-Wd/2+1,L*0.64,Wd-2,2);g.fill();g.stroke();
   g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=1;
   for(let rx=-L/2+5;rx<L*0.1;rx+=4.5){g.beginPath();g.moveTo(rx,-Wd/2+2.5);g.lineTo(rx,Wd/2-2.5);g.stroke();}
-  const cg=g.createLinearGradient(L*0.14,-Wd/2,L*0.52,Wd/2);cg.addColorStop(0, safeCol(lt, 'rgba(255,220,120,0.4)'));cg.addColorStop(0.5, safeCol(c, 'rgba(255,220,120,0.4)'));cg.addColorStop(1, safeCol(dk, 'rgba(255,220,120,0.4)'));
+  const cg=g.createLinearGradient(L*0.14,-Wd/2,L*0.52,Wd/2);cg.addColorStop(0,safeCol(lt,'#9ec5ff'));cg.addColorStop(0.5,safeCol(c,'#4a90ff'));cg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   g.fillStyle=cg;g.beginPath();g.roundRect(L*0.14,-Wd/2+1,L*0.36,Wd-2,3);g.fill();g.stroke();
   g.fillStyle='#9be3ff';g.fillRect(L*0.35,-Wd/2+3,4.2,Wd-6);
  }else if(sh==='heli'){
+  // Distinct Gunship silhouettes per faction (Comanche stealth / Helix twin-rotor / Hind Mi-24)
   g.fillStyle=dk;g.strokeStyle='#0d1117';g.lineWidth=1.5;
-  g.beginPath();g.moveTo(-8,-3.5);g.lineTo(-33,-1.6);g.lineTo(-33,1.6);g.lineTo(-8,3.5);g.closePath();g.fill();g.stroke();
-  g.fillStyle=c;g.fillRect(-34,-8,6,16);g.fillRect(-31.5,-2.5,6.5,5);
-  g.fillStyle=dk;g.fillRect(-3.5,-16,7.5,32);g.strokeRect(-3.5,-16,7.5,32);
-  g.fillStyle='#1b2128';g.fillRect(-1,-15,7.5,4.8);g.fillRect(-1,10.2,7.5,4.8);
-  g.fillStyle='#ffd34d';g.fillRect(5.5,-13.6,2.8,2);g.fillRect(5.5,11.6,2.8,2);
-  const hg=g.createLinearGradient(0,-10,0,10);hg.addColorStop(0, safeCol(lt, 'rgba(255,220,120,0.4)'));hg.addColorStop(0.5, safeCol(c, 'rgba(255,220,120,0.4)'));hg.addColorStop(1, safeCol(dk, 'rgba(255,220,120,0.4)'));
-  g.fillStyle=hg;g.beginPath();g.ellipse(2,0,19.5,9.2,0,0,7);g.fill();g.stroke();
+  g.beginPath();g.moveTo(-8,-3.5);g.lineTo(-34,-1.6);g.lineTo(-34,1.6);g.lineTo(-8,3.5);g.closePath();g.fill();g.stroke();
+  g.fillStyle=c;g.fillRect(-35,-8.5,6,17);g.fillRect(-32.5,-2.5,6.5,5);
+  g.fillStyle=dk;g.fillRect(-3.5,-16.5,7.5,33);g.strokeRect(-3.5,-16.5,7.5,33);
+  g.fillStyle='#1b2128';g.fillRect(-1,-15.5,7.5,4.8);g.fillRect(-1,10.7,7.5,4.8);
+  g.fillStyle='#ffd34d';g.fillRect(5.5,-14,2.8,2);g.fillRect(5.5,12,2.8,2);
+  const hg=g.createLinearGradient(0,-10,0,10);hg.addColorStop(0,safeCol(lt,'#9ec5ff'));hg.addColorStop(0.5,safeCol(c,'#4a90ff'));hg.addColorStop(1,safeCol(dk,'#1f4f9e'));
+  g.fillStyle=hg;g.beginPath();g.ellipse(2,0,fac==='china'?22:19.5,fac==='china'?10.5:9.2,0,0,7);g.fill();g.stroke();
   g.fillStyle='rgba(255,255,255,.18)';g.beginPath();g.roundRect(-8,-4.5,14,9,2);g.fill();
-  g.fillStyle='#9fe3ff';g.beginPath();g.ellipse(11.5,0,6.8,4.6,0,0,7);g.fill();g.stroke();
-  g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.ellipse(12.8,-1.5,3.4,1.5,0,0,7);g.fill();
+  g.fillStyle='#9fe3ff';g.beginPath();g.ellipse(12,0,6.8,4.6,0,0,7);g.fill();g.stroke();
+  g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.ellipse(13.2,-1.5,3.4,1.5,0,0,7);g.fill();
+ }else if(sh==='aurora'){
+  // USA Aurora Supersonic Strike Bomber: long sleek needle nose, wide swept-delta stealth wings, twin ramjet nacelles!
+  const ag=g.createLinearGradient(0,-24,0,24);ag.addColorStop(0,'#525d6b');ag.addColorStop(0.5,'#262d36');ag.addColorStop(1,'#14181f');
+  g.fillStyle=ag;g.strokeStyle='#090c10';g.lineWidth=1.8;
+  g.beginPath();
+  g.moveTo(32,0);           // Long needle supersonic nose
+  g.lineTo(10,-4.5);
+  g.lineTo(-14,-25);        // Wide swept-delta port wingtip
+  g.lineTo(-22,-25);
+  g.lineTo(-18,-9);
+  g.lineTo(-25,-6.5);       // Twin ramjet engine pods
+  g.lineTo(-25,6.5);
+  g.lineTo(-18,9);
+  g.lineTo(-22,25);         // Wide swept-delta starboard wingtip
+  g.lineTo(-14,25);
+  g.lineTo(10,4.5);
+  g.closePath();g.fill();g.stroke();
+  // Team-colored stealth chine stripes & leading edge highlights
+  g.strokeStyle=c;g.lineWidth=2.4;
+  g.beginPath();g.moveTo(12,-4.5);g.lineTo(-14,-23.5);g.moveTo(12,4.5);g.lineTo(-14,23.5);g.stroke();
+  g.fillStyle=dk;g.beginPath();g.roundRect(-21,-5.5,34,11,4);g.fill();g.stroke();
+  // Twin canted V-tails + central fuel-air bomb bay hatch
+  g.fillStyle=lt;g.fillRect(-21,-8.5,8,2.8);g.fillRect(-21,5.7,8,2.8);
+  g.fillStyle='#ffd34d';g.fillRect(-6,-2.2,10,4.4);
+  // Gold-tinted supersonic cockpit canopy
+  g.fillStyle='#7fd7ff';g.beginPath();g.ellipse(14,0,8.5,2.7,0,0,7);g.fill();g.stroke();
+  g.fillStyle='rgba(255,255,255,.78)';g.beginPath();g.ellipse(15.5,-0.9,4.5,1.0,0,0,7);g.fill();
+ }else if(sh==='bomber'){
+  // Russia Raven Strategic Flying-Wing / Tu-160 Heavy Bomber: massive swept wingspan & heavy ordnance
+  const bg=g.createLinearGradient(0,-26,0,26);bg.addColorStop(0,safeCol(lt,'#9ec5ff'));bg.addColorStop(0.5,safeCol(c,'#4a90ff'));bg.addColorStop(1,safeCol(dk,'#1f4f9e'));
+  g.fillStyle=bg;g.strokeStyle='#090c10';g.lineWidth=1.8;
+  g.beginPath();
+  g.moveTo(27,0);g.lineTo(9,-6);g.lineTo(-12,-27);g.lineTo(-20,-27);g.lineTo(-15,-7);
+  g.lineTo(-24,-5);g.lineTo(-24,5);g.lineTo(-15,7);g.lineTo(-20,27);g.lineTo(-12,27);g.lineTo(9,6);
+  g.closePath();g.fill();g.stroke();
+  g.fillStyle='#242a32';g.fillRect(-8,-16,11,3.2);g.fillRect(-8,12.8,11,3.2);
+  g.fillStyle=dk;g.beginPath();g.roundRect(-20,-4.5,38,9,3.5);g.fill();g.stroke();
+  g.fillStyle='#ff4d3d';g.fillRect(-19,-7.5,7,3);g.fillRect(-19,4.5,7,3);
+  g.fillStyle='#a8e8ff';g.beginPath();g.ellipse(14,0,7.5,3.2,0,0,7);g.fill();g.stroke();
+ }else if(sh==='mig'){
+  // China Firebird / MiG Strike Fighter: forward canards, twin angled tails & napalm pods
+  const mg=g.createLinearGradient(0,-20,0,20);mg.addColorStop(0,safeCol(lt,'#ffb0a6'));mg.addColorStop(0.5,safeCol(c,'#ff4d3d'));mg.addColorStop(1,safeCol(dk,'#9e2a20'));
+  g.fillStyle=mg;g.strokeStyle='#090c10';g.lineWidth=1.7;
+  g.beginPath();
+  g.moveTo(23,0);g.lineTo(12,-3.5);g.lineTo(9,-9);g.lineTo(5,-9);g.lineTo(6,-4);
+  g.lineTo(-6,-19);g.lineTo(-12,-19);g.lineTo(-8,-4.5);g.lineTo(-18,-8.5);g.lineTo(-21,-8.5);
+  g.lineTo(-18,0);g.lineTo(-21,8.5);g.lineTo(-18,8.5);g.lineTo(-8,4.5);
+  g.lineTo(-12,19);g.lineTo(-6,19);g.lineTo(6,4);g.lineTo(5,9);g.lineTo(9,9);g.lineTo(12,3.5);
+  g.closePath();g.fill();g.stroke();
+  g.fillStyle='#ffd34d';g.fillRect(-3,-12.5,9,2.8);g.fillRect(-3,9.7,9,2.8);
+  g.fillStyle=dk;g.beginPath();g.roundRect(-17,-3.4,31,6.8,3);g.fill();g.stroke();
+  g.fillStyle='#a8e8ff';g.beginPath();g.ellipse(11,0,6.5,2.7,0,0,7);g.fill();g.stroke();
  }else if(sh==='jet'){
-  const jg=g.createLinearGradient(0,-19,0,19);jg.addColorStop(0, safeCol(lt, 'rgba(255,220,120,0.4)'));jg.addColorStop(0.45, safeCol(c, 'rgba(255,220,120,0.4)'));jg.addColorStop(1, safeCol(dk, 'rgba(255,220,120,0.4)'));
+  // USA Falcon Fighter Jet: crisp F-16/F-22 air superiority silhouette
+  const jg=g.createLinearGradient(0,-19,0,19);jg.addColorStop(0,safeCol(lt,'#a8ccff'));jg.addColorStop(0.45,safeCol(c,'#4a90ff'));jg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   g.fillStyle=jg;g.strokeStyle='#0d1117';g.lineWidth=1.7;
   g.beginPath();g.moveTo(22,0);g.lineTo(5,-4.5);g.lineTo(-4,-18);g.lineTo(-10,-18);g.lineTo(-6,-4.5);g.lineTo(-15,-3.5);g.lineTo(-19,-9.5);g.lineTo(-21,-9.5);g.lineTo(-19,0);g.lineTo(-21,9.5);g.lineTo(-19,9.5);g.lineTo(-15,3.5);g.lineTo(-6,4.5);g.lineTo(-10,18);g.lineTo(-4,18);g.lineTo(5,4.5);g.closePath();g.fill();g.stroke();
-  // Wing panel & leading edge highlight
   g.strokeStyle='rgba(255,255,255,.28)';g.lineWidth=1.2;
   g.beginPath();g.moveTo(4,-4.5);g.lineTo(-4,-17.5);g.moveTo(4,4.5);g.lineTo(-4,17.5);g.stroke();
-  // Underwing missiles & drop tanks
   g.fillStyle='#ff8a2a';g.fillRect(-1,-11.5,8.5,2.4);g.fillRect(-1,9.1,8.5,2.4);
-  g.fillStyle='#3a424d';g.fillRect(-8,-8,7,2);g.fillRect(-8,6,7,2);
-  // Spine & twin canted tail fins
   g.fillStyle=dk;g.beginPath();g.roundRect(-15.5,-3.5,29,7,3);g.fill();g.stroke();
   g.fillStyle=lt;g.fillRect(-16,-6.8,6.5,3.2);g.fillRect(-16,3.6,6.5,3.2);
-  // Cockpit canopy + specular glint
-  const cg=g.createLinearGradient(5,-3,15,3);cg.addColorStop(0, safeCol('#d4f5ff', 'rgba(255,220,120,0.4)'));cg.addColorStop(1, safeCol('#2b78a8', 'rgba(255,220,120,0.4)'));
+  const cg=g.createLinearGradient(5,-3,15,3);cg.addColorStop(0,safeCol('#d4f5ff','#a8e8ff'));cg.addColorStop(1,safeCol('#2b78a8','#1f4f9e'));
   g.fillStyle=cg;g.beginPath();g.ellipse(10,0,7.2,3.1,0,0,7);g.fill();g.stroke();
   g.fillStyle='rgba(255,255,255,.72)';g.beginPath();g.ellipse(11,-1.1,4.0,1.1,0,0,7);g.fill();
+ }else if(sh==='battlebus'){
+  // Free Militia Battle Bus: elongated armored yellow/team-striped school bus with armored window plates
+  const bL=L*1.16, bW=Wd*0.95;
+  g.fillStyle='rgba(0,0,0,.48)';g.beginPath();g.roundRect(-bL/2+3,-bW/2+4,bL+2,bW+2,4);g.fill();
+  for(const wx of [-bL/2+5,-2,bL/2-11])for(const wy of [-bW/2-3.2,bW/2-2.2]){
+   g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.5,5.4,1.5);g.fill();
+  }
+  const bg=g.createLinearGradient(0,-bW/2,0,bW/2);bg.addColorStop(0,'#f2c12e');bg.addColorStop(0.5,'#d49b1a');bg.addColorStop(1,'#8c6208');
+  g.fillStyle=bg;g.strokeStyle='#0d1117';g.lineWidth=1.8;
+  g.beginPath();g.roundRect(-bL/2,-bW/2,bL,bW,4);g.fill();g.stroke();
+  g.fillStyle=c;g.fillRect(-bL/2+3,-bW/2+2,bL-10,3.2);g.fillRect(-bL/2+3,bW/2-5.2,bL-10,3.2);
+  // Armored firing slits along both sides + front windshield armor
+  g.fillStyle='#1c222a';
+  for(let sx=-bL/2+6;sx<bL/2-10;sx+=7){g.fillRect(sx,-bW/2+1,4.5,2.2);g.fillRect(sx,bW/2-3.2,4.5,2.2);}
+  g.fillStyle='#9be3ff';g.fillRect(bL/2-6,-bW/2+3,3.5,bW-6);
+ }else if(sh==='technical'){
+  // Free Militia Gun Truck: rugged off-road pickup with open cargo bed & roll cage
+  for(const wx of [-L/2+3,L/2-9])for(const wy of [-Wd/2-3.2,Wd/2-2.2]){
+   g.fillStyle='#12161c';g.beginPath();g.roundRect(wx,wy,8.5,5.4,1.6);g.fill();
+   g.fillStyle='#788491';g.fillRect(wx+2,wy+1.5,4,2.4);
+  }
+  g.fillStyle='#5c4d36';g.strokeStyle='#0d1117';g.lineWidth=1.5;
+  g.beginPath();g.roundRect(-L/2+1,-Wd/2+1.5,L*0.56,Wd-3,2);g.fill();g.stroke();
+  g.fillStyle='#2a241b';g.fillRect(-L/2+3,-Wd/2+3.5,L*0.48,Wd-7);
+  g.fillStyle=c;g.beginPath();g.roundRect(L*0.06,-Wd/2+1.5,L*0.44,Wd-3,3);g.fill();g.stroke();
+  g.fillStyle='#9be3ff';g.fillRect(L*0.32,-Wd/2+3.5,4,Wd-7);
  }else{
-  // Combat Vehicles (Tanks, Heavy Tanks, Artillery, AA, Jeeps, Buggies)
-  const wheeled=sh==='jeep'||sh==='rbuggy'||e.type==='battlebus';
+  // Combat Vehicles (Tanks, Heavy Tanks, Nuke Cannon, ECM, Avenger, Quad, BTR, Artillery, Jeeps)
+  const wheeled=sh==='jeep'||sh==='rbuggy'||sh==='btr'||sh==='avenger'||sh==='quad';
   if(wheeled){
-   const nw=e.type==='battlebus'?3:2;
+   const nw=(sh==='btr'||sh==='quad')?3:2;
    for(let wi=0;wi<nw;wi++){
     const wx=-L/2+3+wi*((L-12)/(nw-1));
     for(const wy of [-Wd/2-3.4,Wd/2-2.2]){
@@ -2297,7 +2426,6 @@ function getUnitSprite(e){
     }
    }
   }else{
-   // Armored track assemblies with roadwheel detail & side skirts
    g.fillStyle='#12161c';g.strokeStyle='#090c10';g.lineWidth=1.2;
    g.beginPath();g.roundRect(-L/2-2.5,-Wd/2-4.6,L+5,7.4,2.6);g.fill();g.stroke();
    g.beginPath();g.roundRect(-L/2-2.5,Wd/2-2.8,L+5,7.4,2.6);g.fill();g.stroke();
@@ -2306,23 +2434,57 @@ function getUnitSprite(e){
    }
   }
   const hg=g.createLinearGradient(0,-Wd/2,0,Wd/2);
-  hg.addColorStop(0, safeCol(lt, 'rgba(255,220,120,0.4)'));hg.addColorStop(0.45, safeCol(c, 'rgba(255,220,120,0.4)'));hg.addColorStop(1, safeCol(dk, 'rgba(255,220,120,0.4)'));
+  hg.addColorStop(0,safeCol(lt,'#9ec5ff'));hg.addColorStop(0.45,safeCol(c,'#4a90ff'));hg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   g.fillStyle=hg;g.strokeStyle='#0b0f14';g.lineWidth=1.8;
   g.beginPath();
   g.moveTo(-L/2+2,-Wd/2+1.5);g.lineTo(L/2-5.5,-Wd/2+1.5);g.lineTo(L/2+3.8,-Wd/2+5.8);
   g.lineTo(L/2+3.8,Wd/2-5.8);g.lineTo(L/2-5.5,Wd/2-1.5);g.lineTo(-L/2+2,Wd/2-1.5);
   g.lineTo(-L/2-1.2,0);g.closePath();g.fill();g.stroke();
-  // Sloped glacis / ERA reactive blocks & rear engine deck grille
-  g.fillStyle='rgba(255,255,255,.22)';g.fillRect(L*0.18,-Wd/2+2.6,5.2,Wd-5.2);
-  if(sh==='tank'||sh==='heavy'){
-   g.fillStyle=dk;
-   for(let eb=-Wd/2+3.5;eb<Wd/2-5;eb+=5.5){g.fillRect(L*0.26,eb,3.8,3.6);}
+  // Distinct superstructure details per specialized vehicle
+  if(sh==='ecm'){
+   // China ECM / Inferno Tank: rotating parabolic radar dish & incendiary canisters
+   g.fillStyle='#ffd34d';g.beginPath();g.arc(-2,0,7.5,0,7);g.fill();g.stroke();
+   g.fillStyle='#1b2026';g.fillRect(2,-6,8,3.2);g.fillRect(2,2.8,8,3.2);
+  }else if(sh==='marauder'){
+   // GLA Marauder Tank: twin scrap-welded heavy cannons & spiked plow
+   g.fillStyle='#3b352c';g.fillRect(L/2,-Wd/2+2,4,Wd-4);
+   g.fillStyle='#1b2026';g.fillRect(0,-5.5,L*0.92,3.8);g.fillRect(0,1.7,L*0.92,3.8);
+  }else{
+   g.fillStyle='rgba(255,255,255,.22)';g.fillRect(L*0.18,-Wd/2+2.6,5.2,Wd-5.2);
+   if(sh==='tank'||sh==='heavy'){
+    g.fillStyle=dk;
+    for(let eb=-Wd/2+3.5;eb<Wd/2-5;eb+=5.5){g.fillRect(L*0.26,eb,3.8,3.6);}
+   }
   }
   g.fillStyle='rgba(0,0,0,.42)';g.fillRect(-L/2+4,-Wd/2+4.2,L*0.27,Wd-8.4);
   g.strokeStyle='rgba(255,255,255,.15)';g.lineWidth=1;
   for(let gx=-L/2+5.5;gx<-L/2+4+L*0.25;gx+=3.2){g.beginPath();g.moveTo(gx,-Wd/2+4.8);g.lineTo(gx,Wd/2-4.8);g.stroke();}
  }
 
+ if(VIEW3D){
+  // Bake deeper 2.5D extruded lower hull / fuselage walls & metallic rim bevel
+  const [c3,g3]=makeCanvas(pad*2*SPR_SC,pad*2*SPR_SC);
+  g3.scale(SPR_SC,SPR_SC);
+  const depth=isJetShape?7.5:(sh==='heavy'||sh==='battlebus'||sh==='nukecannon')?10.0:7.5;
+  // Ground contact ambient occlusion
+  g3.save();g3.globalAlpha=0.52;g3.filter='blur(2.5px)';
+  g3.drawImage(c,0,0,c.width,c.height,5,6,pad*2,pad*2);
+  g3.restore();
+  // Extruded dark armored side-skirt / under-fuselage tiers
+  for(let z=depth;z>=1;z-=1.25){
+   g3.save();g3.globalAlpha=0.92;
+   g3.drawImage(c,0,0,c.width,c.height,-z*0.36,-z*0.62,pad*2,pad*2);
+   g3.restore();
+  }
+  // Shade lower side walls for strong 3D volume contrast, then stamp sunlit upper deck
+  g3.fillStyle='rgba(6,10,16,0.52)';
+  g3.globalCompositeOperation='source-atop';
+  g3.fillRect(0,0,pad*2,pad*2);
+  g3.globalCompositeOperation='source-over';
+  g3.drawImage(c,0,0,c.width,c.height,-depth*0.36,-depth*0.66,pad*2,pad*2);
+  SPR_CACHE.set(key,{canvas:c3,pad});
+  return {canvas:c3,pad};
+ }
  SPR_CACHE.set(key,{canvas:c,pad});
  return {canvas:c,pad};
 }
@@ -2387,7 +2549,7 @@ function drawBld(e){
     const [gx,gy]=p3(cx,cy,35);
     const pulse=0.55+0.35*dSin(G.t*3.8+e.id);
     const glow=fac==='china'?'92,225,255':fac==='russia'?'255,145,60':'255,230,110';
-    const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,R*0.65);rg.addColorStop(0, safeCol(`rgba(${glow},${pulse})`, 'rgba(255,220,120,0.4)'));rg.addColorStop(1, safeCol(`rgba(${glow},0)`, 'rgba(255,220,120,0.4)'));
+    const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,R*0.65);rg.addColorStop(0,safeCol(`rgba(${glow},${pulse})`,'rgba(255,230,110,0.6)'));rg.addColorStop(1,safeCol(`rgba(${glow},0)`,'rgba(255,230,110,0)'));
     ctx.fillStyle=rg;ctx.beginPath();ctx.ellipse(gx,gy,R*0.65,R*0.52,0,0,7);ctx.fill();
     if(Math.random()<0.14)G.fx.push({k:'smoke',x:e.x-10,y:e.y-22,vx:6,vy:-24,r:8,life:1.6,max:1.6});
    }
@@ -2412,7 +2574,7 @@ function drawBld(e){
    drawPrism3D(x+6,y+8,w-12,h-14,6,32,'#384352','#1e252e','#151a21',c);
    const [bx,by]=p3(x+w/2-36,y+h-6,6);
    ctx.fillStyle='#121822';ctx.fillRect(bx,by-20,72,20);
-   if(e.built){const bg=ctx.createLinearGradient(bx,by-20,bx,by);bg.addColorStop(0, safeCol('rgba(255,215,110,.28)', 'rgba(255,220,120,0.4)'));bg.addColorStop(1, safeCol('rgba(255,140,40,.08)', 'rgba(255,220,120,0.4)'));ctx.fillStyle=bg;ctx.fillRect(bx+2,by-18,68,17);}
+   if(e.built){const bg=ctx.createLinearGradient(bx,by-20,bx,by);bg.addColorStop(0,safeCol('rgba(255,215,110,.28)','rgba(255,215,110,0.28)'));bg.addColorStop(1,safeCol('rgba(255,140,40,.08)','rgba(255,140,40,0.08)'));ctx.fillStyle=bg;ctx.fillRect(bx+2,by-18,68,17);}
    ctx.strokeStyle='#ffd34d';ctx.lineWidth=2;ctx.strokeRect(bx,by-20,72,20);
    drawCyl3D(x+26,y+24,8,32,38,'#7b8694','#3c434d',c);
    drawCyl3D(x+w-26,y+24,8,32,38,'#7b8694','#3c434d',c);
@@ -2485,6 +2647,20 @@ function drawBld(e){
  if(!e.built){
   ctx.fillStyle='#111';ctx.fillRect(x+8,cy-5,w-16,9);ctx.fillStyle='#ffd34d';ctx.fillRect(x+10,cy-3,(w-20)*e.prog,5);
  }
+ if(e.built&&(e.bLv||1)>1){
+  const lv=e.bLv;
+  const bCol=lv>=3?'#ffd34d':'#7fd7ff';
+  // 3D Reinforced Corner Armor Bastions
+  for(const [bx,by] of [[x+3,y+3],[x+w-13,y+3],[x+3,y+h-13],[x+w-13,y+h-13]]){
+   drawPrism3D(bx,by,10,10,6,14+lv*3,bCol,'#2b333e','#1a2028','#0d1117');
+  }
+  // Rooftop Tier Beacon & Roman Numeral Rank Badge
+  const [ux,uy]=p3(x+w-18,y+16,32);
+  ctx.fillStyle='rgba(10,14,20,.88)';ctx.beginPath();ctx.roundRect(ux-13,uy-9,26,15,4);ctx.fill();
+  ctx.strokeStyle=bCol;ctx.lineWidth=1.4;ctx.stroke();
+  ctx.fillStyle=bCol;ctx.font='700 11px Rajdhani,sans-serif';ctx.textAlign='center';
+  ctx.fillText(lv>=3?'★ III':'★ II',ux,uy+2);ctx.textAlign='left';
+ }
  const sel=G.sel.includes(e);
  if(sel){
   const [sx0,sy0]=p3(x,y,6),[sx1,sy1]=p3(x+w,y,6),[sx2,sy2]=p3(x+w,y+h,6),[sx3,sy3]=p3(x,y+h,6);
@@ -2501,13 +2677,17 @@ function drawUnit(e){
  const al=altOf(e);const gx=e.x-cam.x,gy=e.y-cam.y;if(gx<-120||gy<-120||gx>VW+120||gy>VH+120)return;
  const [x,y]=p3(gx,gy,al);
  const c=PC(e.team),dk=PD(e.team),lt=PL(e.team),sel=G.sel.includes(e),sh=e.d.shape;
+ const isJetShape=(sh==='jet'||sh==='aurora'||sh==='bomber'||sh==='mig');
 
- // Airborne ground shadow
+ // Ground contact / airborne shadow
  if(al){
   ctx.save();ctx.translate(gx+al*0.65,gy+al*0.35);ctx.rotate(e.ang);
   ctx.fillStyle='rgba(0,0,0,.44)';
-  if(sh==='jet')jetShape();else{ctx.beginPath();ctx.ellipse(0,0,e.r*1.3,e.r*0.75,0,0,7);ctx.fill();}
+  if(isJetShape)jetShape();else{ctx.beginPath();ctx.ellipse(0,0,e.r*1.3,e.r*0.75,0,0,7);ctx.fill();}
   ctx.restore();
+ }else if(VIEW3D&&e.d.armor!=='inf'){
+  ctx.fillStyle='rgba(0,0,0,.42)';
+  ctx.beginPath();ctx.ellipse(gx+3.5,gy+3.5,e.r*1.28,e.r*0.92,e.ang,0,7);ctx.fill();
  }
  // Selection ring
  if(sel){
@@ -2515,85 +2695,169 @@ function drawUnit(e){
   ctx.beginPath();ctx.ellipse(x,y+2,e.r+6,(e.r+6)*0.72,0,0,7);ctx.stroke();
  }
 
- // ---- 1. TROOPS / INFANTRY: Detailed 3D Fireteams with Packs, Straps, Stride & Weapons ----
+ // ---- 1. SINGLE REALISTIC 3D SOLDIER RENDERER (Tuned Size & 3D Anatomy) ----
  if(e.d.armor==='inf'){
-  const offsets = e.d.hero||sh==='sniper'||sh==='hacker'||sh==='worker'
-   ? [[0,0]] : sh==='rinf' ? [[-5,-3],[5,3]] : [[-6,-4],[6,-2],[0,5]];
-  const walk=e.moving?dSin(G.t*19+e.id*2.1)*3.0:0;
-  for(let idxS=0;idxS<offsets.length;idxS++){
-   const [ox,oy]=offsets[idxS],sx=x+ox,sy=y+oy,stride=(idxS%2?walk:-walk),hBody=e.d.hero?12:9.5;
-   ctx.fillStyle='rgba(0,0,0,.52)';ctx.beginPath();ctx.ellipse(sx+2.2,sy+3.2,6.2,3.8,0,0,7);ctx.fill();
-   ctx.fillStyle='#2a3028';ctx.beginPath();ctx.roundRect(sx-dCos(e.ang)*3.5-2.8,sy-hBody+1,5.6,hBody-3,1.5);ctx.fill();
-   ctx.strokeStyle='#181d23';ctx.lineWidth=2.3;
-   ctx.beginPath();ctx.moveTo(sx-1.5,sy-3);ctx.lineTo(sx-1.8+stride*0.7,sy+2.2);ctx.moveTo(sx+1.5,sy-3);ctx.lineTo(sx+1.8-stride*0.7,sy+2.2);ctx.stroke();
-   ctx.fillStyle=dk;ctx.beginPath();ctx.roundRect(sx-4.2,sy-hBody,8.4,hBody-1.2,2.2);ctx.fill();
-   ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(sx-3.5,sy-hBody+0.6,7.0,hBody-2.4,1.8);ctx.fill();
-   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle='rgba(255,255,255,.26)';ctx.fillRect(sx-2.2,sy-hBody+1.8,1.5,hBody-4);ctx.fillRect(sx+0.8,sy-hBody+1.8,1.5,hBody-4);
-   ctx.save();ctx.translate(sx,sy-hBody*0.56);ctx.rotate(e.ang);
-   if(sh==='rinf'){ctx.fillStyle='#262e24';ctx.fillRect(-7.5,-2.5,19.5,4.8);ctx.strokeStyle='#0d1117';ctx.lineWidth=1;ctx.strokeRect(-7.5,-2.5,19.5,4.8);ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.arc(12.5,0,2.5,0,7);ctx.fill();}
-   else if(sh==='sniper'){ctx.fillStyle='#12161b';ctx.fillRect(-2,-1.3,20,2.5);ctx.fillStyle='#ffd34d';ctx.fillRect(4,-3.0,6,1.6);if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,60,60,.72)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(74,0);ctx.stroke();}}
-   else if(sh==='worker'){ctx.fillStyle='#ffd34d';ctx.fillRect(0,-1.6,10,3.2);}
-   else{ctx.fillStyle='#161b22';ctx.fillRect(-1,-1.4,14.5,2.7);ctx.fillStyle='#3b4450';ctx.fillRect(4,1.2,2.4,3.5);}
-   ctx.restore();
-   ctx.fillStyle=dk;ctx.beginPath();ctx.arc(sx,sy-hBody-2.6,3.8,0,7);ctx.fill();
-   ctx.fillStyle=lt;ctx.beginPath();ctx.arc(sx-0.6,sy-hBody-3.2,3.1,0,7);ctx.fill();
-   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.1;ctx.stroke();
-   ctx.fillStyle=e.d.hero?'#ffd34d':'#6be0ff';ctx.fillRect(sx+dCos(e.ang)*2.2-1.5,sy-hBody-3.4,3.0,1.7);
+  const sc=e.d.hero?1.45:1.32;
+  const walk=e.moving?dSin(G.t*17+e.id*2.3)*4.2:0;
+  const hBody=13.5*sc;
+  const fac=e.team>=0?G.fac[e.team]:'usa';
+  const camoBase=fac==='usa'?'#53633e':fac==='china'?'#634138':fac==='russia'?'#44543e':'#756640';
+  const camoDark=fac==='usa'?'#2b361f':fac==='china'?'#382019':fac==='russia'?'#232d20':'#453b22';
+
+  // Ground contact & directional 3D cast shadow
+  ctx.fillStyle='rgba(0,0,0,.45)';
+  ctx.beginPath();ctx.ellipse(x+1.8,y+4.2,9.2,5.2,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.28)';
+  ctx.beginPath();ctx.ellipse(x+6.8,y+5.8,10.5,4.0,0.28,0,7);ctx.fill();
+
+  // Articulated combat trousers & heavy boots
+  ctx.strokeStyle='#15191f';ctx.lineWidth=3.6;ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(x-2.6,y-4.5);ctx.lineTo(x-3.2+walk*0.85,y+3.2);
+  ctx.moveTo(x+2.6,y-4.5);ctx.lineTo(x+3.2-walk*0.85,y+3.2);
+  ctx.stroke();
+  ctx.fillStyle='#0d1015';
+  ctx.beginPath();ctx.arc(x-3.2+walk*0.85,y+3.5,2.2,0,7);ctx.arc(x+3.2-walk*0.85,y+3.5,2.2,0,7);ctx.fill();
+
+  // 3D Tactical Rucksack / Radio Pack
+  const bAng=e.ang+Math.PI;
+  const bpx=x+dCos(bAng)*4.6, bpy=y-hBody*0.52+dSin(bAng)*2.8;
+  ctx.fillStyle=camoDark;
+  ctx.beginPath();ctx.roundRect(bpx-4.6,bpy-5.4,9.2,10.8,2.4);ctx.fill();
+  ctx.strokeStyle='#0d1117';ctx.lineWidth=1.2;ctx.stroke();
+
+  // 3D Shaded Torso & Armored Shoulder Pauldrons
+  const tg=ctx.createLinearGradient(x-7.0,y-hBody,x+7.0,y);
+  tg.addColorStop(0,safeCol(lt,'#b8d8ff'));
+  tg.addColorStop(0.45,safeCol(c,'#4a90ff'));
+  tg.addColorStop(1,safeCol(dk,'#1a3e7a'));
+  ctx.fillStyle=tg;
+  ctx.beginPath();ctx.roundRect(x-6.2,y-hBody,12.4,hBody-2.5,3.4);ctx.fill();
+  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.35;ctx.stroke();
+
+  // Tactical plate carrier & chest rig
+  ctx.fillStyle=camoBase;
+  ctx.beginPath();ctx.roundRect(x-4.4,y-hBody+2.8,8.8,hBody-6.8,1.8);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.28)';
+  ctx.fillRect(x-3.4,y-hBody+2.5,6.8,2.6);
+
+  // Equipped Weapon & Forearm Grip
+  ctx.save();ctx.translate(x,y-hBody*0.54);ctx.rotate(e.ang);
+  if(sh==='rinf'){
+   ctx.fillStyle='#242b33';ctx.beginPath();ctx.roundRect(-10.5,-3.8,27.0,7.4,1.8);ctx.fill();
+   ctx.strokeStyle='#0d1117';ctx.lineWidth=1.2;ctx.stroke();
+   ctx.fillStyle=c;ctx.fillRect(-3.8,-3.8,8.8,7.4);
+   ctx.fillStyle='#ff9436';ctx.beginPath();ctx.arc(17.0,0,3.4,0,7);ctx.fill();
+  }else if(sh==='sniper'){
+   ctx.fillStyle='#14181e';ctx.fillRect(-2.5,-1.8,27.5,3.4);
+   ctx.fillStyle='#ffd34d';ctx.fillRect(4.5,-4.0,8.5,2.2);
+   if(e.tgt&&!e.moving){ctx.strokeStyle='rgba(255,65,65,.8)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(25.0,0);ctx.lineTo(92,0);ctx.stroke();}
+  }else if(sh==='worker'){
+   ctx.fillStyle='#e5b832';ctx.fillRect(0,-2.2,14.5,4.4);
+  }else{
+   ctx.fillStyle='#161b22';ctx.fillRect(-1.5,-1.9,20.5,3.7);
+   ctx.fillStyle='#3c4654';ctx.fillRect(6.2,1.7,3.0,4.6);
   }
-  if(e.d.hero){ctx.fillStyle='#ffd34d';ctx.font='700 10.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+trUnit(e.d.name).split(' ').pop().toUpperCase(),x,y-21);ctx.textAlign='left';}
-  if(sel||e.hp<e.maxHp)hpBar(x,y-17,22,e.hp/e.maxHp);
+  ctx.restore();
+
+  // 3D Sculpted Helmet Dome & Tactical Visor
+  const hy=y-hBody-3.8;
+  const hg=ctx.createRadialGradient(x-1.8,hy-1.8,0.8,x,hy,5.8);
+  hg.addColorStop(0,safeCol('#ffffff','#f4f8fc'));
+  hg.addColorStop(0.42,safeCol(lt,'#a8ccff'));
+  hg.addColorStop(1,safeCol(dk,'#1a3e7a'));
+  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,hy,5.5,0,7);ctx.fill();
+  ctx.strokeStyle='#0c1016';ctx.lineWidth=1.35;ctx.stroke();
+  ctx.fillStyle=e.d.hero?'#ffd34d':'#7be8ff';
+  ctx.beginPath();ctx.ellipse(x+dCos(e.ang)*3.1,hy+dSin(e.ang)*1.5,2.8,1.7,e.ang,0,7);ctx.fill();
+
+  if(e.d.hero){ctx.fillStyle='#ffd34d';ctx.font='700 11.5px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText('★ '+trUnit(e.d.name).split(' ').pop().toUpperCase(),x,y-31);ctx.textAlign='left';}
+  if(sel||e.hp<e.maxHp)hpBar(x,y-25,26,e.hp/e.maxHp);
   return;
  }
 
- // ---- 2. HELICOPTERS: Cached Fuselage + Dynamic Spinning Rotor Disc & Blades ----
+// ---- 2. 3D HELICOPTERS ----
  if(sh==='heli'){
   const sp=getUnitSprite(e);
-  ctx.save();ctx.translate(x,y);ctx.rotate(e.ang);
+  const bob=VIEW3D?dSin(G.t*5+e.id)*1.6:0;
+  ctx.save();ctx.translate(x,y+bob);ctx.rotate(e.ang);
   ctx.drawImage(sp.canvas,-sp.pad,-sp.pad,sp.pad*2,sp.pad*2);
-  ctx.save();ctx.rotate(G.t*38);
-  ctx.fillStyle='rgba(215,235,250,.12)';ctx.beginPath();ctx.arc(0,0,28.5,0,7);ctx.fill();
+  ctx.save();ctx.translate(VIEW3D?-1.5:0,VIEW3D?-2.5:0);ctx.rotate(G.t*38);
+  ctx.fillStyle='rgba(215,235,250,.14)';ctx.beginPath();ctx.arc(0,0,29.5,0,7);ctx.fill();
   ctx.strokeStyle='rgba(18,22,28,.92)';ctx.lineWidth=3.2;
-  ctx.beginPath();ctx.moveTo(-28.5,0);ctx.lineTo(28.5,0);ctx.moveTo(0,-28.5);ctx.lineTo(0,28.5);ctx.stroke();
-  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(0,0,4.2,0,7);ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.moveTo(-29.5,0);ctx.lineTo(29.5,0);ctx.moveTo(0,-29.5);ctx.lineTo(0,29.5);ctx.stroke();
+  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(0,0,4.5,0,7);ctx.fill();ctx.restore();
   ctx.restore();
-  if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-10,32,e.hp/e.maxHp);
+  if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-11,32,e.hp/e.maxHp);
   return;
  }
 
- // ---- 3. PLANES / JETS: Wingtip Vortices + Cached Airframe + Dynamic Afterburner ----
- if(sh==='jet'){
+ // ---- 3. 3D PLANES / JETS / AURORA / RAVEN / FIREBIRD ----
+ if(isJetShape){
   if(!e.parked&&GFX.fx){
-   const wx=gx-dCos(e.ang)*16,wy=gy-dSin(e.ang)*16,pAng=e.ang+Math.PI/2;
-   ctx.save();ctx.strokeStyle='rgba(225,242,255,.20)';ctx.lineWidth=1.5;
-   ctx.beginPath();ctx.moveTo(wx+dCos(pAng)*14,wy+dSin(pAng)*14);ctx.lineTo(wx-dCos(e.ang)*28+dCos(pAng)*18,wy-dSin(e.ang)*28+dSin(pAng)*18);
-   ctx.moveTo(wx-dCos(pAng)*14,wy-dSin(pAng)*14);ctx.lineTo(wx-dCos(e.ang)*28-dCos(pAng)*18,wy-dSin(e.ang)*28-dSin(pAng)*18);ctx.stroke();ctx.restore();
+   const wx=x-dCos(e.ang)*16,wy=y-dSin(e.ang)*16,pAng=e.ang+Math.PI/2,span=sh==='aurora'||sh==='bomber'?22:14;
+   ctx.save();ctx.strokeStyle=sh==='aurora'?'rgba(140,225,255,.36)':'rgba(225,242,255,.24)';ctx.lineWidth=sh==='aurora'?2.2:1.6;
+   ctx.beginPath();ctx.moveTo(wx+dCos(pAng)*span,wy+dSin(pAng)*span);ctx.lineTo(wx-dCos(e.ang)*36+dCos(pAng)*(span+4),wy-dSin(e.ang)*36+dSin(pAng)*(span+4));
+   ctx.moveTo(wx-dCos(pAng)*span,wy-dSin(pAng)*span);ctx.lineTo(wx-dCos(e.ang)*36-dCos(pAng)*(span+4),wy-dSin(e.ang)*36-dSin(pAng)*(span+4));ctx.stroke();ctx.restore();
   }
   const sp=getUnitSprite(e);
-  ctx.save();ctx.translate(x,y);ctx.rotate(e.ang);
+  const bank=VIEW3D&&!e.parked?1-Math.min(0.24,Math.abs(dSin(e.ang))*0.16):1;
+  ctx.save();ctx.translate(x,y);ctx.rotate(e.ang);ctx.scale(1,bank);
   ctx.drawImage(sp.canvas,-sp.pad,-sp.pad,sp.pad*2,sp.pad*2);
+  // Wingtip strobe / navigation lights for realistic night/day aviation contrast
   if(!e.parked){
-   const fl=9.5+dSin(G.t*55+e.id)*3.5;
-   ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.ellipse(-22.5-fl*0.4,0,fl,3.6,0,0,7);ctx.fill();
-   ctx.fillStyle='#fff8c4';ctx.beginPath();ctx.arc(-21.5,0,2.7,0,7);ctx.fill();
+   const wSpan=sh==='aurora'||sh==='bomber'?23:16;
+   ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(-8,-wSpan,2.0,0,7);ctx.fill();
+   ctx.fillStyle='#44ff77';ctx.beginPath();ctx.arc(-8,wSpan,2.0,0,7);ctx.fill();
+   const fl=(sh==='aurora'?15:10)+dSin(G.t*55+e.id)*3.5;
+   if(sh==='aurora'){
+    for(const oy of [-4.5,4.5]){
+     const eg=ctx.createLinearGradient(-24-fl,0,-22,0);
+     eg.addColorStop(0,safeCol('rgba(76,201,255,0)','rgba(76,201,255,0)'));
+     eg.addColorStop(0.6,safeCol('#4cc9ff','#4cc9ff'));
+     eg.addColorStop(1,safeCol('#ffffff','#ffffff'));
+     ctx.fillStyle=eg;ctx.beginPath();ctx.ellipse(-25-fl*0.4,oy,fl,3.0,0,0,7);ctx.fill();
+    }
+   }else{
+    const eg=ctx.createLinearGradient(-22-fl,0,-20,0);
+    eg.addColorStop(0,safeCol('rgba(255,110,20,0)','rgba(255,110,20,0)'));
+    eg.addColorStop(0.65,safeCol('#ff8a2a','#ff8a2a'));
+    eg.addColorStop(1,safeCol('#fff8c4','#fff8c4'));
+    ctx.fillStyle=eg;ctx.beginPath();ctx.ellipse(-22.5-fl*0.4,0,fl,3.8,0,0,7);ctx.fill();
+   }
   }
   ctx.restore();
   if(e.team===ME&&(sel||e.ammo<e.d.ammo)){for(let i=0;i<e.d.ammo;i++){ctx.fillStyle=i<e.ammo?'#ffd34d':'#444';ctx.fillRect(x-6+i*7,y+e.r+4,5,3);}}
-  if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-10,34,e.hp/e.maxHp);
+  if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-11,34,e.hp/e.maxHp);
   return;
  }
 
- // ---- 4. TANKS & GROUND VEHICLES: Cached Hull + Recoil Barrel & Cupola ----
- const sp=getUnitSprite(e),L=e.r*2.42;
+// ---- 4. 3D TANKS & GROUND VEHICLES ----
+ const sp=getUnitSprite(e),L=e.r*2.44;
  ctx.save();ctx.translate(x,y);ctx.rotate(e.ang);
  ctx.drawImage(sp.canvas,-sp.pad,-sp.pad,sp.pad*2,sp.pad*2);
  if(e.d.turret){
+  // Elevate turret onto upper armored deck in 3D mode
+  if(VIEW3D)ctx.translate(-2.8,-4.6);
   ctx.rotate(e.tang-e.ang);
   const rec=(e.recT&&e.recT>G.t)?-(e.recT-G.t)*35:0;
   ctx.save();ctx.translate(rec,0);
   if(sh==='heavy'){
    ctx.fillStyle='#1b2026';ctx.fillRect(0,-6.6,L*0.98,4.4);ctx.fillRect(0,2.2,L*0.98,4.4);
    ctx.fillStyle='#0d1014';ctx.fillRect(L*0.90,-7.4,5.4,6.0);ctx.fillRect(L*0.90,1.4,5.4,6.0);
+  }else if(sh==='nukecannon'){
+   ctx.fillStyle='#1b2026';ctx.fillRect(-4,-4.5,L*1.25,9.0);
+   ctx.fillStyle='#ffd34d';ctx.fillRect(L*0.45,-5.2,9,10.4);
+   ctx.fillStyle='#111';ctx.fillRect(L*0.48,-5.2,3,10.4);
+   ctx.fillStyle='#0d1014';ctx.fillRect(L*1.12,-6.2,8,12.4);
+  }else if(sh==='avenger'){
+   ctx.fillStyle='#242a32';ctx.fillRect(-5,-8.5,16,17);
+   ctx.fillStyle='#5ce1ff';ctx.fillRect(4,-6.8,14,2.8);ctx.fillRect(4,4.0,14,2.8);
+  }else if(sh==='quad'){
+   ctx.fillStyle='#1b2026';
+   for(const qy of [-6.2,-2.2,2.2,6.2])ctx.fillRect(0,qy-1,L*0.92,2.0);
+  }else if(sh==='battlebus'){
+   ctx.fillStyle='#1b2026';ctx.fillRect(-2,-3,L*0.72,6);
   }else if(sh==='aa'||sh==='sam'||sh==='mlrs'){
    ctx.fillStyle='#242a32';ctx.fillRect(-4,-8.2,16.5,16.4);
    ctx.fillStyle='#ffd34d';for(let ri=-5.2;ri<=5.2;ri+=5.2)ctx.fillRect(8,ri-1.3,7.5,2.6);
@@ -2604,15 +2868,18 @@ function drawUnit(e){
   }
   ctx.restore();
   const tr=e.r*0.68;
+  // 3D turret collar shadow
+  if(VIEW3D){ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(2.2,2.5,tr*1.18,tr*0.98,0,0,7);ctx.fill();}
   ctx.fillStyle=dk;ctx.fillRect(-tr*1.35,-tr*0.82,tr*0.55,tr*1.64);
-  const tg=ctx.createLinearGradient(-tr,-tr,tr,tr);tg.addColorStop(0, safeCol(lt, 'rgba(255,220,120,0.4)'));tg.addColorStop(0.5, safeCol(c, 'rgba(255,220,120,0.4)'));tg.addColorStop(1, safeCol(dk, 'rgba(255,220,120,0.4)'));
+  const tg=ctx.createLinearGradient(-tr,-tr,tr,tr);tg.addColorStop(0,safeCol(lt,'#9ec5ff'));tg.addColorStop(0.5,safeCol(c,'#4a90ff'));tg.addColorStop(1,safeCol(dk,'#1f4f9e'));
   ctx.fillStyle=tg;ctx.beginPath();ctx.ellipse(0,0,tr*1.14,tr*0.94,0,0,7);ctx.fill();ctx.strokeStyle='#0d1117';ctx.lineWidth=1.8;ctx.stroke();
-  ctx.fillStyle='#5ce1ff';ctx.fillRect(tr*0.35,-tr*0.52,4.0,3.2);
-  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.2,tr*0.25,tr*0.36,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#5ce1ff';ctx.fillRect(tr*0.35,-tr*0.52,4.2,3.4);
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.beginPath();ctx.ellipse(-tr*0.18,-tr*0.22,tr*0.65,tr*0.38,-0.3,0,7);ctx.fill();
+  ctx.fillStyle=lt;ctx.beginPath();ctx.arc(-tr*0.2,tr*0.25,tr*0.38,0,7);ctx.fill();ctx.stroke();
  }
  ctx.restore();
  if(e.vet){ctx.fillStyle='#ffd34d';for(let i=0;i<e.vet;i++){ctx.fillRect(x-e.r-7,y-e.r+i*5,6,3);}}
- if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-10,Math.max(22,e.r*2.2),e.hp/e.maxHp);
+ if(sel||e.hp<e.maxHp)hpBar(x,y-e.r-11,Math.max(22,e.r*2.2),e.hp/e.maxHp);
 }
 function drawFx(){
  for(const f of G.fx){const x=f.x-cam.x,y=f.y-cam.y;
@@ -2943,6 +3210,7 @@ function doAct(act,shift){
  else if(a==='b'){if(!own.some(u=>u.d.builder))return;const d=B[v];if(d.req&&!hasB(ME,d.req)){msg('Requires '+B[d.req].name,'#ff6b5b',true);return;}
   if(G.money[ME]<bldCost(v,ME)){msg('Insufficient funds','#ff6b5b',true);return;}G.place={type:v};G.target=null;G.amove=false;}
  else if(a==='cancel'){const b=own.find(e=>e.kind==='b');const i=+v;if(b&&b.queue[i])issue({k:'cq',bid:b.id,i,item:b.queue[i]});}
+ else if(a==='bup'){const b=own.find(e=>e.kind==='b'&&e.built);if(b)issue({k:'bup',bid:b.id});}
  else if(a==='sell'){const b=own.find(e=>e.kind==='b');if(!b||b.d.shape==='hq')return;issue({k:'sell',bid:b.id});G.sel=[];}
  else if(a==='evac'){const b=own.find(e=>e.kind==='b'&&e.d.garrison);if(b)issue({k:'evac',bid:b.id});}
  else if(a==='stop'){const us=ownUnits();if(us.length)issue({k:'st',ids:us.map(u=>u.id)});}
@@ -3000,6 +3268,7 @@ function getCmds(){
   if(b.built&&b.d.shape==='airfield')out.push({act:'seljets',label:tr('cmdSelJets'),key:'Y',tip:tr('tipSelJets')});
   if(b.built&&b.d.makes)out.push({act:'rally',label:tr('cmdRally'),key:'L',tip:tr('tipRally')});
   if(b.d.garrison&&b.gar&&b.gar.length)out.push({act:'evac',label:tr('cmdEvac')+' ('+b.gar.length+')',key:'V',tip:'Unload all garrisoned infantry (Shortcut: V)'});
+  if(b.built){const bi=bldUpgInfo(b);if(bi)out.push({act:'bup:'+b.id,label:'⬆ '+bi.title,cost:bi.cost,cls:'up',key:'B',tip:bi.bonus+' (Shortcut: B)'});}
   if(b.d.shape!=='hq'&&!b.d.neutral)out.push({act:'sell',label:b.built?tr('cmdSell'):tr('cmdCancel'),key:'X',tip:b.built?'Refund 50% (Shortcut: X)':'Refund 75% (Shortcut: X)'});
  }
  return out;
@@ -3039,7 +3308,7 @@ function uiTick(dt){
     if(e.d.builder&&e.order&&e.order.t==='build')ih+=`<div class="muted">Constructing ${e.order.b.d.name}</div>`;
     if(e.d.hack&&e.team===ME)ih+=`<div style="color:#5dff9a">${e.idleT>3?'Hacking: +$4/s':'Hacks for cash when left idle'}${(e.hackCd||0)>G.t?' · disable ready in '+Math.ceil(e.hackCd-G.t)+'s':''}</div>`;
     if(e.horde)ih+=`<div style="color:#ffd34d">Horde bonus active</div>`;}
-   else{if(!e.built)ih+=`<div>Under construction: ${Math.floor(e.prog*100)}%</div>`;
+   else{if(!e.built)ih+=`<div>Under construction: ${Math.floor(e.prog*100)}%</div>`;else if((e.bLv||1)>1)ih+=`<div style="color:#ffd34d;font-weight:700">★ Building Tier ${e.bLv} / 3 (Reinforced)</div>`;
     if(e.d.pow)ih+=`<div class="muted">Power ${e.d.pow>0?'+':''}${e.d.pow}${e.d.desc?' · '+e.d.desc:''}</div>`;else if(e.d.desc)ih+=`<div class="muted">${e.d.desc}</div>`;
     if(e.d.shape==='airfield'&&e.team===ME)ih+=`<div class="muted">Jets: ${jetsAt(e)}/4</div>`;
     if(e.queue&&e.queue.length&&e.team===ME){ih+='<div>';e.queue.forEach((q,i)=>{const nm=q.startsWith('up:')?UPG[q.slice(3)].name:U[q].name;ih+=`<div class="q" data-act="cancel:${i}" title="Click to cancel">${nm}${i===0?`<b style="width:${e.qprog*100}%"></b>`:''}</div>`;});ih+='</div>';}}
@@ -3074,12 +3343,14 @@ for(const id of ['cmds','info','powers'])$(id).addEventListener('pointerdown',ev
 // ONLINE: lobby + N-player lockstep (host relays turn bundles) via PeerJS
 // =====================================================================
 const TICK=1/30,TPT=3;
-const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},
+const ICE={iceServers:[
+ {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302','stun:stun.cloudflare.com:3478']},
  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
- {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}]};
-const PEER_PREFIX='ironfront-v5-';
-const PUB_SLOTS=8;
+ {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+],iceCandidatePoolSize:4};
+const PEER_PREFIX='ironfront-zh-v16-';
+const PUB_SLOTS=12;
 const NET={peer:null,beacon:null,pubSlot:0,host:false,code:null,conns:new Map(),hostConn:null,myCid:null,inLobby:false,link:''};
 const MP={on:false,tick:0,acc:0,D:5,pending:[],fin:-1,bun:{},col:{},inject:{},nextB:0,hashes:{},waitT:0,pubT:0,left:new Set(),humans:[],pconn:{},desync:false,lag:''};
 function mpStatus(t){const el=$('mpStatus');if(el)el.innerHTML=t;}
@@ -3100,16 +3371,19 @@ function netReset(){
 function startPublicBeacon(slotIdx){
  if(!NET.host||!NET.inLobby||MP.on||slotIdx>PUB_SLOTS)return;
  try{if(NET.beacon)NET.beacon.destroy();}catch(e){}
- const b=new Peer(PEER_PREFIX+'pub-'+slotIdx,{config:ICE,debug:0});
+ const b=new Peer(PEER_PREFIX+'pub-'+slotIdx,{config:ICE,pingInterval:3000,debug:0});
  NET.beacon=b;
  b.on('open',()=>{NET.pubSlot=slotIdx;});
+ b.on('disconnected',()=>{if(NET.host&&NET.inLobby&&!b.destroyed)try{b.reconnect();}catch(e){}});
  b.on('connection',c=>{
-  c.on('open',()=>{
+  const reply=()=>{
    const openCnt=setup.slots.filter(s=>s.kind==='open').length;
    const curCnt=setup.slots.filter(s=>['you','human','ai'].includes(s.kind)).length;
-   c.send({pubInfo:{code:NET.code,host:myName(),map:setup.map.biome,open:openCnt,players:curCnt}});
-   setTimeout(()=>{try{c.close();}catch(e){}},600);
-  });
+   try{c.send({pubInfo:{code:NET.code,host:myName(),map:setup.map.biome,open:openCnt,players:curCnt}});}catch(e){}
+  };
+  c.on('open',reply);
+  c.on('data',d=>{if(d&&d.ping)reply();});
+  setTimeout(()=>{try{c.close();}catch(e){}},1500);
  });
  b.on('error',e=>{
   if(e&&e.type==='unavailable-id')startPublicBeacon(slotIdx+1);
@@ -3119,7 +3393,7 @@ function scanPublicLobbies(autoJoinFirst){
  if(!netReady()||navigator.onLine===false){netInit();return;}
  const box=$('pubLobbies');if(box)box.innerHTML='<span style="color:#9fb0c2;font-size:13px">Scanning public lobby channels (1–'+PUB_SLOTS+')…</span>';
  const found=[];let done=0,joined=false;
- const tmp=new Peer({config:ICE,debug:0});
+ const tmp=new Peer({config:ICE,pingInterval:3000,debug:0});
  const finish=()=>{
   try{tmp.destroy();}catch(e){}
   if(joined)return;
@@ -3135,10 +3409,11 @@ function scanPublicLobbies(autoJoinFirst){
    let settled=false;
    const c=tmp.connect(PEER_PREFIX+'pub-'+i,{reliable:true});
    const mark=()=>{if(settled)return;settled=true;done++;if(done>=PUB_SLOTS)finish();};
-   const tm=setTimeout(()=>{try{c.close();}catch(e){}mark();},2600);
+   const tm=setTimeout(()=>{try{c.close();}catch(e){}mark();},3600);
+   c.on('open',()=>{try{c.send({ping:1});}catch(e){}});
    c.on('data',d=>{
     clearTimeout(tm);
-    if(d&&d.pubInfo&&d.pubInfo.open>0){
+    if(d&&d.pubInfo&&d.pubInfo.open>0&&!found.some(x=>x.code===d.pubInfo.code)){
      found.push(d.pubInfo);
      if(autoJoinFirst&&!joined){joined=true;try{tmp.destroy();}catch(e){}netJoin(d.pubInfo.code);return;}
     }
@@ -3159,7 +3434,8 @@ function netHost(){
  const code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
  NET.host=true;NET.code=code;NET.myCid='host';
  setup.mode='host';setup.slots=defaultSlots('host');setup.slots[0].name=myName();
- const peer=new Peer(PEER_PREFIX+code.toLowerCase(),{config:ICE,debug:0});NET.peer=peer;
+ const peer=new Peer(PEER_PREFIX+code.toLowerCase(),{config:ICE,pingInterval:3000,debug:0});NET.peer=peer;
+ peer.on('disconnected',()=>{if(NET.host&&!peer.destroyed)try{peer.reconnect();}catch(e){}});
  mpStatus('Opening game…');
  peer.on('open',()=>{NET.inLobby=true;NET.link=appUrl()+'#join-'+code;startPublicBeacon(1);
   mpStatus(`Hosting Public Lobby <b style="color:#ffd34d;font-size:18px">${code}</b> (visible in <b>Scan Open Lobbies</b> &amp; <b>Quick Match</b>!).<br>Direct link: <span style="user-select:text;-webkit-user-select:text;color:#9fd6ff;word-break:break-all">${NET.link}</span> <span class="chip" id="mpCopy">Copy link</span> <span class="chip" id="mpCancel">Close lobby</span><br>Set slots below to <b>Open</b> for players, or to AI. Start when everyone has joined.`);
@@ -3210,22 +3486,46 @@ function hostTryBundle(){
 // ---------- client ----------
 function netJoin(code){
  if(!netReady()||navigator.onLine===false){netInit();return;}
- code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ code=String(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
  if(code.length!==4){mpStatus('Type a valid 4-character game code.');return;}
  netReset();saveName();NET.code=code;
- const peer=new Peer({config:ICE,debug:0});NET.peer=peer;
- mpStatus(`Connecting to game <b style="color:#ffd34d">${code}</b>…`);let ok=false;
- peer.on('open',id=>{NET.myCid=id;
-  const conn=peer.connect(PEER_PREFIX+code.toLowerCase(),{reliable:true});NET.hostConn=conn;
-  conn.on('open',()=>{ok=true;conn.send({hello:{name:myName(),fac:setup.myFac||'random'}});mpStatus(`Connected to game <b style="color:#ffd34d">${code}</b>. Pick your faction and team below; the host starts the battle.`);});
-  conn.on('data',d=>{if(d&&typeof d==='object')clientOnData(d);});
-  conn.on('close',()=>{if(ok)clientOnClose();});
-  conn.on('error',()=>{if(ok)clientOnClose();});
-  setTimeout(()=>{if(!ok&&NET.hostConn===conn){try{conn.close();}catch(e){}try{peer.destroy();}catch(e){}NET.hostConn=null;mpStatus(`Could not reach game <b style="color:#ffd34d">${code}</b>. Check the code and ensure the host's lobby is open.`);}},12000);
- });
+ const peer=new Peer({config:ICE,pingInterval:3000,debug:0});NET.peer=peer;
+ mpStatus(`Connecting to host <b style="color:#ffd34d">${code}</b>…`);let ok=false,tries=0;
+ const attemptConnect=()=>{
+  if(ok||peer.destroyed)return;
+  tries++;
+  const conn=peer.connect(PEER_PREFIX+code.toLowerCase(),{reliable:true,serialization:'json'});NET.hostConn=conn;
+  const helloIv=setInterval(()=>{if(ok||!conn.open){if(ok)clearInterval(helloIv);return;}try{conn.send({hello:{name:myName(),fac:setup.myFac||'random'}});}catch(e){}},700);
+  conn.on('open',()=>{
+   ok=true;clearInterval(helloIv);
+   conn.send({hello:{name:myName(),fac:setup.myFac||'random'}});
+   mpStatus(`Connected to game <b style="color:#ffd34d">${code}</b>. Pick your faction and team below; the host starts the battle.`);
+  });
+  conn.on('data',d=>{
+   if(!ok){ok=true;clearInterval(helloIv);}
+   if(d&&typeof d==='object')clientOnData(d);
+  });
+  conn.on('close',()=>{clearInterval(helloIv);if(ok)clientOnClose();});
+  conn.on('error',()=>{clearInterval(helloIv);if(ok)clientOnClose();});
+  setTimeout(()=>{
+   clearInterval(helloIv);
+   if(!ok&&NET.hostConn===conn){
+    try{conn.close();}catch(e){}
+    if(tries<3&&!peer.destroyed){
+     mpStatus(`Searching for host <b style="color:#ffd34d">${code}</b> (attempt ${tries+1}/3)…`);
+     setTimeout(attemptConnect,900);
+    }else{
+     try{peer.destroy();}catch(e){}NET.hostConn=null;
+     mpStatus(`Could not reach host <b style="color:#ffd34d">${code}</b>. Ensure the host lobby is open on the same version, or use <b>📡 Join LAN</b>.`);
+    }
+   }
+  },5500);
+ };
+ peer.on('open',id=>{NET.myCid=id;attemptConnect();});
  peer.on('error',e=>{const t=e&&e.type;if(MP.on)return;
   if(ok)clientOnClose();
-  else mpStatus(t==='peer-unavailable'?`No game with code <b>${code}</b> is open. Check the code.`:'Could not connect ('+(t||'network error')+'). Try again.');});
+  else if(t==='peer-unavailable'&&tries<3){setTimeout(attemptConnect,900);}
+  else mpStatus(t==='peer-unavailable'?`Host <b>${code}</b> not found. Verify the 4-letter code or use <b>🔍 Scan Open Lobbies</b>.`:'Could not connect ('+(t||'network error')+'). Try again.');});
 }
 function clientOnData(d){
  if(d.full){NET.inLobby=false;mpStatus('That game lobby is full.');return;}
@@ -3802,9 +4102,59 @@ function frame(now){
 // ---- IF7_ZERO_HOUR: Web Audio Synth SFX/BGM, Generals' Challenge, Serverless LAN WebRTC & Chat ----
 const SFX={
  on:true,bgm:false,ctx:null,bgmTimer:null,lastSfx:{},noiseBuf:null,
+ sfxGain:null,bgmGain:null,comp:null,
+ sfxVol:0.85,bgmVol:0.65,style:'auto',
  facOf(team){return (G&&G.fac&&team>=0&&G.fac[team])||(G&&G.fac&&G.fac[ME])||'usa';},
+ loadPrefs(){
+  try{
+   const sv=localStorage.getItem('if_sfx_vol');if(sv!==null)this.sfxVol=Math.max(0,Math.min(1,parseFloat(sv)));
+   const bv=localStorage.getItem('if_bgm_vol');if(bv!==null)this.bgmVol=Math.max(0,Math.min(1,parseFloat(bv)));
+   const st=localStorage.getItem('if_bgm_style');if(st)this.style=st;
+  }catch(e){}
+  this.syncUi();
+ },
+ syncUi(){
+  const sv=$('sfxVol'),bv=$('bgmVol'),s1=$('bgmStyleSel'),s2=$('menuBgmStyle');
+  if(sv)sv.value=Math.round(this.sfxVol*100);
+  if(bv)bv.value=Math.round(this.bgmVol*100);
+  if(s1)s1.value=this.style;
+  if(s2)s2.value=this.style;
+  if(this.sfxGain&&this.ctx)this.sfxGain.gain.setTargetAtTime(this.on?this.sfxVol:0,this.ctx.currentTime,0.02);
+  if(this.bgmGain&&this.ctx)this.bgmGain.gain.setTargetAtTime(this.bgm?this.bgmVol:0,this.ctx.currentTime,0.03);
+ },
+ setSfxVol(v){
+  this.sfxVol=Math.max(0,Math.min(1,v));
+  try{localStorage.setItem('if_sfx_vol',String(this.sfxVol));}catch(e){}
+  this.syncUi();
+ },
+ setBgmVol(v){
+  this.bgmVol=Math.max(0,Math.min(1,v));
+  try{localStorage.setItem('if_bgm_vol',String(this.bgmVol));}catch(e){}
+  this.syncUi();
+ },
+ setStyle(st){
+  this.style=st||'auto';
+  try{localStorage.setItem('if_bgm_style',this.style);}catch(e){}
+  this.syncUi();
+  if(this.bgm){clearInterval(this.bgmTimer);this.bgmTimer=null;this.toggleBgm(true,this.style==='zh_metal');}
+ },
  init(){
-  if(!this.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)this.ctx=new AC();}
+  if(!this.ctx){
+   const AC=window.AudioContext||window.webkitAudioContext;
+   if(AC){
+    this.ctx=new AC();
+    this.comp=this.ctx.createDynamicsCompressor();
+    this.comp.threshold.value=-14;this.comp.knee.value=18;this.comp.ratio.value=4;
+    this.comp.attack.value=0.005;this.comp.release.value=0.18;
+    this.comp.connect(this.ctx.destination);
+    this.sfxGain=this.ctx.createGain();
+    this.sfxGain.gain.value=this.on?this.sfxVol:0;
+    this.sfxGain.connect(this.comp);
+    this.bgmGain=this.ctx.createGain();
+    this.bgmGain.gain.value=this.bgm?this.bgmVol:0;
+    this.bgmGain.connect(this.comp);
+   }
+  }
   if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume();
   if(this.ctx&&!this.noiseBuf){
    const sr=this.ctx.sampleRate,b=this.ctx.createBuffer(1,sr*1.5|0,sr),d=b.getChannelData(0);
@@ -3812,14 +4162,14 @@ const SFX={
    this.noiseBuf=b;
   }
  },
- noise(t,dur,filterType,freq0,freq1,gain0,q=1.2){
+ noise(t,dur,filterType,freq0,freq1,gain0,q=1.2,bus){
   if(!this.ctx||!this.noiseBuf)return;
-  const c=this.ctx,s=c.createBufferSource();s.buffer=this.noiseBuf;
+  const c=this.ctx,out=bus||this.sfxGain||c.destination,s=c.createBufferSource();s.buffer=this.noiseBuf;
   const f=c.createBiquadFilter();f.type=filterType;f.frequency.setValueAtTime(freq0,t);
   if(freq1)f.frequency.exponentialRampToValueAtTime(Math.max(30,freq1),t+dur);
   f.Q.value=q;
   const g=c.createGain();g.gain.setValueAtTime(gain0,t);g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
-  s.connect(f);f.connect(g);g.connect(c.destination);
+  s.connect(f);f.connect(g);g.connect(out);
   s.start(t,Math.random()*0.4,dur+0.02);
  },
  canHear(x,y){if(!this.on||!G)return false;if(x==null)return true;const dx=x-(cam.x+VW/2),dy=y-(cam.y+VH/2);return dHypot(dx,dy)<Math.max(VW,VH)*0.95;},
@@ -3828,287 +4178,309 @@ const SFX={
   const now=performance.now(),fac=this.facOf(team),k='s_'+(utype||proj)+'_'+fac;
   if(now-(this.lastSfx[k]||0)<48)return;
   this.lastSfx[k]=now;this.init();if(!this.ctx)return;
-  const c=this.ctx,t=c.currentTime;
+  const c=this.ctx,t=c.currentTime,out=this.sfxGain||c.destination;
   // Laser Avenger / High-Energy Beam
   if(utype==='avenger'){
    const o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain();
-   o.type='sawtooth';o.frequency.setValueAtTime(1850,t);o.frequency.exponentialRampToValueAtTime(210,t+0.13);
-   o2.type='sine';o2.frequency.setValueAtTime(920,t);o2.frequency.exponentialRampToValueAtTime(140,t+0.13);
-   g.gain.setValueAtTime(0.055,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
-   o.connect(g);o2.connect(g);g.connect(c.destination);o.start(t);o2.start(t);o.stop(t+0.14);o2.stop(t+0.14);return;
+   o.type='sawtooth';o.frequency.setValueAtTime(1920,t);o.frequency.exponentialRampToValueAtTime(220,t+0.13);
+   o2.type='sine';o2.frequency.setValueAtTime(960,t);o2.frequency.exponentialRampToValueAtTime(150,t+0.13);
+   g.gain.setValueAtTime(0.065,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+   o.connect(g);o2.connect(g);g.connect(out);o.start(t);o2.start(t);o.stop(t+0.14);o2.stop(t+0.14);return;
   }
   // Heavy Anti-Materiel Sniper / Jarmen Kell / Col. Burton
   if(utype==='sniper'||utype==='jarmen'||utype==='burton'){
-   this.noise(t,0.16,'bandpass',2200,320,0.14,2.2);
+   this.noise(t,0.16,'bandpass',2300,340,0.16,2.2,out);
    const o=c.createOscillator(),g=c.createGain();
-   o.type='sawtooth';o.frequency.setValueAtTime(360,t);o.frequency.exponentialRampToValueAtTime(52,t+0.12);
-   g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.13);return;
+   o.type='sawtooth';o.frequency.setValueAtTime(380,t);o.frequency.exponentialRampToValueAtTime(54,t+0.12);
+   g.gain.setValueAtTime(0.09,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.13);return;
   }
   // Gatling / Rotary Cannon (China Gatling Tank, Bunker, Hellhound, Quad Cannon)
   if(utype==='gatling'||utype==='quad'||utype==='hellhound'||utype==='l_bunker'){
-   this.noise(t,0.055,'bandpass',1650,620,0.085,2.5);
+   this.noise(t,0.055,'bandpass',1700,640,0.095,2.5,out);
    const o=c.createOscillator(),g=c.createGain();
-   o.type='sawtooth';o.frequency.setValueAtTime(240,t);o.frequency.exponentialRampToValueAtTime(68,t+0.05);
-   g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.055);return;
+   o.type='sawtooth';o.frequency.setValueAtTime(250,t);o.frequency.exponentialRampToValueAtTime(70,t+0.05);
+   g.gain.setValueAtTime(0.055,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.055);return;
   }
   // Rifleman / Conscript / Technical / Raider Jeep
   if(proj==='bullet'){
-   const f0=fac==='usa'?1950:fac==='china'?1550:fac==='russia'?1450:1750;
-   this.noise(t,0.065,'bandpass',f0,480,0.08,1.8);
+   const f0=fac==='usa'?1980:fac==='china'?1580:fac==='russia'?1480:1780;
+   this.noise(t,0.065,'bandpass',f0,480,0.088,1.8,out);
    const o=c.createOscillator(),g=c.createGain();
-   o.type='triangle';o.frequency.setValueAtTime(210,t);o.frequency.exponentialRampToValueAtTime(58,t+0.045);
-   g.gain.setValueAtTime(0.042,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.05);return;
+   o.type='triangle';o.frequency.setValueAtTime(215,t);o.frequency.exponentialRampToValueAtTime(58,t+0.045);
+   g.gain.setValueAtTime(0.046,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.05);return;
   }
   // Rocket / Missile / RPG / Patriot / Sky Shield / SCUD / Buggy
   if(proj==='rocket'){
-   this.noise(t,0.24,'bandpass',1350,380,0.12,1.4);
+   this.noise(t,0.24,'bandpass',1400,380,0.13,1.4,out);
    const o=c.createOscillator(),g=c.createGain();
-   o.type='sawtooth';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(62,t+0.18);
-   g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.19);return;
+   o.type='sawtooth';o.frequency.setValueAtTime(195,t);o.frequency.exponentialRampToValueAtTime(62,t+0.18);
+   g.gain.setValueAtTime(0.056,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.19);return;
   }
   // Flame / Dragon Tank
   if(proj==='flame'){
-   this.noise(t,0.22,'lowpass',850,240,0.11,1.0);return;
+   this.noise(t,0.22,'lowpass',880,240,0.12,1.0,out);return;
   }
-  // Tank Main Cannon & Heavy Siege Artillery (Paladin, Battlemaster, Overlord, Bogatyr, Nuke Cannon, Inferno)
+  // Tank Main Cannon & Heavy Siege Artillery
   const isHeavy=utype==='titan'||utype==='bogatyr'||utype==='nuke_cannon'||utype==='thunder'||utype==='rocketart'||utype==='stormr';
-  const dur=isHeavy?0.42:0.28;
-  this.noise(t,dur,'lowpass',isHeavy?920:1150,75,isHeavy?0.24:0.17,1.1);
+  const dur=isHeavy?0.44:0.29;
+  this.noise(t,dur,'lowpass',isHeavy?950:1180,72,isHeavy?0.26:0.19,1.1,out);
   const o=c.createOscillator(),g=c.createGain();
-  o.type='sine';o.frequency.setValueAtTime(isHeavy?135:165,t);o.frequency.exponentialRampToValueAtTime(24,t+dur*0.85);
-  g.gain.setValueAtTime(isHeavy?0.18:0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.85);
-  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur*0.88);
+  o.type='sine';o.frequency.setValueAtTime(isHeavy?138:168,t);o.frequency.exponentialRampToValueAtTime(22,t+dur*0.86);
+  g.gain.setValueAtTime(isHeavy?0.21:0.15,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.86);
+  o.connect(g);g.connect(out);o.start(t);o.stop(t+dur*0.88);
  },
  superweapon(swType,x,y,team){
   if(!this.on)return;this.init();if(!this.ctx)return;
-  const c=this.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+  const c=this.ctx,t=c.currentTime,out=this.sfxGain||c.destination,o=c.createOscillator(),g=c.createGain();
   if(swType==='lance'){
-   o.type='sine';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(1280,t+0.9);
-   g.gain.setValueAtTime(0.11,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.2);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.22);
+   o.type='sine';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(1320,t+0.9);
+   g.gain.setValueAtTime(0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.2);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+1.22);
   }else if(swType==='nuke'){
-   o.type='sawtooth';o.frequency.setValueAtTime(165,t);o.frequency.linearRampToValueAtTime(510,t+0.55);o.frequency.linearRampToValueAtTime(150,t+1.2);
-   g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.25);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.26);
+   o.type='sawtooth';o.frequency.setValueAtTime(165,t);o.frequency.linearRampToValueAtTime(520,t+0.55);o.frequency.linearRampToValueAtTime(145,t+1.2);
+   g.gain.setValueAtTime(0.14,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.25);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+1.26);
   }else if(swType==='blizzard'){
-   this.noise(t,1.1,'bandpass',900,220,0.12,2.0);
+   this.noise(t,1.1,'bandpass',920,220,0.14,2.0,out);
    o.type='triangle';o.frequency.setValueAtTime(640,t);o.frequency.exponentialRampToValueAtTime(120,t+1.05);
-   g.gain.setValueAtTime(0.10,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.1);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.12);
+   g.gain.setValueAtTime(0.11,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.1);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+1.12);
   }else{
    o.type='square';o.frequency.setValueAtTime(340,t);o.frequency.setValueAtTime(510,t+0.22);o.frequency.setValueAtTime(340,t+0.44);o.frequency.setValueAtTime(510,t+0.66);
-   g.gain.setValueAtTime(0.085,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.95);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.96);
+   g.gain.setValueAtTime(0.095,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.95);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.96);
   }
  },
  ack(ent,isAttack){
   if(!this.on||!ent)return;
   const now=performance.now();if(now-(this.lastSfx.ack||0)<120)return;this.lastSfx.ack=now;
-  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,fac=this.facOf(ME);
+  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,out=this.sfxGain||c.destination,fac=this.facOf(ME);
   const isVeh=ent.kind==='u'&&ent.d&&ent.d.armor==='veh';
-  // Authentic radio squelch + faction tactical commlink beep
-  this.noise(t,0.032,'bandpass',2600,1900,0.035,3.0);
+  this.noise(t,0.032,'bandpass',2600,1900,0.038,3.0,out);
   const o=c.createOscillator(),g=c.createGain();
   o.type=isVeh?'sawtooth':(fac==='militia'?'square':'triangle');
   const base=isVeh?(isAttack?175:220):(isAttack?460:580);
   o.frequency.setValueAtTime(base,t+0.015);o.frequency.setValueAtTime(base*(isAttack?0.84:1.25),t+0.055);
-  g.gain.setValueAtTime(0.042,t+0.015);g.gain.exponentialRampToValueAtTime(0.001,t+0.10);
-  o.connect(g);g.connect(c.destination);o.start(t+0.015);o.stop(t+0.105);
+  g.gain.setValueAtTime(0.048,t+0.015);g.gain.exponentialRampToValueAtTime(0.001,t+0.10);
+  o.connect(g);g.connect(out);o.start(t+0.015);o.stop(t+0.105);
  },
  boom(r,x,y){
   if(!this.canHear(x,y))return;
   const now=performance.now();if(now-(this.lastSfx.boom||0)<70)return;this.lastSfx.boom=now;
-  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,dur=Math.min(1.15,0.32+r*0.006);
-  // Layer 1: Sub-bass concussive shockwave thump
+  this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,out=this.sfxGain||c.destination,dur=Math.min(1.18,0.34+r*0.006);
   const o=c.createOscillator(),og=c.createGain();
-  o.type='sine';o.frequency.setValueAtTime(Math.max(48,110-r*0.25),t);o.frequency.exponentialRampToValueAtTime(18,t+Math.min(0.65,dur*0.75));
-  og.gain.setValueAtTime(Math.min(0.28,0.10+r*0.002),t);og.gain.exponentialRampToValueAtTime(0.001,t+Math.min(0.68,dur*0.78));
-  o.connect(og);og.connect(c.destination);o.start(t);o.stop(t+Math.min(0.7,dur*0.8));
-  // Layer 2: Filtered debris & shrapnel roar
-  this.noise(t,dur,'lowpass',Math.max(220,780-r*1.8),55,Math.min(0.30,0.09+r*0.0022),0.9);
+  o.type='sine';o.frequency.setValueAtTime(Math.max(46,112-r*0.25),t);o.frequency.exponentialRampToValueAtTime(18,t+Math.min(0.68,dur*0.76));
+  og.gain.setValueAtTime(Math.min(0.32,0.12+r*0.0022),t);og.gain.exponentialRampToValueAtTime(0.001,t+Math.min(0.7,dur*0.78));
+  o.connect(og);og.connect(out);o.start(t);o.stop(t+Math.min(0.72,dur*0.8));
+  this.noise(t,dur,'lowpass',Math.max(220,820-r*1.8),52,Math.min(0.34,0.10+r*0.0024),0.9,out);
  },
  play(kind,team){
-  if(!this.on)return;this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,fac=this.facOf(team);
+  if(!this.on)return;this.init();if(!this.ctx)return;const c=this.ctx,t=c.currentTime,out=this.sfxGain||c.destination,fac=this.facOf(team);
   if(kind==='click'){
    const o=c.createOscillator(),g=c.createGain();
    o.type='sine';o.frequency.setValueAtTime(fac==='usa'?880:fac==='china'?680:760,t);o.frequency.exponentialRampToValueAtTime(420,t+0.038);
-   g.gain.setValueAtTime(0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.042);
-   o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.045);
+   g.gain.setValueAtTime(0.045,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.042);
+   o.connect(g);g.connect(out);o.start(t);o.stop(t+0.045);
   }else if(kind==='ready'){
    const notes=fac==='usa'?[523.25,659.25,783.99]:fac==='china'?[392.0,523.25,587.33]:fac==='russia'?[329.63,440.0,493.88]:[369.99,440.0,554.37];
    notes.forEach((f,idx)=>{
     const o=c.createOscillator(),g=c.createGain();
     o.type=fac==='china'?'sawtooth':'triangle';o.frequency.setValueAtTime(f,t+idx*0.065);
-    g.gain.setValueAtTime(0.055,t+idx*0.065);g.gain.exponentialRampToValueAtTime(0.001,t+idx*0.065+0.18);
-    o.connect(g);g.connect(c.destination);o.start(t+idx*0.065);o.stop(t+idx*0.065+0.19);
+    g.gain.setValueAtTime(0.06,t+idx*0.065);g.gain.exponentialRampToValueAtTime(0.001,t+idx*0.065+0.18);
+    o.connect(g);g.connect(out);o.start(t+idx*0.065);o.stop(t+idx*0.065+0.19);
    });
   }else if(kind==='siren'){this.superweapon('nuke',null,null,team);}
  },
  toggleBgm(forceState, forceMain){
   if(typeof forceMain==='boolean')this.playMainOnly=forceMain;
   this.bgm=typeof forceState==='boolean'?forceState:!this.bgm;
+  this.syncUi();
   const b=$('bgmBtn'), zb=$('zhThemeBtn'), tzb=$('topZhThemeBtn');
   if(b){b.style.borderColor=(this.bgm&&!this.playMainOnly)?'#ffd34d':'#3b5068';b.textContent=(this.bgm&&!this.playMainOnly)?tr('bgmOn'):tr('bgmOff');}
   if(zb){zb.classList.toggle('on',this.bgm&&!!this.playMainOnly);zb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';zb.textContent=(this.bgm&&this.playMainOnly)?tr('zhThemeOn'):tr('zhTheme');}
   if(tzb){tzb.style.borderColor=(this.bgm&&this.playMainOnly)?'#ffd34d':'#3b5068';tzb.textContent=(this.bgm&&this.playMainOnly)?tr('topZhOn'):tr('topZh');}
-  if(!this.bgm){clearInterval(this.bgmTimer);this.bgmTimer=null;return;}
-  this.init();let step=0;
-  try{if(this.ctx){const c=this.ctx,t=c.currentTime;
-   for(const f of [73.42,110.0,146.83,220.0,293.66,349.23,440.0]){
-    const o=c.createOscillator(),g=c.createGain(),fl=c.createBiquadFilter();
-    o.type='sawtooth';fl.type='lowpass';
-    fl.frequency.setValueAtTime(320,t);fl.frequency.exponentialRampToValueAtTime(2200,t+0.65);fl.frequency.exponentialRampToValueAtTime(650,t+1.35);
-    o.frequency.setValueAtTime(f,t);
-    g.gain.setValueAtTime(0.002,t);g.gain.linearRampToValueAtTime(0.026,t+0.35);g.gain.exponentialRampToValueAtTime(0.0008,t+1.4);
-    o.connect(fl);fl.connect(g);g.connect(c.destination);o.start(t);o.stop(t+1.42);
-   }
-  }}catch(e){}
-  const mainTheme={
-   tempo:170,
-   bass:[
-    73.42,0,73.42,146.83, 110.0,0,146.83,110.0,  87.31,0,87.31,174.61, 130.81,0,174.61,130.81,
-    98.0,0,98.0,196.0,    146.83,0,196.0,146.83, 110.0,0,110.0,146.83, 164.81,146.83,130.81,110.0,
-    73.42,73.42,146.83,73.42, 65.41,65.41,130.81,65.41, 58.27,58.27,116.54,58.27, 65.41,73.42,87.31,110.0,
-    73.42,146.83,73.42,146.83, 87.31,174.61,87.31,174.61, 110.0,220.0,110.0,164.81, 146.83,110.0,87.31,73.42
+  if(this.bgmTimer){clearInterval(this.bgmTimer);this.bgmTimer=null;}
+  if(!this.bgm)return;
+  this.init();
+  let step=0;
+  const bgmOut=this.bgmGain||this.ctx.destination;
+  const zhMainScore={
+   tempo:132,
+   chug:[
+    146.83,146.83,146.83,146.83, 146.83,146.83,130.81,146.83, 174.61,174.61,174.61,174.61, 164.81,164.81,146.83,130.81,
+    116.54,116.54,116.54,116.54, 130.81,130.81,130.81,130.81, 146.83,146.83,146.83,146.83, 146.83,130.81,110.0,130.81,
+    146.83,146.83,146.83,146.83, 146.83,146.83,164.81,174.61, 196.0,196.0,196.0,196.0,    174.61,174.61,164.81,146.83,
+    220.0,220.0,220.0,220.0,     233.08,233.08,220.0,196.0,   174.61,174.61,164.81,146.83, 146.83,146.83,146.83,0
+   ],
+   sub:[
+    73.42,0,73.42,0, 73.42,0,65.41,73.42, 87.31,0,87.31,0, 82.41,0,73.42,65.41,
+    58.27,0,58.27,0, 65.41,0,65.41,0,    73.42,0,73.42,0, 73.42,65.41,55.0,65.41,
+    73.42,0,73.42,0, 73.42,0,82.41,87.31, 98.0,0,98.0,0,   87.31,0,82.41,73.42,
+    110.0,0,110.0,0, 116.54,0,110.0,98.0, 87.31,0,82.41,73.42, 73.42,73.42,0,0
    ],
    brass:[
-    293.66,0,440.0,587.33, 523.25,0,440.0,392.0,  349.23,0,440.0,523.25, 659.25,0,587.33,523.25,
-    392.0,0,493.88,587.33, 659.25,0,587.33,523.25, 440.0,0,523.25,587.33, 659.25,587.33,523.25,440.0,
-    587.33,0,659.25,698.46, 783.99,0,698.46,659.25, 587.33,0,523.25,466.16, 440.0,493.88,523.25,587.33,
-    587.33,587.33,0,698.46, 659.25,659.25,0,587.33, 523.25,493.88,440.0,392.0, 349.23,329.63,293.66,0
+    293.66,0,0,0, 440.0,0,0,466.16, 440.0,0,392.0,0, 349.23,0,329.63,0,
+    293.66,0,0,0, 349.23,0,392.0,0, 440.0,0,0,0,     0,0,392.0,349.23,
+    293.66,0,0,0, 587.33,0,0,523.25, 466.16,0,440.0,0, 392.0,0,440.0,0,
+    523.25,0,587.33,0, 659.25,0,587.33,523.25, 440.0,0,392.0,349.23, 293.66,0,0,0
    ],
-   harmony:[
-    146.83,0,220.0,293.66, 261.63,0,220.0,196.0,  174.61,0,220.0,261.63, 329.63,0,293.66,261.63,
-    196.0,0,246.94,293.66, 329.63,0,293.66,261.63, 220.0,0,261.63,293.66, 329.63,293.66,261.63,220.0,
-    293.66,0,329.63,349.23, 392.0,0,349.23,329.63,  293.66,0,261.63,233.08, 220.0,246.94,261.63,293.66,
-    293.66,293.66,0,349.23, 329.63,329.63,0,293.66, 261.63,246.94,220.0,196.0, 174.61,164.81,146.83,0
+   pad:[
+    146.83,0,0,0, 0,0,0,0, 174.61,0,0,0, 0,0,0,0,
+    116.54,0,0,0, 130.81,0,0,0, 146.83,0,0,0, 0,0,0,0,
+    146.83,0,0,0, 0,0,0,0, 196.0,0,0,0, 0,0,0,0,
+    220.0,0,0,0, 233.08,0,0,0, 174.61,0,0,0, 146.83,0,0,0
    ],
-   arp:[
-    587.33,440.0,587.33,440.0, 523.25,440.0,523.25,440.0, 698.46,523.25,698.46,523.25, 659.25,523.25,659.25,523.25,
-    587.33,493.88,587.33,493.88, 659.25,587.33,659.25,587.33, 587.33,440.0,587.33,440.0, 659.25,587.33,523.25,440.0,
-    783.99,587.33,783.99,587.33, 698.46,587.33,698.46,587.33, 587.33,466.16,587.33,466.16, 523.25,440.0,523.25,587.33,
-    880.0,698.46,880.0,698.46, 783.99,659.25,783.99,659.25, 698.46,587.33,659.25,523.25, 587.33,440.0,293.66,0
-   ],
-   bType:'sawtooth',lType:'sawtooth',cutoff:1450
+   cutoff:1950,isZH:true
   };
-  const themes={
-   main:mainTheme,
+  const factionScores={
    usa:{
-    tempo:164,
-    bass:[73.42,73.42,146.83,73.42, 87.31,87.31,174.61,87.31, 98.0,98.0,196.0,98.0, 110.0,110.0,130.81,146.83,
-          73.42,0,146.83,130.81, 110.0,0,98.0,87.31, 65.41,65.41,130.81,98.0, 87.31,110.0,146.83,110.0],
-    brass:[293.66,0,440.0,392.0, 349.23,0,392.0,440.0, 523.25,0,440.0,392.0, 349.23,329.63,293.66,220.0,
-           440.0,0,523.25,587.33, 659.25,0,587.33,523.25, 440.0,392.0,440.0,523.25, 587.33,0,440.0,293.66],
-    harmony:[146.83,0,220.0,196.0, 174.61,0,196.0,220.0, 261.63,0,220.0,196.0, 174.61,164.81,146.83,110.0,
-             220.0,0,261.63,293.66, 329.63,0,293.66,261.63, 220.0,196.0,220.0,261.63, 293.66,0,220.0,146.83],
-    arp:[587.33,440.0,523.25,440.0, 698.46,523.25,587.33,523.25, 783.99,587.33,659.25,587.33, 523.25,440.0,392.0,349.23,
-         587.33,440.0,659.25,587.33, 783.99,659.25,698.46,659.25, 587.33,523.25,587.33,659.25, 880.0,659.25,587.33,440.0],
-    bType:'sawtooth',lType:'sawtooth',cutoff:1280
+    tempo:138,
+    chug:[110.0,110.0,220.0,110.0, 130.81,130.81,261.63,130.81, 146.83,146.83,293.66,146.83, 164.81,146.83,130.81,110.0,
+          110.0,110.0,220.0,110.0, 174.61,174.61,349.23,174.61, 196.0,196.0,392.0,196.0,    220.0,196.0,164.81,130.81],
+    sub:[55.0,0,55.0,0, 65.41,0,65.41,0, 73.42,0,73.42,0, 82.41,73.42,65.41,55.0,
+         55.0,0,55.0,0, 87.31,0,87.31,0, 98.0,0,98.0,0,   110.0,98.0,82.41,65.41],
+    brass:[440.0,0,0,523.25, 659.25,0,587.33,523.25, 587.33,0,0,659.25, 783.99,0,659.25,587.33,
+           440.0,0,523.25,659.25, 698.46,0,659.25,587.33, 783.99,0,880.0,783.99, 659.25,0,523.25,440.0],
+    pad:[220.0,0,0,0, 261.63,0,0,0, 293.66,0,0,0, 329.63,0,0,0,
+         220.0,0,0,0, 349.23,0,0,0, 392.0,0,0,0, 440.0,0,0,0],
+    cutoff:1750
    },
    china:{
-    tempo:176,
-    bass:[73.42,73.42,87.31,73.42, 110.0,110.0,98.0,87.31, 73.42,73.42,110.0,130.81, 146.83,130.81,110.0,87.31,
-          73.42,0,110.0,73.42, 87.31,0,110.0,130.81, 146.83,146.83,130.81,110.0, 87.31,73.42,87.31,73.42],
-    brass:[293.66,349.23,440.0,0, 587.33,523.25,440.0,0, 440.0,523.25,587.33,659.25, 587.33,440.0,349.23,293.66,
-           440.0,0,587.33,659.25, 783.99,659.25,587.33,440.0, 523.25,587.33,659.25,587.33, 440.0,349.23,293.66,0],
-    harmony:[146.83,0,220.0,0, 293.66,0,220.0,0, 220.0,0,293.66,329.63, 293.66,220.0,174.61,0,
-             220.0,0,293.66,329.63, 392.0,329.63,293.66,220.0, 261.63,293.66,329.63,293.66, 220.0,174.61,146.83,0],
-    arp:[587.33,440.0,587.33,349.23, 587.33,440.0,659.25,587.33, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66,
-         587.33,440.0,783.99,659.25, 783.99,659.25,587.33,440.0, 659.25,587.33,523.25,440.0, 587.33,440.0,349.23,293.66],
-    bType:'sawtooth',lType:'sawtooth',cutoff:1080
+    tempo:146,
+    chug:[73.42,0,73.42,146.83, 87.31,0,87.31,174.61, 110.0,0,98.0,87.31, 73.42,0,110.0,73.42,
+          73.42,146.83,130.81,110.0, 87.31,174.61,146.83,130.81, 110.0,130.81,146.83,174.61, 146.83,110.0,87.31,73.42],
+    sub:[73.42,0,0,0, 87.31,0,0,0, 110.0,0,98.0,87.31, 73.42,0,0,0,
+         73.42,0,0,0, 87.31,0,0,0, 110.0,0,0,0, 73.42,0,0,0],
+    brass:[587.33,0,440.0,349.23, 440.0,0,523.25,587.33, 698.46,0,587.33,440.0, 349.23,392.0,440.0,0,
+           880.0,0,698.46,587.33, 698.46,0,783.99,880.0, 1046.5,0,880.0,698.46, 587.33,0,440.0,293.66],
+    pad:[146.83,0,0,0, 174.61,0,0,0, 220.0,0,0,0, 146.83,0,0,0,
+         146.83,0,0,0, 174.61,0,0,0, 220.0,0,0,0, 146.83,0,0,0],
+    cutoff:1420
    },
    russia:{
-    tempo:158,
-    bass:[65.41,65.41,130.81,65.41, 87.31,77.78,65.41,58.27, 65.41,65.41,98.0,87.31, 77.78,65.41,58.27,65.41,
-          65.41,0,130.81,98.0, 87.31,0,116.54,98.0, 77.78,77.78,87.31,98.0, 130.81,98.0,77.78,65.41],
-    brass:[196.0,0,233.08,261.63, 233.08,0,196.0,174.61, 261.63,0,293.66,311.13, 293.66,261.63,233.08,196.0,
-           261.63,0,311.13,392.0, 466.16,392.0,349.23,311.13, 293.66,261.63,233.08,196.0, 261.63,0,196.0,130.81],
-    harmony:[130.81,0,155.56,174.61, 155.56,0,130.81,116.54, 174.61,0,196.0,207.65, 196.0,174.61,155.56,0,
-             130.81,0,155.56,196.0, 233.08,196.0,174.61,155.56, 146.83,130.81,116.54,98.0, 130.81,0,98.0,65.41],
-    arp:[392.0,261.63,392.0,261.63, 466.16,311.13,466.16,311.13, 523.25,392.0,523.25,392.0, 466.16,349.23,392.0,261.63,
-         392.0,261.63,523.25,392.0, 587.33,466.16,587.33,466.16, 523.25,392.0,466.16,311.13, 392.0,261.63,196.0,130.81],
-    bType:'sawtooth',lType:'sawtooth',cutoff:880
+    tempo:128,
+    chug:[65.41,65.41,130.81,65.41, 77.78,77.78,155.56,77.78, 87.31,87.31,174.61,87.31, 98.0,98.0,196.0,98.0,
+          65.41,0,130.81,116.54, 103.83,0,98.0,87.31, 77.78,77.78,98.0,116.54, 130.81,98.0,77.78,65.41],
+    sub:[65.41,0,0,0, 77.78,0,0,0, 87.31,0,0,0, 98.0,0,0,0,
+         65.41,0,0,0, 103.83,0,98.0,87.31, 77.78,0,98.0,0, 65.41,0,0,0],
+    brass:[261.63,0,311.13,392.0, 349.23,0,311.13,293.66, 311.13,0,392.0,466.16, 392.0,0,349.23,311.13,
+           392.0,0,466.16,523.25, 466.16,0,392.0,349.23, 311.13,293.66,261.63,246.94, 261.63,0,196.0,130.81],
+    pad:[130.81,0,0,0, 155.56,0,0,0, 174.61,0,0,0, 196.0,0,0,0,
+         130.81,0,0,0, 207.65,0,0,0, 155.56,0,0,0, 130.81,0,0,0],
+    cutoff:1150
    },
    militia:{
-    tempo:174,
-    bass:[82.41,82.41,164.81,110.0, 82.41,82.41,123.47,110.0, 82.41,98.0,110.0,123.47, 130.81,123.47,110.0,98.0,
-          82.41,164.81,82.41,110.0, 87.31,174.61,87.31,110.0, 98.0,110.0,123.47,130.81, 123.47,110.0,98.0,82.41],
-    brass:[329.63,349.23,415.30,440.0, 415.30,349.23,329.63,246.94, 440.0,493.88,523.25,493.88, 440.0,415.30,349.23,329.63,
-           415.30,440.0,493.88,523.25, 659.25,523.25,493.88,440.0, 415.30,349.23,329.63,246.94, 440.0,415.30,349.23,329.63],
-    harmony:[164.81,0,207.65,220.0, 207.65,0,164.81,0, 220.0,0,261.63,246.94, 220.0,207.65,174.61,0,
-             207.65,220.0,246.94,261.63, 329.63,261.63,246.94,220.0, 207.65,174.61,164.81,0, 220.0,207.65,174.61,164.81],
-    arp:[659.25,440.0,659.25,415.30, 659.25,440.0,523.25,493.88, 659.25,523.25,659.25,587.33, 659.25,523.25,440.0,415.30,
-         659.25,440.0,783.99,659.25, 880.0,659.25,783.99,659.25, 659.25,523.25,493.88,440.0, 415.30,349.23,329.63,246.94],
-    bType:'square',lType:'sawtooth',cutoff:1120
+    tempo:140,
+    chug:[82.41,164.81,82.41,164.81, 87.31,174.61,87.31,174.61, 103.83,207.65,103.83,207.65, 110.0,220.0,110.0,220.0,
+          82.41,164.81,87.31,103.83, 110.0,220.0,123.47,110.0, 103.83,87.31,82.41,73.42, 82.41,123.47,164.81,82.41],
+    sub:[82.41,0,82.41,0, 87.31,0,87.31,0, 103.83,0,103.83,0, 110.0,0,110.0,0,
+         82.41,0,87.31,0, 110.0,0,123.47,0, 103.83,0,82.41,0, 82.41,0,0,0],
+    brass:[659.25,0,698.46,830.61, 880.0,0,830.61,698.46, 659.25,0,830.61,987.77, 1046.5,0,987.77,880.0,
+           830.61,0,880.0,987.77, 1046.5,0,1174.66,1318.51, 1046.5,987.77,880.0,830.61, 698.46,659.25,659.25,0],
+    pad:[164.81,0,0,0, 174.61,0,0,0, 207.65,0,0,0, 220.0,0,0,0,
+         164.81,0,0,0, 220.0,0,0,0, 207.65,0,0,0, 164.81,0,0,0],
+    cutoff:1650
+   },
+   ambient:{
+    tempo:185,
+    chug:[73.42,0,0,0, 110.0,0,0,0, 87.31,0,0,0, 65.41,0,73.42,0],
+    sub:[73.42,0,0,0, 0,0,0,0, 87.31,0,0,0, 65.41,0,0,0],
+    brass:[0,0,0,0, 440.0,0,0,0, 0,0,0,0, 523.25,0,440.0,0],
+    pad:[146.83,0,0,0, 220.0,0,0,0, 174.61,0,0,0, 130.81,0,146.83,0],
+    cutoff:720,isAmbient:true
    }
   };
-  let curTempo=mainTheme.tempo;
+  let curTempo=zhMainScore.tempo;
   const tickBgm=()=>{
    if(!this.bgm||paused||!this.ctx)return;
-   if(!running&&!this.playMainOnly)return;
+   if(!running&&!this.playMainOnly&&this.style==='auto')return;
    const c=this.ctx;if(c.state==='suspended')c.resume();
-   const t=c.currentTime,s=step++;
-   const th=this.playMainOnly?mainTheme:((s<64)?mainTheme:(themes[this.facOf(ME)]||themes.usa));
+   const t=c.currentTime,s=step++,out=this.bgmGain||c.destination;
+   let th;
+   if(this.playMainOnly||this.style==='zh_metal')th=zhMainScore;
+   else if(this.style!=='auto'&&factionScores[this.style])th=factionScores[this.style];
+   else th=factionScores[this.facOf(ME)]||factionScores.usa;
    if(th.tempo&&th.tempo!==curTempo){curTempo=th.tempo;clearInterval(this.bgmTimer);this.bgmTimer=setInterval(tickBgm,curTempo);}
    const inCombat=G&&G.lastAttack&&G.lastAttack[ME]&&(G.t-G.lastAttack[ME].t<14);
-   const climax=(s%64)>=32||inCombat;
-   const durSec=(curTempo/1000)*1.15;
-   const bf=th.bass[s%th.bass.length];
+   const climax=!th.isAmbient&&((s%64)>=32||inCombat||th.isZH);
+   const stepSec=curTempo/1000;
+
+   // 1. Driving Palm-Muted Rock Guitar / Ostinato Chug
+   const cf=th.chug[s%th.chug.length];
+   if(cf>0){
+    const oc=c.createOscillator(),gc=c.createGain(),fc=c.createBiquadFilter();
+    oc.type=th.isAmbient?'sine':'sawtooth';
+    fc.type='lowpass';fc.Q.value=3.2;
+    fc.frequency.setValueAtTime(climax?th.cutoff*1.35:th.cutoff*0.95,t);
+    fc.frequency.exponentialRampToValueAtTime(240,t+stepSec*0.95);
+    oc.frequency.setValueAtTime(cf,t);
+    gc.gain.setValueAtTime(climax?0.072:0.050,t);
+    gc.gain.exponentialRampToValueAtTime(0.0008,t+stepSec*0.98);
+    oc.connect(fc);fc.connect(gc);gc.connect(out);oc.start(t);oc.stop(t+stepSec);
+   }
+
+   // 2. Deep Sub-Bass Foundation
+   const sf=th.sub[s%th.sub.length];
+   if(sf>0){
+    const os=c.createOscillator(),gs=c.createGain();
+    os.type='triangle';os.frequency.setValueAtTime(sf,t);
+    gs.gain.setValueAtTime(0.11,t);gs.gain.exponentialRampToValueAtTime(0.001,t+stepSec*2.8);
+    os.connect(gs);gs.connect(out);os.start(t);os.stop(t+stepSec*2.85);
+   }
+
+   // 3. Sustained Heroic Brass / Lead Horn Section (3-voice detuned chorus with long sustain)
+   const bf=th.brass[s%th.brass.length];
    if(bf>0){
-    const ob=c.createOscillator(),gb=c.createGain(),fb=c.createBiquadFilter();
-    ob.type=th.bType;fb.type='lowpass';fb.frequency.setValueAtTime(climax?th.cutoff*1.55:th.cutoff,t);
-    ob.frequency.setValueAtTime(bf,t);
-    gb.gain.setValueAtTime(climax?0.062:0.044,t);gb.gain.exponentialRampToValueAtTime(0.0008,t+durSec);
-    ob.connect(fb);fb.connect(gb);gb.connect(c.destination);ob.start(t);ob.stop(t+durSec+0.01);
-   }
-   const lf=th.brass[s%th.brass.length];
-   if(lf>0){
-    for(const det of [-8,8]){
-     const ol=c.createOscillator(),gl=c.createGain(),fl=c.createBiquadFilter();
-     ol.type=th.lType;ol.detune.value=det;fl.type='lowpass';
-     fl.frequency.setValueAtTime(climax?th.cutoff*2.5:th.cutoff*1.7,t);
-     ol.frequency.setValueAtTime(lf,t);
-     gl.gain.setValueAtTime(climax?0.028:0.017,t);gl.gain.exponentialRampToValueAtTime(0.0008,t+durSec*1.05);
-     ol.connect(fl);fl.connect(gl);gl.connect(c.destination);ol.start(t);ol.stop(t+durSec*1.08);
+    const leadDur=stepSec*3.6;
+    for(const det of [-11,0,11]){
+     const ob=c.createOscillator(),gb=c.createGain(),fb=c.createBiquadFilter();
+     ob.type=th.isAmbient?'triangle':'sawtooth';ob.detune.value=det;
+     fb.type='lowpass';fb.frequency.setValueAtTime(420,t);
+     fb.frequency.exponentialRampToValueAtTime(climax?th.cutoff*2.2:th.cutoff*1.6,t+0.09);
+     ob.frequency.setValueAtTime(bf,t);
+     gb.gain.setValueAtTime(0.002,t);
+     gb.gain.linearRampToValueAtTime(climax?0.032:0.022,t+0.055);
+     gb.gain.exponentialRampToValueAtTime(0.0008,t+leadDur);
+     ob.connect(fb);fb.connect(gb);gb.connect(out);ob.start(t);ob.stop(t+leadDur+0.02);
     }
    }
-   const hf=th.harmony[s%th.harmony.length];
-   if(hf>0&&(climax||s%2===0)){
-    const oh=c.createOscillator(),gh=c.createGain();
-    oh.type='triangle';oh.frequency.setValueAtTime(hf,t);
-    gh.gain.setValueAtTime(climax?0.034:0.020,t);
-    gh.gain.exponentialRampToValueAtTime(0.0008,t+durSec*1.2);
-    oh.connect(gh);gh.connect(c.destination);oh.start(t);oh.stop(t+durSec*1.22);
-   }
-   if(th.arp&&(climax||this.playMainOnly||s%2===0)){
-    const af=th.arp[s%th.arp.length];
-    if(af>0){
-     const oa=c.createOscillator(),ga=c.createGain();
-     oa.type='triangle';oa.frequency.setValueAtTime(af,t);
-     ga.gain.setValueAtTime(climax?0.020:0.011,t);ga.gain.exponentialRampToValueAtTime(0.0008,t+durSec*0.65);
-     oa.connect(ga);ga.connect(c.destination);oa.start(t);oa.stop(t+durSec*0.68);
+
+   // 4. Warm Orchestral String / Synth Pad (4-beat sustained chords)
+   const pf=th.pad[s%th.pad.length];
+   if(pf>0){
+    const padDur=stepSec*4.2;
+    for(const mult of [1,1.5]){
+     const op=c.createOscillator(),gp=c.createGain(),fp=c.createBiquadFilter();
+     op.type='sawtooth';fp.type='lowpass';fp.frequency.setValueAtTime(760,t);
+     op.frequency.setValueAtTime(pf*mult,t);
+     gp.gain.setValueAtTime(0.002,t);gp.gain.linearRampToValueAtTime(0.022,t+0.12);
+     gp.gain.exponentialRampToValueAtTime(0.0008,t+padDur);
+     op.connect(fp);fp.connect(gp);gp.connect(out);op.start(t);op.stop(t+padDur+0.02);
     }
    }
-   if(s%4===0||(climax&&(s%2===0))){
-    const ok=c.createOscillator(),gk=c.createGain();
-    ok.type='sine';ok.frequency.setValueAtTime(s%8===0?145:115,t);ok.frequency.exponentialRampToValueAtTime(28,t+0.14);
-    gk.gain.setValueAtTime(climax?0.095:0.060,t);gk.gain.exponentialRampToValueAtTime(0.0008,t+0.15);
-    ok.connect(gk);gk.connect(c.destination);ok.start(t);ok.stop(t+0.16);
-   }
-   if(s%4===2||(climax&&s%4===3)){
-    this.noise(t,0.095,'bandpass',1900,720,climax?0.052:0.028,1.1);
-   }else{
-    this.noise(t,0.032,'highpass',5400,3600,climax?0.020:0.011,1.0);
+
+   // 5. Heavy Military Percussion (Kick, Snare Crack, Hi-Hat)
+   if(!th.isAmbient){
+    if(s%4===0||(climax&&s%8===6)){
+     const ok=c.createOscillator(),gk=c.createGain();
+     ok.type='sine';ok.frequency.setValueAtTime(145,t);ok.frequency.exponentialRampToValueAtTime(32,t+0.16);
+     gk.gain.setValueAtTime(climax?0.13:0.09,t);gk.gain.exponentialRampToValueAtTime(0.0008,t+0.17);
+     ok.connect(gk);gk.connect(out);ok.start(t);ok.stop(t+0.18);
+    }
+    if(s%4===2){
+     this.noise(t,0.14,'bandpass',1750,620,climax?0.072:0.048,1.0,out);
+    }else{
+     this.noise(t,0.035,'highpass',6200,4000,climax?0.024:0.015,1.0,out);
+    }
    }
   };
   this.bgmTimer=setInterval(tickBgm,curTempo);
  }
 };
-
 function takeSnapshot(){
  try{
   if(!cv)return null;
@@ -4134,8 +4506,13 @@ if($('menu3dBtn'))$('menu3dBtn').addEventListener('click',()=>setView3D(!VIEW3D)
 if($('view3dBtn'))$('view3dBtn').addEventListener('click',()=>setView3D(!VIEW3D));
 if($('snapBtn'))$('snapBtn').addEventListener('click',()=>takeSnapshot());
 
-$('sfxBtn').addEventListener('click',()=>{SFX.on=!SFX.on;$('sfxBtn').textContent=SFX.on?tr('sfxOn'):tr('sfxOff');$('sfxBtn').style.borderColor=SFX.on?'#ffd34d':'#3b5068';if(SFX.on)SFX.play('click');});
-$('bgmBtn').addEventListener('click',()=>{SFX.toggleBgm(undefined,false);SFX.userMutedBgm=!SFX.bgm;});
+SFX.loadPrefs();
+$('sfxBtn').addEventListener('click',()=>{SFX.on=!SFX.on;SFX.syncUi();$('sfxBtn').textContent=SFX.on?tr('sfxOn'):tr('sfxOff');$('sfxBtn').style.borderColor=SFX.on?'#ffd34d':'#3b5068';if(SFX.on)SFX.play('click');});
+$('bgmBtn').addEventListener('click',()=>{if(SFX.bgm&&SFX.playMainOnly){SFX.toggleBgm(true,false);}else{SFX.toggleBgm(undefined,false);}SFX.userMutedBgm=!SFX.bgm;});
+if($('sfxVol'))$('sfxVol').addEventListener('input',e=>SFX.setSfxVol(parseInt(e.target.value,10)/100));
+if($('bgmVol'))$('bgmVol').addEventListener('input',e=>SFX.setBgmVol(parseInt(e.target.value,10)/100));
+if($('bgmStyleSel'))$('bgmStyleSel').addEventListener('change',e=>SFX.setStyle(e.target.value));
+if($('menuBgmStyle'))$('menuBgmStyle').addEventListener('change',e=>SFX.setStyle(e.target.value));
 const toggleZhMain=()=>{const next=!(SFX.bgm&&SFX.playMainOnly);SFX.toggleBgm(next,next);SFX.userMutedBgm=!next;};
 if($('zhThemeBtn'))$('zhThemeBtn').addEventListener('click',toggleZhMain);
 if($('topZhThemeBtn'))$('topZhThemeBtn').addEventListener('click',toggleZhMain);
